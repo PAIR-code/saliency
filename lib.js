@@ -28,7 +28,7 @@ var idWrtMap = {};
 
 // Array of checkpointed divs.
 var checkpoints = [];
-var checkpoint_freq = 10;
+var checkpoint_freq = 4;
 
 var tbody = document.querySelector('#table tbody');
 var xhr = new XMLHttpRequest();
@@ -345,7 +345,7 @@ function readyPage() {
       for (var i = 0; i < checkpoints.length; i++) {
         if (window.scrollY > checkpoints[i].offsetTop &&
             i < (200 / checkpoint_freq) - 1) {
-          loadCheckpoint(i + 1);
+          loadCheckpoint(i);
         }
       }
     }
