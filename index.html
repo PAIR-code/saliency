@@ -1,1 +1,446 @@
-saliency
+<html>
+<head>
+  <title>SmoothGrad paper</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400" rel="stylesheet">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+  <style>
+    body {
+      font-family: "Roboto", "Helvetica", sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+    }
+
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    .grads-container {
+      width: 64%;
+    }
+
+    .grads-container img {
+      width: 100%;
+      background: url('images/loader.gif') no-repeat;
+      background-position: center;
+    }
+
+    table td {
+      font-size: 12px;
+      text-align: center;
+      outline: 1px solid white;
+      padding: 0;
+      margin: 0;
+    }
+
+    table.inner td {
+      padding: 0;
+      margin: 0;
+      border: 0;
+      width: 25%;
+    }
+
+    .footer-row {
+      height: 15px;
+    }
+
+    .incorrect-row {
+      background-color: #ffe8e8;
+    }
+
+    .incorrect-row td {
+      outline: 1px solid #ffe8e8;
+    }
+
+    table.inner tr {
+      border: 0;
+    }
+
+    table.inner th {
+      padding: 8px;
+    }
+
+    table th {
+      font-size: 11px;
+    }
+
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+    }
+
+    thead, tbody { display: block; }
+
+    .rotated {
+      transform: rotate(90deg);
+      transform-origin: left bottom 0;
+      margin-top: -111px;
+      font-weight: bold;
+      font-size: 1.2em;
+      padding: 8px;
+    }
+
+    #headers {
+      z-index: 1000;
+      background-color: white;
+      height: 65px;
+      vertical-align: middle;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+
+    #headers span {
+      background-color: white;
+      display: inline-block;
+      line-height: 65px;
+      font-size: 1.2em;
+      font-weight: bold;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cover {
+      background: #1e283a;
+    }
+
+    .cover-container {
+      padding-top: 10px;
+      padding-bottom: 60px;
+    }
+    .descriptions {
+      padding-top: 20px;
+    }
+    .cover-container, .descriptions, .attribution-container {
+      padding-right: 15px;
+      padding-left: 15px;
+      margin-right: auto;
+      margin-left: auto;
+    }
+
+    @media (min-width: 415px) {
+      .cover-container, .descriptions, .attribution-container {
+        width: 500px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .cover-container, .descriptions, .attribution-container {
+        width: 650px;
+      }
+    }
+
+    @media (min-width: 992px) {
+      .cover-container, .descriptions, .attribution-container {
+        width: 770px;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .cover-container, .descriptions, .attribution-container {
+        width: 970px;
+      }
+    }
+
+    .cover h1 {
+      font-family: "Roboto", "Gotham A", "Gotham B";
+      letter-spacing: 0.05em;
+      font-size: 63px;
+      font-weight: 700;
+      margin-bottom: 0.5em;
+      text-transform: uppercase;
+    }
+
+    .cover h3 {
+      font-size: 30px;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    .descriptions h3 {
+      color: #313b4e;
+      opacity: .8;
+    }
+
+    .cover {
+      color: #ddd;
+    }
+
+    .authors {
+      margin-top: -40px;
+      font-size: 15px;
+    }
+
+    .team-link {
+      margin-top: 5px;
+    }
+    .team-link a {
+      font-size: 15px;
+      color: #ccc;
+    }
+
+    .subtitle {
+      margin-top: -20px;
+    }
+
+    .icons {
+      margin-top: 30px;
+      padding-left: 4px;
+    }
+
+    .icons a {
+      display: inline-block;
+      font-size: 16px;
+      color: #ccc;
+      text-decoration: none;
+    }
+
+    .paper-icon {
+      display: inline-block;
+    }
+
+    .paper-icon a {
+      line-height: 35px;
+      vertical-align: top;
+    }
+
+    .paper-icon:hover a {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .description p {
+      width: 75%;
+      font-size: 16px;
+    }
+
+    .description img {
+      vertical-align: middle;
+      width: 100%;
+    }
+
+    .imgs-container {
+      display: table-row;
+    }
+
+    .img-container {
+      color: #62779c;
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+      padding-right: 10px;
+      display: table-cell;
+      width: 33%;
+    }
+
+    #headers.fixed-header {
+      position: fixed;
+      top: 0;
+    }
+
+    #table-container.fixed-header {
+      margin-top: 106px;
+    }
+
+    .smoothgrad-label {
+      color: #ff4e4e;
+    }
+
+    .image-label {
+      font-size: 15px;
+      text-align: left;
+      padding-bottom: 4px;
+      padding-top: 6px;
+      padding-left: 2px;
+      font-weight: normal;
+    }
+
+    .img-times-selector-container {
+      margin-left: -80px;
+      margin-top: -45px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+     }
+
+    .img-times-selector {
+      width: 175px;
+    }
+
+    .img-times-selector:hover {
+      cursor: pointer;
+    }
+
+    .img-times-selector div {
+      font-size: 12px !important;
+      display: inline-block;
+      padding: 4px;
+    }
+
+    .select-grad {
+      border-top-left-radius: 5px;
+      border-bottom-left-radius: 5px;
+    }
+
+    .select-img-times-grad {
+      border-top-right-radius: 5px;
+      border-bottom-right-radius: 5px;
+      margin-left: -5px;
+    }
+
+    .grad-selected {
+      background-color: #666;
+      color: #eee;
+    }
+    .grad-unselected {
+      background-color: #eee;
+      color: #333;
+    }
+    .grad:hover {
+      cursor: pointer;
+      outline: 1px solid red !important;
+    }
+    #table {
+      margin-top: 4px;
+      width: 100%;
+    }
+    .grad-wrt-container {
+      font-size: 14px;
+      float: left;
+    }
+    .pointer-container {
+      float: right;
+      margin-bottom: 10px;
+    }
+    .main-img:hover {
+      cursor: pointer;
+    }
+
+    .selected-gradient-wrt {
+      cursor: auto !important;
+      font-weight: bold;
+      text-decoration: none !important;
+    }
+    .gradient-wrt {
+      color: black;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .show-mispred tr.correct-row {
+      display: none;
+    }
+
+    .show-mispred tr.incorrect-row {
+      display: table-row !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="scroll-container">
+    <div class="cover">
+      <div class="cover-container">
+        <div class="icons">
+          <div class="paper-icon">
+            <a href="http://arxiv.org/">
+              <img src="images/paper_icon.png" style="width: 100px"/><br>Paper
+            </a>
+          </div>
+          <div class="paper-icon" style="margin-left: 20px">
+            <a href="http://github.com/tensorflow/saliency">
+              <img src="images/code_icon.png" style="width: 100px"/><br>Code
+            </a>
+          </div>
+        </div>
+        <div class="title"><h1>SmoothGrad</h1></div>
+        <div class="authors">Daniel Smilkov, Nikhil Thorat, Been Kim, Fernanda Viégas, Martin Wattenberg</div>
+        <div class="team-link"><a href="https://research.google.com/bigpicture/">Google Big Picture</a></div>
+      </div>
+    </div>
+    <div class="descriptions">
+      <h3>What is a sensitivity mask?</h3>
+      <div class="description">
+          <p>When a machine learning model makes a prediction, often times we would like to determine which features of the input (pixels, for images) were important for the prediction. If the model makes a misprediction, we might want to know which features contributed to the misclassification. We can visualize the feature importance mask as a grayscale image with the same dimensions as the original image with brightness corresponding to importance of the pixel.</p>
+      </div>
+      <h3>Computing sensitivity</h3>
+      <div class="description">
+        <p>There are many techniques to compute a sensitivity mask for an image for a particular prediction. The simplest approach is to take the gradient of a class prediction neuron with respect to the input pixels. This tells us how much a small change to each pixel would affect the prediction. Visually, this mask tends to be noisy.</p>
+        <p>The SmoothGrad technique often significantly denoises this sensitivity mask. This technique adds pixel-wise Gaussian noise to many copies of the image, and simply averages the resulting gradients.</p>
+        <p style="margin-top: 2em">
+          <div class="imgs-container">
+            <div class="img-container"></div>
+            <div class="img-container">Gradient</div>
+            <div class="img-container">SmoothGrad</div>
+          </div>
+          <div class="imgs-container">
+            <div class="img-container">
+              <img src="images/obelisk.png"/>
+            </div>
+            <div class="img-container">
+              <img src="images/obelisk_gradient.png"/>
+            </div>
+            <div class="img-container">
+              <img src="images/obelisk_smoothgrad.png">
+            </div>
+          </div>
+        </p>
+      </div>
+      <div class="description" style="margin-top: 3em">
+        <h3>Augmenting other methods</h3>
+        <p>The SmoothGrad technique augments other sensitivity techniques. With this release, we have provided implementations of several sensitivity techniques and their SmoothGrad counterparts. This is not comprehensive, and we are accepting pull requests to add new methods!</p>
+        <p>
+          Below, we show vanilla gradients, <a href="https://arxiv.org/abs/1703.01365">Integrated gradients</a>, and <a href="https://arxiv.org/abs/1412.6806">Guided Backpropagation</a> as they apply to 200 randomly chosen images from the <a href="http://www.image-net.org/">ImageNet dataset</a> using the <a href="https://arxiv.org/abs/1512.00567">Inception V3 model</a>.
+        </p>
+        <p style="margin-bottom: 2em">
+          When the model makes a mistake, we show the row with a light red background and give the option to choose which mask to visualize - label or the prediction. Often times you can see why the model made a mistake!
+        </p>
+      </div>
+    </div>
+    <div class="attribution-container">
+      <div id="headers">
+        <span style="width: 4%"></span><!--
+     --><span style="width: 32%">Image</span><!--
+     --><span style="width: 16%">Gradient</span><!--
+     --><span style="width: 16%">Integrated</span><!--
+     --><span style="width: 16%">Guided Backprop</span><!--
+     --><div class="img-times-selector-container">
+          <div class="img-times-selector">
+            <div class="select-grad grad-selected">Gradient</div>
+            <div class="select-img-times-grad grad-unselected">Gradient × Image</div>
+          </div>
+        </div>
+      </div>
+      <div id="table-container">
+        <div class="grad-wrt-container">
+          <input type="checkbox" id="show-mispred"/>
+          Only show mispredictions
+        </div>
+        <div class="pointer-container">
+          <img src="images/pointer.png" width="30px"/>
+          Mouse over images
+        </div>
+        <table id="table">
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="lib.js"></script>
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-46457317-6', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+</body>
+</html>
