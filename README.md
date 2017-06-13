@@ -2,10 +2,9 @@
 
 ## Introduction
 
-This repository contains code for the [SmoothGrad
-paper](https://research.google.com/bigpicture/), as well as implementations of
+This repository contains code for [SmoothGrad](https://tensorflow.github.io/saliency/), as well as implementations of
 several other saliency techniques. Each of these techniques can also be
-augmented with SmoothGrad. The techniques are:
+augmented with SmoothGrad. The techniques implemented in this library are:
 
 *   Vanilla Gradients
     ([paper](https://scholar.google.com/scholar?q=Visualizing+higher-layer+features+of+a+deep+network&btnG=&hl=en&as_sdt=0%2C22),
@@ -13,6 +12,9 @@ augmented with SmoothGrad. The techniques are:
 *   Guided Backpropogation ([paper](https://arxiv.org/abs/1412.6806))
 *   Integrated Gradients ([paper](https://arxiv.org/abs/1703.01365))
 *   Occlusion
+
+This list is by no means comprehensive. We are accepting pull requests to add
+new methods!
 
 ## Download
 ```
@@ -25,11 +27,11 @@ cd saliency
 Each saliency mask class extends from the `SaliencyMask` base class. This class
 contains the following methods:
 
-*   `__init__(graph, session, y, x)`: manipulates the graph, or creates a new
-    graph. Often this will add nodes to the graph, so this shouldn't be called
-    continuously. `y` is the output tensor to compute saliency masks with
-    respect to, `x` is the input tensor with the outer most dimension being
-    batch size.
+*   `__init__(graph, session, y, x)`: Constructor of the SaliencyMask. This can
+    modify the graph, or sometimes create a new graph. Often this will add nodes
+    to the graph, so this shouldn't be called continuously. `y` is the output
+    tensor to compute saliency masks with respect to, `x` is the input tensor
+    with the outer most dimension being batch size.
 *   `GetMask(x_value, feed_dict)`: Returns a mask of the shape of non-batched
     `x_value` given by the saliency technique.
 *   `GetSmoothedMask(x_value, feed_dict)`: Returns a mask smoothed of the shape
@@ -55,7 +57,7 @@ the SmoothGrad paper for more details on which visualization method to use.
 [This example iPython notebook]([http://github.com/tensorflow/saliency/blob/master/Examples.ipynb]) shows
 these techniques is a good starting place.
 
-Another example of using GuidedBackprop from tensorflow code:
+Another example of using GuidedBackprop with SmoothGrad from TensorFlow:
 
 ```
 from guided_backprop import GuidedBackprop
