@@ -26,9 +26,11 @@ var idClickMap = {};
 // Map of id to 0 (with respect to label) or 1 (with respect to prediction).
 var idWrtMap = {};
 
+var idCorrectMap = {};
+
 // Array of checkpointed divs.
 var checkpoints = [];
-var checkpoint_freq = 4;
+var checkpoint_freq = 1;
 
 var tbody = document.querySelector('#table tbody');
 var xhr = new XMLHttpRequest();
@@ -46,6 +48,7 @@ xhr.onload = () => {
     if (topPred !== label) {
       isCorrectPrediction = false;
     }
+    idCorrectMap[i] = isCorrectPrediction;
 
     idImgMap[i] = [];
     idLoadedMap[i] = false;
@@ -332,6 +335,11 @@ function readyPage() {
       scrollEventScheduled = true;
     });
 
+    var BUFFER_PX = window.innerHeight / 2;
+    function elementInViewport(el, parent) {
+      return el.offsetTop + parent.offsetTop < window.scrollY + window.innerHeight + BUFFER_PX;
+    }
+
     function updateHeader() {
       if (window.scrollY > headerPosition.top) {
         headers.addClass('fixed-header');
@@ -341,44 +349,45 @@ function readyPage() {
         headers.removeClass('fixed-header');
       }
 
-      // check lazy loading
-      for (var i = 0; i < checkpoints.length; i++) {
-        if (window.scrollY > checkpoints[i].offsetTop &&
-            i < (200 / checkpoint_freq) - 1) {
-          loadCheckpoint(i);
+      // Process scroll.
+      for (var i = 0; i < 200; i++) {
+        var images = idImgMap[i];
+
+        // If only showing misprediction and this is a correct row, don't load it.
+        if (showMispredMode == 1 && idCorrectMap[i]) {
+          continue;
+        }
+
+        var parent = document.getElementById('table-container');
+        var inViewport = elementInViewport(checkpoints[i], parent);
+
+        if (inViewport) {
+          for (var j = 0; j < images.length; j++) {
+            var image = images[j];
+            var newattr = mode == 0 ? 'data-mask' : 'data-imgxmask';
+            newattr += (idWrtMap[i] === 0 ? '' : '-wrt-pred') + '-src';
+
+            if (image.src != image.getAttribute(newattr)) {
+              image.src = image.getAttribute(newattr);
+            }
+          }
+          idLoadedMap[i] = true;
         }
       }
     }
 
     var showMispred = false;
+    var showMispredMode = 0; // 0 means unchecked, 1 means show only mispred.
     $("#show-mispred").change(function(event) {
       if (this.checked) {
         $("#table").addClass('show-mispred');
+        showMispredMode = 1;
       } else {
         $("#table").removeClass('show-mispred');
+        showMispredMode = 0;
       }
+      updateHeader();
     });
-
-    function loadCheckpoint(c) {
-      for (var i = 0; i < checkpoint_freq; i++) {
-        var id = checkpoint_freq * c + i;
-        if (idLoadedMap[id]) {
-          continue;
-        }
-
-        var images = idImgMap[id];
-        for (var j = 0; j < images.length; j++) {
-          var image = images[j];
-
-          var newattr = mode == 0 ? 'data-mask' : 'data-imgxmask';
-          newattr += (idWrtMap[i] === 0 ? '' : '-wrt-pred') + '-src';
-
-          image.src = image.getAttribute(newattr);
-        }
-        idLoadedMap[id] = true;
-      }
-    }
-    loadCheckpoint(0);
 
     function changeMode(cmode) {
       mode = cmode;
