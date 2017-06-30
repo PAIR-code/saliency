@@ -21,10 +21,17 @@ from skimage.transform import resize
 
 class GradCam(SaliencyMask):
     """A SaliencyMask class that computes saliency masks with Grad-CAM.
-    
+  
     https://arxiv.org/abs/1610.02391
+
+    Example usage (based on Examples.ipynb):
+
+    grad_cam = GradCam(graph, sess, y, images, conv_layer = end_points['Mixed_5c'])
+    grad_mask_2d = grad_cam.GetMask(im, feed_dict = {neuron_selector: prediction_class}, should_resize = False, 
+                                    three_dims = False)
+
     """
-    def __init__(self, graph, session, y, x, conv_layer, normalize=True):
+    def __init__(self, graph, session, y, x, conv_layer):
         super(GradCam, self).__init__(graph, session, y, x)
         self.conv_layer = conv_layer
         self.gradients_node = tf.gradients(y, conv_layer)[0]
