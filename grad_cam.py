@@ -26,7 +26,7 @@ class GradCam(SaliencyMask):
 
     Example usage (based on Examples.ipynb):
 
-    grad_cam = GradCam(graph, sess, y, images, conv_layer = end_points['Mixed_5c'])
+    grad_cam = GradCam(graph, sess, y, images, conv_layer = end_points['Mixed_7c'])
     grad_mask_2d = grad_cam.GetMask(im, feed_dict = {neuron_selector: prediction_class}, 
                                     should_resize = False, 
                                     three_dims = False)
@@ -73,6 +73,7 @@ class GradCam(SaliencyMask):
 
         # resize heatmap to be the same size as the input
         if should_resize:
+            grad_cam = grad_cam / np.max(grad_cam) # values need to be [0,1] to be resized
             grad_cam = resize(grad_cam, x_value.shape[:2])
 
         # convert grayscale to 3-D
