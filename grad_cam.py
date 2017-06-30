@@ -27,8 +27,12 @@ class GradCam(SaliencyMask):
     Example usage (based on Examples.ipynb):
 
     grad_cam = GradCam(graph, sess, y, images, conv_layer = end_points['Mixed_5c'])
-    grad_mask_2d = grad_cam.GetMask(im, feed_dict = {neuron_selector: prediction_class}, should_resize = False, 
+    grad_mask_2d = grad_cam.GetMask(im, feed_dict = {neuron_selector: prediction_class}, 
+                                    should_resize = False, 
                                     three_dims = False)
+
+    The Grad-CAM paper suggests using the last convolutional layer, which would 
+    be 'Mixed_5c' in inception_v2 and 'Mixed_7c' in inception_v3.
 
     """
     def __init__(self, graph, session, y, x, conv_layer):
