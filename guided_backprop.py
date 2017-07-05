@@ -23,6 +23,9 @@ class GuidedBackprop(SaliencyMask):
   This implementation copies the TensorFlow graph to a new graph with the ReLU
   gradient overwritten as in the paper:
   https://arxiv.org/abs/1412.6806
+  
+  Thanks to Chris Olah for generously sharing his implementation of the ReLU
+  backprop.
   """
 
   GuidedReluRegistered = False
@@ -34,12 +37,12 @@ class GuidedBackprop(SaliencyMask):
     self.x = x
 
     if GuidedBackprop.GuidedReluRegistered is False:
+      #### Acknowledgement to Chris Olah ####
       @tf.RegisterGradient("GuidedRelu")
       def _GuidedReluGrad(op, grad):
         gate_g = tf.cast(grad > 0, "float32")
         gate_y = tf.cast(op.outputs[0] > 0, "float32")
         return gate_y * gate_g * grad
-
     GuidedBackprop.GuidedReluRegistered = True
 
     with graph.as_default():
