@@ -24,9 +24,9 @@ class IntegratedGradients(GradientSaliency):
   https://arxiv.org/abs/1703.01365
   """
 
-  def GetMask(self, x_value, feed_dict={}, x_baseline=None, nsamples=100):
+  def GetMask(self, x_value, feed_dict={}, x_baseline=None, nsamples=25):
     """Returns a integrated gradients mask."""
-    if x_baseline == None:
+    if x_baseline is None:
       x_baseline = np.zeros_like(x_value)
 
     assert x_baseline.shape == x_value.shape

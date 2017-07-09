@@ -20,7 +20,7 @@ import tensorflow as tf
 class SaliencyMask(object):
   """Base class for saliency masks. Alone, this class doesn't do anything."""
   def __init__(self, graph, session, y, x):
-    """Constructs a SaliencyMask.
+    """Constructs a SaliencyMask by computing dy/dx.
 
     Args:
       graph: The TensorFlow graph to evaluate masks on.
@@ -50,15 +50,21 @@ class SaliencyMask(object):
       x_value: Input value, not batched.
       feed_dict: (Optional) feed dictionary to pass to the session.run call.
     """
-    pass
+    raise NotImplementedError('A derived class should implemented GetMask()')
 
   def GetSmoothedMask(
-      self, x_value, feed_dict={}, stdev_spread=.2, nsamples=50):
+      self, x_value, feed_dict={}, stdev_spread=.15, nsamples=25,
+      magnitude=True, **kwargs):
     """Returns a mask that is smoothed with the SmoothGrad method.
 
     Args:
       x_value: Input value, not batched.
       feed_dict: (Optional) feed dictionary to pass to the session.run call.
+      stdev_spread: Amount of noise to add to the input, as fraction of the
+                    total spread (x_max - x_min). Defaults to 15%.
+      nsamples: Number of samples to average across to get the smooth gradient.
+      magnitude: If true, computes the sum of squares of gradients instead of
+                 just the sum. Defaults to true.
     """
     stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
 
@@ -66,8 +72,11 @@ class SaliencyMask(object):
     for i in range(nsamples):
       noise = np.random.normal(0, stdev, x_value.shape)
       x_plus_noise = x_value + noise
-
-      total_gradients += self.GetMask(x_plus_noise, feed_dict)
+      grad = self.GetMask(x_plus_noise, feed_dict, **kwargs)
+      if magnitude:
+        total_gradients += (grad * grad)
+      else:
+        total_gradients += grad
 
     return total_gradients / nsamples
 
