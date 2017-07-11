@@ -15,7 +15,7 @@
 """Utilities to compute an Occlusion SaliencyMask."""
 
 import numpy as np
-from saliency import SaliencyMask
+from base import SaliencyMask
 import tensorflow as tf
 
 class Occlusion(SaliencyMask):
@@ -38,16 +38,16 @@ class Occlusion(SaliencyMask):
 
     feed_dict[self.x] = [x_value]
     original_y_value = self.session.run(self.y, feed_dict=feed_dict)
-  
+
     for row in range(x_value.shape[0] - size):
       for col in range(x_value.shape[1] - size):
         x_occluded = np.array(x_value)
-      
+
         x_occluded[row:row+size, col:col+size, :] = occlusion_window
-      
+
         feed_dict[self.x] = [x_occluded]
         y_value = self.session.run(self.y, feed_dict=feed_dict)
-      
+
         score_diff = original_y_value - y_value
         occlusion_scores[row:row+size, col:col+size, :] += score_diff
     return occlusion_scores

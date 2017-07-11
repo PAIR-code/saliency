@@ -16,7 +16,6 @@
 import numpy as np
 import tensorflow as tf
 
-
 class SaliencyMask(object):
   """Base class for saliency masks. Alone, this class doesn't do anything."""
   def __init__(self, graph, session, y, x):

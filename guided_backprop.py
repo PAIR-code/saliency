@@ -14,7 +14,7 @@
 
 """Utilites to computed GuidedBackprop SaliencyMasks"""
 
-from saliency import SaliencyMask
+from base import SaliencyMask
 import tensorflow as tf
 
 class GuidedBackprop(SaliencyMask):
@@ -23,7 +23,7 @@ class GuidedBackprop(SaliencyMask):
   This implementation copies the TensorFlow graph to a new graph with the ReLU
   gradient overwritten as in the paper:
   https://arxiv.org/abs/1412.6806
-  
+
   Thanks to Chris Olah for generously sharing his implementation of the ReLU
   backprop.
   """
