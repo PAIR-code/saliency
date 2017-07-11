@@ -24,8 +24,14 @@ class IntegratedGradients(GradientSaliency):
   https://arxiv.org/abs/1703.01365
   """
 
-  def GetMask(self, x_value, feed_dict={}, x_baseline=None, nsamples=25):
-    """Returns a integrated gradients mask."""
+  def GetMask(self, x_value, feed_dict={}, x_baseline=None, x_steps=25):
+    """Returns a integrated gradients mask.
+
+    Args:
+      x_value: input ndarray.
+      x_baseline: Baseline value used in integration. Defaults to 0.
+      x_steps: Number of integrated steps between baseline and x.
+    """
     if x_baseline is None:
       x_baseline = np.zeros_like(x_value)
 
@@ -35,7 +41,7 @@ class IntegratedGradients(GradientSaliency):
 
     total_gradients = np.zeros_like(x_value)
 
-    for alpha in np.linspace(0, 1, nsamples):
+    for alpha in np.linspace(0, 1, x_steps):
       x_step = x_baseline + alpha * x_diff
 
       total_gradients += super(IntegratedGradients, self).GetMask(
