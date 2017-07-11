@@ -5,3 +5,5 @@ models/
 inception_v3.ckpt
 inception_v3_*.tar.gz
 *.pyc
+dist/
+build/
