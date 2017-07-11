@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains code for [SmoothGrad](https://tensorflow.github.io/saliency/), as well as implementations of
+This repository contains code for [SmoothGrad](https://pair-code.github.io/saliency/), as well as implementations of
 several other saliency techniques. Each of these techniques can also be
 augmented with SmoothGrad. The techniques implemented in this library are:
 
@@ -18,7 +18,7 @@ new methods!
 
 ## Download
 ```
-git clone https://github.com/tensorflow/saliency
+git clone https://github.com/pair-code/saliency
 cd saliency
 ```
 
@@ -54,7 +54,7 @@ the SmoothGrad paper for more details on which visualization method to use.
 
 ## Examples
 
-[This example iPython notebook]([http://github.com/tensorflow/saliency/blob/master/Examples.ipynb]) shows
+[This example iPython notebook]([http://github.com/pair-code/saliency/blob/master/Examples.ipynb]) shows
 these techniques is a good starting place.
 
 Another example of using GuidedBackprop with SmoothGrad from TensorFlow:
