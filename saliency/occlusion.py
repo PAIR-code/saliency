@@ -15,8 +15,9 @@
 """Utilities to compute an Occlusion SaliencyMask."""
 
 import numpy as np
-from base import SaliencyMask
 import tensorflow as tf
+
+from .base import SaliencyMask
 
 class Occlusion(SaliencyMask):
   """A SaliencyMask class that computes saliency masks by occluding the image.

@@ -16,7 +16,7 @@
 
 import tensorflow as tf
 import numpy as np
-from base import GradientSaliency
+from .base import GradientSaliency
 
 class IntegratedGradients(GradientSaliency):
   """A SaliencyMask class that implements the integrated gradients method.
