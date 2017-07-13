@@ -17,7 +17,6 @@ import numpy as np
 import tensorflow as tf
 
 from saliency import SaliencyMask
-from skimage.transform import resize
 
 class GradCam(SaliencyMask):
     """A SaliencyMask class that computes saliency masks with Grad-CAM.
@@ -74,7 +73,10 @@ class GradCam(SaliencyMask):
         # resize heatmap to be the same size as the input
         if should_resize:
             grad_cam = grad_cam / np.max(grad_cam) # values need to be [0,1] to be resized
-            grad_cam = resize(grad_cam, x_value.shape[:2])
+            with self.graph.as_default():
+                grad_cam = np.squeeze(tf.image.resize_bilinear(
+                    np.expand_dims(np.expand_dims(grad_cam, 0), 3), 
+                    x_value.shape[:2]).eval(session=self.session))
 
         # convert grayscale to 3-D
         if three_dims:
