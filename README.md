@@ -12,6 +12,7 @@ augmented with SmoothGrad. The techniques implemented in this library are:
 *   Guided Backpropogation ([paper](https://arxiv.org/abs/1412.6806))
 *   Integrated Gradients ([paper](https://arxiv.org/abs/1703.01365))
 *   Occlusion
+*   Grad-CAM ([paper](https://arxiv.org/abs/1610.02391))
 
 This list is by no means comprehensive. We are accepting pull requests to add
 new methods!
