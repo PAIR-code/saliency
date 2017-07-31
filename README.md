@@ -23,6 +23,7 @@ git clone https://github.com/pair-code/saliency
 cd saliency
 ```
 
+Testing relative link [test](saliency/test)
 ## Usage
 
 Each saliency mask class extends from the `SaliencyMask` base class. This class
