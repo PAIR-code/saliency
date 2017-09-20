@@ -55,7 +55,7 @@ the SmoothGrad paper for more details on which visualization method to use.
 
 ## Examples
 
-[This example iPython notebook]([http://github.com/pair-code/saliency/blob/master/Examples.ipynb]) shows
+[This example iPython notebook](http://github.com/pair-code/saliency/blob/master/Examples.ipynb) shows
 these techniques is a good starting place.
 
 Another example of using GuidedBackprop with SmoothGrad from TensorFlow:
