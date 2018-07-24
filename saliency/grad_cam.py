@@ -16,7 +16,7 @@
 import numpy as np
 import tensorflow as tf
 
-from saliency import SaliencyMask
+from .base import SaliencyMask
 
 class GradCam(SaliencyMask):
     """A SaliencyMask class that computes saliency masks with Grad-CAM.
