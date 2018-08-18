@@ -61,7 +61,7 @@ class GradCam(SaliencyMask):
         grad = grad[0]
 
         weights = np.mean(grad, axis=(0,1))
-        grad_cam = np.ones(output.shape[0:2], dtype=np.float32)
+        grad_cam = np.zeros(output.shape[0:2], dtype=np.float32)
 
         # weighted average
         for i, w in enumerate(weights):
