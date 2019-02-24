@@ -81,7 +81,7 @@ image = GetImagePNG(...)
 ...
 
 smoothgrad_guided_backprop =
-    guided_backprop_saliency.GetSmoothedMask(image, feed_dict={...})
+    guided_backprop_saliency.GetMask(image, feed_dict={...})
 
 # Compute a 2D tensor for visualization.
 grayscale_visualization = visualization.VisualizeImageGrayscale(
