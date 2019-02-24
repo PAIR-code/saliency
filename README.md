@@ -73,7 +73,7 @@ x = tf.placeholder(...)
 # Compute guided backprop.
 # NOTE: This creates another graph that gets cached, try to avoid creating many
 # of these.
-guided_backprop_saliency = GuidedBackpropSaliency(graph, session, y, x)
+guided_backprop_saliency = GuidedBackprop(graph, session, y, x)
 
 ...
 # Load data.
