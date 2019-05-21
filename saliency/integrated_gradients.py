@@ -47,4 +47,4 @@ class IntegratedGradients(GradientSaliency):
       total_gradients += super(IntegratedGradients, self).GetMask(
           x_step, feed_dict)
 
-    return total_gradients * x_diff
+    return total_gradients * x_diff / x_steps
