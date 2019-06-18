@@ -15,6 +15,7 @@
 """Utilities to compute SaliencyMasks."""
 import numpy as np
 import tensorflow as tf
+from multiprocessing import dummy as multiprocessing
 
 class SaliencyMask(object):
   """Base class for saliency masks. Alone, this class doesn't do anything."""
@@ -25,17 +26,10 @@ class SaliencyMask(object):
       graph: The TensorFlow graph to evaluate masks on.
       session: The current TensorFlow session.
       y: The output tensor to compute the SaliencyMask against. This tensor
-          should be of size 1.
+          should have the same first dimension (batch size) as x.
       x: The input tensor to compute the SaliencyMask against. The outer
           dimension should be the batch size.
     """
-
-    # y must be of size one, otherwise the gradient we get from tf.gradients
-    # will be summed over all ys.
-    size = 1
-    for shape in y.shape:
-      size *= shape
-    assert size == 1
 
     self.graph = graph
     self.session = session
@@ -53,7 +47,7 @@ class SaliencyMask(object):
 
   def GetSmoothedMask(
       self, x_value, feed_dict={}, stdev_spread=.15, nsamples=25,
-      magnitude=True, **kwargs):
+      magnitude=True, num_threads=1, **kwargs):
     """Returns a mask that is smoothed with the SmoothGrad method.
 
     Args:
@@ -67,15 +61,16 @@ class SaliencyMask(object):
     """
     stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
 
-    total_gradients = np.zeros_like(x_value)
-    for i in range(nsamples):
+    def single_mask(i):
       noise = np.random.normal(0, stdev, x_value.shape)
       x_plus_noise = x_value + noise
-      grad = self.GetMask(x_plus_noise, feed_dict, **kwargs)
-      if magnitude:
-        total_gradients += (grad * grad)
-      else:
-        total_gradients += grad
+      return self.GetMask(x_plus_noise, feed_dict, **kwargs)
+
+    pool = multiprocessing.Pool(num_threads)
+    grads = np.array(pool.map(single_mask, range(nsamples)))
+    if magnitude:
+      grads = grads * grads
+    total_gradients = np.sum(grads, axis=0)
 
     return total_gradients / nsamples
 
