@@ -47,7 +47,7 @@ class SaliencyMask(object):
 
   def GetSmoothedMask(
       self, x_value, feed_dict={}, stdev_spread=.15, nsamples=25,
-      magnitude=True, num_threads=1, **kwargs):
+      magnitude=True, num_threads=None, **kwargs):
     """Returns a mask that is smoothed with the SmoothGrad method.
 
     Args:
