@@ -45,7 +45,7 @@ class IntegratedGradientsTest(googletest.TestCase):
         expected_val = y_input_val[0] - y_baseline_val[0]
 
         # Calculate the integrated gradients attribution of the input.
-        ig = integrated_gradients.IntegratedGradients(graph, sess, y[0], x)
+        ig = integrated_gradients.IntegratedGradients(graph, sess, y, x)
         mask = ig.GetMask(x_value=x_input_val[0], feed_dict={},
                           x_baseline=x_baseline_val[0], x_steps=1000)
 
