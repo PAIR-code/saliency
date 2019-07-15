@@ -18,7 +18,7 @@ from skimage.morphology import disk
 from skimage.transform import resize
 
 FLAGS = flags.FLAGS
-
+# TODO (tolgab) change all prints to log
 
 def normalize_image(im, value_range, resize_shape=None):
   im_max = np.max(im)
@@ -124,8 +124,21 @@ class XRAIConfig():
     # Verbosity to print status as segments are added
     self.verbosity = verbosity
 
+class SaliencyOutput:
+  def __init__(self, attribution_mask):
+    self.attribution_mask = attribution_mask
 
-class SegmentIntegratedGradients(saliency.GradientSaliency):
+class XRAIOutput(SaliencyOutput):
+  def __init__(self, attribution_mask):
+    super(XRAIOutput, self).__init__(attribution_mask)
+    self.baselines = None
+    self.error = None
+    self.baseline_predictions = None
+    self.ig_attribution = None
+    self.segments = None
+
+
+class XRAI(saliency.GradientSaliency):
   def __init__(self, graph, session, y, images):
     # Initialize integrated gradients
     self.integrated_gradients = saliency.IntegratedGradients(graph, session, y,
@@ -161,30 +174,79 @@ class SegmentIntegratedGradients(saliency.GradientSaliency):
             raise ValueError("Baseline size {} does not match input size {}".format(baseline.shape, x_value.shape))
     return x_baselines
 
-  def GetMask(self, x_value, sig_config, feed_dict={}, max_area=1.0, segments=None):
+  def GetMask(self, x_value, feed_dict={}, baselines=None, segments=None, extra_parameters=None):
     """ This outputs a heatmap of size of the input image with SIG attributions
 
     output is 3D with third dimension = 1
     """
-    x_baselines = self.make_baselines(x_value, sig_config)
+    x_baselines = self.make_baselines(x_value, baselines)
 
     attr = self.get_integrated_gradients_mean(x_value, feed_dict=feed_dict,
                                               baselines=x_baselines,
-                                              steps=sig_config.steps)
-    segs = sig_config.segmentation_fun(x_value)
-    (percent_masks, masks_trace) = self.sig(im=x_value, attr=attr, segs=segs, percent_areas=[max_area], verbose=sig_config.verbosity)
-    # Unpack masks
-    # TODO(tolgab) Directly return float heatmap instead of unpacking from trace
-    sig_attr_raw = -np.inf * np.ones(shape=x_value.shape[:2], dtype=np.float)
-    # masks_trace : current_mask, added_mask, current_attr_sum, current_area_perc
-    for ii in xrange(1, len(masks_trace)):
-      mask_diff = np.logical_and(np.logical_not(masks_trace[ii-1][0]), masks_trace[ii][0])
-      if np.sum(mask_diff) == 0:
-        continue
-      sig_attr_raw[mask_diff] = calculate_attr_max(mask_diff, attr)
-    sig_attr_raw[sig_attr_raw==-np.inf] = np.min(sig_attr_raw[sig_attr_raw!=-np.inf]) - 0.1
+                                              steps=extra_parameters.steps)
+    if segments is not None:
+      segs = segments
+    else:
+      segs = get_segments_felsenschwab(x_value)
 
-    return sig_attr_raw
+    if extra_parameters.algorithm == 'full':
+      xrai_alg = self.xrai
+    elif extra_parameters.algorithm == 'fast':
+      xrai_alg = self.xrai_fast
+    else:
+      print('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
+
+    attr_map, _ = xrai_alg(attr=attr, segs=segs,
+                          max_area_th=extra_parameters.max_area,
+                          gain_fun=gain_density,
+                          verbose=extra_parameters.verbosity,
+                          integer_segments=extra_parameters.flatten_xrai_segments)
+
+    return attr_map
+
+  def GetMaskWithDetails(self, x_value, feed_dict={}, baselines=None, segments=None, extra_parameters=None):
+    """ Applies XRAI method on an input image and returns the result saliency
+        mask along with other detailed information.
+    Parameters:
+      x_value - input value, not batched.
+      output_selector=None - the index of the output to calculate the saliency for in the output tensor.
+      feed_dict={} - feed dictionary to pass to the TF session.run(...) call.
+      baselines=None - a list of baselines to use for calculating Integrated Gradients attribution. Every baseline in the list should have the same dimensions as the input. If the value is not set then the algorithm will make the best effort to select default baselines.
+      segments=None - the list of precalculated image segments that should be passed to XRAI. Each element of the list is an [N,M] integer array, where NxM are the image dimensions. Each element of the list may provide information about multiple segments by encoding them with distinct integer values. If the value is ‘None’, a defaut segmentation algorithm will be applied.
+      extra_parameters=None - a XraiParameters object that specifies additional parameters for the XRAI saliency method.
+
+    Returns:
+      A XraiOutput object that contains the output of the XRAI algorithm.
+    """
+    x_baselines = self.make_baselines(x_value, baselines)
+
+    attr = self.get_integrated_gradients_mean(x_value, feed_dict=feed_dict,
+                                              baselines=x_baselines,
+                                              steps=extra_parameters.steps)
+    if segments is not None:
+      segs = segments
+    else:
+      segs = get_segments_felsenschwab(x_value)
+
+    if extra_parameters.algorithm == 'full':
+      xrai_alg = self.xrai
+    elif extra_parameters.algorithm == 'fast':
+      xrai_alg = self.xrai_fast
+    else:
+      print('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
+
+    attr_map, attr_data = xrai_alg(attr=attr, segs=segs,
+                          max_area_th=extra_parameters.max_area,
+                          gain_fun=gain_density,
+                          verbose=extra_parameters.verbosity,
+                          integer_segments=extra_parameters.flatten_xrai_segments)
+
+
+    results = XRAIOutput(attr_map)
+    if extra_parameters.return_xrai_segments:
+        results.segments = attr_data
+
+    return results
 
 
 @staticmethod
@@ -243,6 +305,13 @@ def _xrai(attr, segs, area_perc_th,
     return sig_attr_raw, attr_ranks
   else:
     return sig_attr_raw, masks_trace
+      # masks_trace : current_mask, added_mask, current_attr_sum, current_area_perc
+    # for ii in xrange(1, len(masks_trace)):
+    #   mask_diff = np.logical_and(np.logical_not(masks_trace[ii-1][0]), masks_trace[ii][0])
+    #   if np.sum(mask_diff) == 0:
+    #     continue
+    #   sig_attr_raw[mask_diff] = calculate_attr_max(mask_diff, attr)
+    # sig_attr_raw[sig_attr_raw==-np.inf] = np.min(sig_attr_raw[sig_attr_raw!=-np.inf]) - 0.1
 
 
 @staticmethod
