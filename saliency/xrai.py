@@ -144,20 +144,16 @@ class XRAI(saliency.GradientSaliency):
     self.integrated_gradients = saliency.IntegratedGradients(graph, session, y,
                                                              images)
 
-  def get_integrated_gradients_base(self, im, feed_dict, baseline, steps):
-    grads = self.integrated_gradients.GetMask(
-      im, feed_dict = feed_dict, x_baseline=baseline, x_steps=steps)
-    return grads
-
-  def get_integrated_gradients_mean(self, im, feed_dict, baselines, steps):
+  def _get_integrated_gradients(self, im, feed_dict, baselines, steps):
     """ Takes mean of attributions from all baselines
     """
     grads = []
     for baseline in baselines:
-      grads.append(self.get_integrated_gradients_base(im, feed_dict, baseline, steps))
-    return np.mean(grads, axis=0)
+      grads.append(self.integrated_gradients.GetMask(
+        im, feed_dict = feed_dict, x_baseline=baseline, x_steps=steps))
+    return grads
 
-  def make_baselines(self, x_value, sig_config):
+  def _make_baselines(self, x_value, sig_config):
     x_baselines = sig_config.baselines
     # If baseline is not provided default to im min and max values
     if x_baselines is None:
@@ -175,34 +171,14 @@ class XRAI(saliency.GradientSaliency):
     return x_baselines
 
   def GetMask(self, x_value, feed_dict={}, baselines=None, segments=None, extra_parameters=None):
-    """ This outputs a heatmap of size of the input image with SIG attributions
-
-    output is 3D with third dimension = 1
+    """ Output a np.ndarray heatmap of XRAI attributions with input shape.
     """
-    x_baselines = self.make_baselines(x_value, baselines)
-
-    attr = self.get_integrated_gradients_mean(x_value, feed_dict=feed_dict,
-                                              baselines=x_baselines,
-                                              steps=extra_parameters.steps)
-    if segments is not None:
-      segs = segments
-    else:
-      segs = get_segments_felsenschwab(x_value)
-
-    if extra_parameters.algorithm == 'full':
-      xrai_alg = self.xrai
-    elif extra_parameters.algorithm == 'fast':
-      xrai_alg = self.xrai_fast
-    else:
-      print('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
-
-    attr_map, _ = xrai_alg(attr=attr, segs=segs,
-                          max_area_th=extra_parameters.max_area,
-                          gain_fun=gain_density,
-                          verbose=extra_parameters.verbosity,
-                          integer_segments=extra_parameters.flatten_xrai_segments)
-
-    return attr_map
+    results = self.GetMaskWithDetails(x_value,
+                                      feed_dict=feed_dict,
+                                      baselines=baselines,
+                                      segments=segments,
+                                      extra_parameters=extra_parameters)
+    return results.attribution_mask
 
   def GetMaskWithDetails(self, x_value, feed_dict={}, baselines=None, segments=None, extra_parameters=None):
     """ Applies XRAI method on an input image and returns the result saliency
@@ -220,7 +196,7 @@ class XRAI(saliency.GradientSaliency):
     """
     x_baselines = self.make_baselines(x_value, baselines)
 
-    attr = self.get_integrated_gradients_mean(x_value, feed_dict=feed_dict,
+    attr = self.get_integrated_gradients(x_value, feed_dict=feed_dict,
                                               baselines=x_baselines,
                                               steps=extra_parameters.steps)
     if segments is not None:
@@ -243,9 +219,16 @@ class XRAI(saliency.GradientSaliency):
 
 
     results = XRAIOutput(attr_map)
+    results.baselines = x_baselines
     if extra_parameters.return_xrai_segments:
-        results.segments = attr_data
-
+      results.segments = attr_data
+    if extra_parameters.return_baseline_predictions:
+      baseline_predictions = []
+      for baseline in x_baselines:
+        baseline_predictions.append(self.predict(baseline))
+      results.baseline_predictions = baseline_predictions
+    if extra_parameters.ig_attributions:
+      results.ig_attribution = attr
     return results
 
 
@@ -301,22 +284,18 @@ def _xrai(attr, segs, area_perc_th,
             "attr_sum: {}, area: {:.3g}/{:.3g}".format(n_masks-len(remaining_masks),
                                         n_masks, current_attr_sum, current_area_perc,
                                         area_perc_th))
+  ig_sum = np.sum(attr)
+  uncomputed_mask = sig_attr_raw==-np.inf
+  # Assign the uncomputed areas a value such that sum is same as ig
+  sig_attr_raw[uncomputed_mask] = (ig_sum - current_attr_sum) / np.sum(uncomputed_mask)
   if integer_segments:
     return sig_attr_raw, attr_ranks
   else:
     return sig_attr_raw, masks_trace
-      # masks_trace : current_mask, added_mask, current_attr_sum, current_area_perc
-    # for ii in xrange(1, len(masks_trace)):
-    #   mask_diff = np.logical_and(np.logical_not(masks_trace[ii-1][0]), masks_trace[ii][0])
-    #   if np.sum(mask_diff) == 0:
-    #     continue
-    #   sig_attr_raw[mask_diff] = calculate_attr_max(mask_diff, attr)
-    # sig_attr_raw[sig_attr_raw==-np.inf] = np.min(sig_attr_raw[sig_attr_raw!=-np.inf]) - 0.1
 
 
 @staticmethod
-def _xrai_fast(attr, segs, area_perc_th,
-    gain_fun, verbose=0, max_iou=1.0,
+def _xrai_fast(attr, segs, gain_fun, verbose=0,
     integer_segments=True):
   """We expect attr to be 2D, SIG shape is equal to attr shape
     Segs are list of binary masks, one per segment (pre-dilated if neeeded)
@@ -336,10 +315,7 @@ def _xrai_fast(attr, segs, area_perc_th,
   sorted_inds, sorted_sums = sorted(zip(range(n_masks), attr_sums), key=lambda x: x[1])
   segs = segs[sorted_inds]
 
-  # While the mask area is less than area_th and remaining_masks is not empty
   for i, added_mask in enumerate(segs):
-    # and current_area_perc <= area_perc_th:
-
     mask_diff = np.logical_and(np.logical_not(current_mask), added_mask)
     if not integer_segments:
       masks_trace.append(added_mask)
