@@ -20,7 +20,7 @@ from skimage.transform import resize
 FLAGS = flags.FLAGS
 # TODO (tolgab) change all prints to log
 
-def normalize_image(im, value_range, resize_shape=None):
+def _normalize_image(im, value_range, resize_shape=None):
   im_max = np.max(im)
   im_min = np.min(im)
   im = (im - im_min) / (im_max - im_min)
@@ -32,7 +32,7 @@ def normalize_image(im, value_range, resize_shape=None):
   return im
 
 
-def get_segments_felsenschwab(im, resize_image=True,
+def _get_segments_felsenschwab(im, resize_image=True,
                               scale_range=[-1.0, 1.0], dilation_rad=5):
   """Get an image and return segments based on felsenschwab algorithm
   TODO (tolgab) This resize is unnecessary with more intelligent param range
@@ -53,9 +53,9 @@ def get_segments_felsenschwab(im, resize_image=True,
   # Normalize image value range and size
   original_shape = im.shape[:2]
   if resize_image:
-    im = normalize_image(im, scale_range, (224, 224))
+    im = _normalize_image(im, scale_range, (224, 224))
   else:
-    im = normalize_image(im, scale_range)
+    im = _normalize_image(im, scale_range)
   segs = []
   for scale in SCALE_VALUES:
     for sigma in SIGMA_VALUES:
@@ -64,18 +64,18 @@ def get_segments_felsenschwab(im, resize_image=True,
       if resize_image:
         seg = resize(seg, original_shape, order=0, preserve_range=True, mode='constant', anti_aliasing=False).astype(np.uint8)
       segs.append(seg)
-  masks = unpack_segs_to_masks(segs)
+  masks = _unpack_segs_to_masks(segs)
   if dilation_rad:
     selem = disk(dilation_rad)
     masks = [dilation(mask, selem=selem) for mask in masks]
   return masks
 
 
-def accumulate_attr_max(attr, axis=1):
+def _accumulate_attr_max(attr, axis=-1):
   return attr.max(axis=axis)
 
 
-def gain_density(mask1, attr, mask2=None):
+def _gain_density(mask1, attr, mask2=None):
   # Compute the attr density over mask1. If mask2 is specified, compute density
   # for mask1 \ mask2
   if mask2 is None:
@@ -85,12 +85,16 @@ def gain_density(mask1, attr, mask2=None):
   return attr[added_mask].mean()
 
 
-def get_iou(mask1, mask2):
+def _get_iou(mask1, mask2):
   return (np.sum(np.logical_and(mask1, mask2)) /
           np.sum(np.logical_or(mask1, mask2)))
 
 
-def unpack_segs_to_masks(segs):
+def _get_diff_cnt(mask1, mask2):
+  return (np.sum(np.logical_and(mask1, mask2))/np.min([np.sum(mask1), np.sum(mask2)]))
+
+
+def _unpack_segs_to_masks(segs):
   masks = []
   for seg in segs:
     for l in xrange(seg.min(), seg.max()+1):
@@ -100,25 +104,17 @@ def unpack_segs_to_masks(segs):
 
 class XRAIConfig():
   def __init__(self,
-               baselines=None,
-               baseline_auto_resize=True,
                steps=100,
                verbosity=0):
     # Number of steps to compute integrated gradients, more is slower but better
     self.steps = steps
-    # A list of baselines to compute integrated gradients
-    # Needs to match the input image size if auto_resize is disabled
-    # If None, min and max values of the input image will be used
-    self.baselines = baselines
-    # Automatically resize baseline image to fit the input image size
-    self.baseline_auto_resize = baseline_auto_resize
+    # # Automatically resize baseline image to fit the input image size
+    # self.baseline_auto_resize = baseline_auto_resize
     self.return_baseline_predictions = False
     self.return_ig_attributions = False
     self.return_ig_for_every_step = False
     self.return_xrai_segments = False
     self.flatten_xrai_segments=True
-    # Specifies a flavour of the XRAI algorithm. ‘full’ - executes slower but
-    # more precise XRAI algorithm. ‘fast’ - executes faster but less precise
     # XRAI algorithm.
     self.algorithm = 'full'
     # Verbosity to print status as segments are added
@@ -141,7 +137,7 @@ class XRAIOutput(SaliencyOutput):
 class XRAI(saliency.GradientSaliency):
   def __init__(self, graph, session, y, images):
     # Initialize integrated gradients
-    self.integrated_gradients = saliency.IntegratedGradients(graph, session, y,
+    self._integrated_gradients = saliency.IntegratedGradients(graph, session, y,
                                                              images)
 
   def _get_integrated_gradients(self, im, feed_dict, baselines, steps):
@@ -149,25 +145,20 @@ class XRAI(saliency.GradientSaliency):
     """
     grads = []
     for baseline in baselines:
-      grads.append(self.integrated_gradients.GetMask(
-        im, feed_dict = feed_dict, x_baseline=baseline, x_steps=steps))
+      grads.append(self._integrated_gradients.GetMask(
+        im, feed_dict=feed_dict, x_baseline=baseline, x_steps=steps))
     return grads
 
-  def _make_baselines(self, x_value, sig_config):
-    x_baselines = sig_config.baselines
+  def _make_baselines(self, x_value, x_baselines):
     # If baseline is not provided default to im min and max values
     if x_baselines is None:
       x_baselines = []
       x_baselines.append(np.min(x_value)*np.ones_like(x_value))
       x_baselines.append(np.max(x_value)*np.ones_like(x_value))
     else:
-      for i, baseline in enumerate(x_baselines):
+      for baseline in x_baselines:
         if baseline.shape != x_value.shape:
-          if sig_config.baseline_auto_resize:
-            baseline = resize(baseline, x_value.shape, preserve_range=True)
-            x_baselines[i] = baseline
-          else:
-            raise ValueError("Baseline size {} does not match input size {}".format(baseline.shape, x_value.shape))
+          raise ValueError("Baseline size {} does not match input size {}".format(baseline.shape, x_value.shape))
     return x_baselines
 
   def GetMask(self, x_value, feed_dict={}, baselines=None, segments=None, extra_parameters=None):
@@ -184,38 +175,35 @@ class XRAI(saliency.GradientSaliency):
     """ Applies XRAI method on an input image and returns the result saliency
         mask along with other detailed information.
     Parameters:
-      x_value - input value, not batched.
-      output_selector=None - the index of the output to calculate the saliency for in the output tensor.
-      feed_dict={} - feed dictionary to pass to the TF session.run(...) call.
-      baselines=None - a list of baselines to use for calculating Integrated Gradients attribution. Every baseline in the list should have the same dimensions as the input. If the value is not set then the algorithm will make the best effort to select default baselines.
-      segments=None - the list of precalculated image segments that should be passed to XRAI. Each element of the list is an [N,M] integer array, where NxM are the image dimensions. Each element of the list may provide information about multiple segments by encoding them with distinct integer values. If the value is ‘None’, a defaut segmentation algorithm will be applied.
-      extra_parameters=None - a XraiParameters object that specifies additional parameters for the XRAI saliency method.
-
     Returns:
       A XraiOutput object that contains the output of the XRAI algorithm.
     """
-    x_baselines = self.make_baselines(x_value, baselines)
+    x_baselines = self._make_baselines(x_value, baselines)
 
-    attr = self.get_integrated_gradients(x_value, feed_dict=feed_dict,
+    attrs = self._get_integrated_gradients(x_value, feed_dict=feed_dict,
                                               baselines=x_baselines,
                                               steps=extra_parameters.steps)
+    # Merge attributions from different baselines
+    attr = np.mean(attrs, axis=0)
+    # Merge attribution channels for XRAI input
+    attr = _accumulate_attr_max(attr)
+
     if segments is not None:
       segs = segments
     else:
-      segs = get_segments_felsenschwab(x_value)
+      segs = _get_segments_felsenschwab(x_value)
 
     if extra_parameters.algorithm == 'full':
-      xrai_alg = self.xrai
+      attr_map, attr_data = self.xrai(attr=attr, segs=segs,
+                                      max_area_th=extra_parameters.max_area,
+                                      gain_fun=_gain_density,
+                                      verbose=extra_parameters.verbosity,
+                                      integer_segments=extra_parameters.flatten_xrai_segments)
     elif extra_parameters.algorithm == 'fast':
-      xrai_alg = self.xrai_fast
+      attr_map, attr_data = self.xrai_fast(attr=attr, segs=segs, gain_fun=_gain_density, verbose=0,
+                                           integer_segments=extra_parameters.flatten_xrai_segments)
     else:
       print('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
-
-    attr_map, attr_data = xrai_alg(attr=attr, segs=segs,
-                          max_area_th=extra_parameters.max_area,
-                          gain_fun=gain_density,
-                          verbose=extra_parameters.verbosity,
-                          integer_segments=extra_parameters.flatten_xrai_segments)
 
 
     results = XRAIOutput(attr_map)
@@ -232,108 +220,114 @@ class XRAI(saliency.GradientSaliency):
     return results
 
 
-@staticmethod
-def _xrai(attr, segs, area_perc_th,
-    gain_fun, verbose=0, max_iou=1.0,
-    integer_segments=True):
-  """We expect attr to be 2D, SIG shape is equal to attr shape
-    Segs are list of binary masks, one per segment (pre-dilated if neeeded)
-  """
-  sig_attr_raw = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
+  @staticmethod
+  def _xrai(attr, segs, area_perc_th,
+      gain_fun, verbose=0, max_iou=0.9,
+      integer_segments=True):
+    """We expect attr to be 2D, SIG shape is equal to attr shape
+      Segs are list of binary masks, one per segment (pre-dilated if neeeded)
+    """
+    sig_attr_raw = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
-  n_masks = len(segs)
-  current_attr_sum = 0.0
-  current_area_perc = 0.0
-  current_mask = np.zeros(attr.shape, dtype=bool)
+    n_masks = len(segs)
+    current_attr_sum = 0.0
+    current_area_perc = 0.0
+    current_mask = np.zeros(attr.shape, dtype=bool)
 
-  masks_trace = []
-  attr_ranks = np.array(shape=attr.shape, dtype=np.int)
-  remaining_masks = {ind: mask for ind, mask in enumerate(segs)}
+    masks_trace = []
+    attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
+    remaining_masks = {ind: mask for ind, mask in enumerate(segs)}
 
-  added_masks_cnt = 0
-  # While the mask area is less than area_th and remaining_masks is not empty
-  while remaining_masks and current_area_perc <= area_perc_th:
-    best_gain = -np.inf
-    best_key = None
-    for mask_key, mask in remaining_masks.iteritems():
-      # If mask overlaps current mask more than max_iou then delete it
-      mask_iou = get_iou(mask, current_mask)
-      if mask_iou > max_iou:
-        del remaining_masks[mask_key]
-        if verbose > 1:
-          print("Skipping mask with iou: {:.3g},".format(mask_iou))
-        continue
-      gain = gain_fun(current_mask, attr, mask2=mask)
-      if gain > best_gain:
-        best_gain = gain
-        best_key = mask_key
+    added_masks_cnt = 1
+    # While the mask area is less than area_th and remaining_masks is not empty
+    while current_area_perc <= area_perc_th:
+      best_gain = -np.inf
+      best_key = None
+      remove_key_queue = []
+      for mask_key, mask in remaining_masks.iteritems():
+        # If mask overlaps current mask more than max_iou then delete it
+        mask_iou = _get_diff_cnt(mask, current_mask)
+        if mask_iou >= max_iou:
+          remove_key_queue.append(mask_key)
+          if verbose>2:
+            print("Skipping mask with iou: {:.3g},".format(mask_iou))
+          continue
+        gain = gain_fun(mask, attr, mask2=current_mask)
+        if gain > best_gain:
+          best_gain = gain
+          best_key = mask_key
+      for key in remove_key_queue:
+        del remaining_masks[key]
+      if len(remaining_masks) == 0:
+        break
+      added_mask = remaining_masks[best_key]
+      mask_diff = np.logical_and(np.logical_not(current_mask), added_mask)
+      if not integer_segments:
+        masks_trace.append(added_mask)
+      else:
+        attr_ranks[mask_diff] = added_masks_cnt
+      current_mask = np.logical_or(current_mask, added_mask)
+      current_attr_sum = np.sum(attr[current_mask])
+      current_area_perc = np.mean(current_mask)
+      sig_attr_raw[mask_diff] = gain
+      del remaining_masks[best_key]  # delete used key
+      if verbose:
+        print("{} of {} masks added,"
+              "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(added_masks_cnt,
+                                          n_masks, current_attr_sum, current_area_perc,
+                                          area_perc_th, len(remaining_masks)))
+      added_masks_cnt += 1
 
-    added_mask = remaining_masks[best_key]
-    mask_diff = np.logical_and(np.logical_not(current_mask), added_mask)
-    if not integer_segments:
-      masks_trace.append(added_mask)
+    ig_sum = np.sum(attr)
+    uncomputed_mask = sig_attr_raw==-np.inf
+    # Assign the uncomputed areas a value such that sum is same as ig
+    sig_attr_raw[uncomputed_mask] = (ig_sum - current_attr_sum) / np.sum(uncomputed_mask)
+    if integer_segments:
+      return sig_attr_raw, attr_ranks
     else:
-      attr_ranks[mask_diff] = added_masks_cnt
-    current_mask = np.logical_or(current_mask, added_mask)
-    current_attr_sum = np.sum(attr[current_mask])
-    current_area_perc = np.mean(current_mask)
-    sig_attr_raw[mask_diff] = gain
-    del remaining_masks[best_key]  # delete used key
-    if verbose:
-      print("{} of {} masks added,"
-            "attr_sum: {}, area: {:.3g}/{:.3g}".format(n_masks-len(remaining_masks),
-                                        n_masks, current_attr_sum, current_area_perc,
-                                        area_perc_th))
-  ig_sum = np.sum(attr)
-  uncomputed_mask = sig_attr_raw==-np.inf
-  # Assign the uncomputed areas a value such that sum is same as ig
-  sig_attr_raw[uncomputed_mask] = (ig_sum - current_attr_sum) / np.sum(uncomputed_mask)
-  if integer_segments:
-    return sig_attr_raw, attr_ranks
-  else:
-    return sig_attr_raw, masks_trace
+      return sig_attr_raw, masks_trace
 
 
-@staticmethod
-def _xrai_fast(attr, segs, gain_fun, verbose=0,
-    integer_segments=True):
-  """We expect attr to be 2D, SIG shape is equal to attr shape
-    Segs are list of binary masks, one per segment (pre-dilated if neeeded)
-  """
-  sig_attr_raw = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
+  @staticmethod
+  def _xrai_fast(attr, segs, gain_fun, area_perc_th=1.0, verbose=0,
+      integer_segments=True):
+    """We expect attr to be 2D, SIG shape is equal to attr shape
+      Segs are list of binary masks, one per segment (pre-dilated if neeeded)
+    """
+    sig_attr_raw = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
-  n_masks = len(segs)
-  current_attr_sum = 0.0
-  current_area_perc = 0.0
-  current_mask = np.zeros(attr.shape, dtype=bool)
+    n_masks = len(segs)
+    current_attr_sum = 0.0
+    current_area_perc = 0.0
+    current_mask = np.zeros(attr.shape, dtype=bool)
 
-  masks_trace = []
-  attr_ranks = np.array(shape=attr.shape, dtype=np.int)
+    masks_trace = []
+    attr_ranks = np.array(shape=attr.shape, dtype=np.int)
 
-  # Sort all masks based on gain, ignore overlaps
-  attr_sums = map(gain_fun, segs)
-  sorted_inds, sorted_sums = sorted(zip(range(n_masks), attr_sums), key=lambda x: x[1])
-  segs = segs[sorted_inds]
+    # Sort all masks based on gain, ignore overlaps
+    attr_sums = map(gain_fun, segs)
+    sorted_inds, sorted_sums = sorted(zip(range(n_masks), attr_sums), key=lambda x: x[1])
+    segs = segs[sorted_inds]
 
-  for i, added_mask in enumerate(segs):
-    mask_diff = np.logical_and(np.logical_not(current_mask), added_mask)
-    if not integer_segments:
-      masks_trace.append(added_mask)
+    for i, added_mask in enumerate(segs):
+      mask_diff = np.logical_and(np.logical_not(current_mask), added_mask)
+      if not integer_segments:
+        masks_trace.append(added_mask)
+      else:
+        attr_ranks[mask_diff] = i
+      current_mask = np.logical_or(current_mask, added_mask)
+      current_attr_sum = np.sum(attr[current_mask])
+      current_area_perc = np.mean(current_mask)
+      sig_attr_raw[mask_diff] = sorted_sums[i]
+      if verbose:
+        print("{} of {} masks added,"
+              "attr_sum: {}, area: {:.3g}/{:.3g}".format(i,
+                                          n_masks, current_attr_sum, current_area_perc,
+                                          area_perc_th))
+    if integer_segments:
+      return sig_attr_raw, attr_ranks
     else:
-      attr_ranks[mask_diff] = i
-    current_mask = np.logical_or(current_mask, added_mask)
-    current_attr_sum = np.sum(attr[current_mask])
-    current_area_perc = np.mean(current_mask)
-    sig_attr_raw[mask_diff] = sorted_sums[i]
-    if verbose:
-      print("{} of {} masks added,"
-            "attr_sum: {}, area: {:.3g}/{:.3g}".format(i,
-                                        n_masks, current_attr_sum, current_area_perc,
-                                        area_perc_th))
-  if integer_segments:
-    return sig_attr_raw, attr_ranks
-  else:
-    return sig_attr_raw, masks_trace
+      return sig_attr_raw, masks_trace
 
 
 
