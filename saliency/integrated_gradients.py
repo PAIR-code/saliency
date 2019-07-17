@@ -39,11 +39,12 @@ class IntegratedGradients(GradientSaliency):
 
     x_diff = x_value - x_baseline
 
-    x_val = []
+    total_gradients = np.zeros_like(x_value)
+
     for alpha in np.linspace(0, 1, x_steps):
-      x_val.append(x_baseline + alpha * x_diff)
-    feed_dict[self.x] = x_val
-    y_val, dy_dx_val = self.session.run([self.y, self.gradients_node],
-                                        feed_dict)
-    total_gradients = np.sum(dy_dx_val, axis=0)
+      x_step = x_baseline + alpha * x_diff
+
+      total_gradients += super(IntegratedGradients, self).GetMask(
+          x_step, feed_dict)
+
     return total_gradients * x_diff / x_steps
