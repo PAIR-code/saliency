@@ -29,13 +29,19 @@ def _normalize_image(im, value_range, resize_shape=None):
   im *= value_range[1] - value_range[0]
   im += np.mean(value_range)
   if resize_shape is not None:
-    im = resize(im, resize_shape, order=3, mode='constant',
-                preserve_range=True, anti_aliasing=True)
+    im = resize(im,
+                resize_shape,
+                order=3,
+                mode='constant',
+                preserve_range=True,
+                anti_aliasing=True)
   return im
 
 
-def _get_segments_felsenschwab(im, resize_image=True,
-                               scale_range=[-1.0, 1.0], dilation_rad=5):
+def _get_segments_felsenschwab(im,
+                               resize_image=True,
+                               scale_range=[-1.0, 1.0],
+                               dilation_rad=5):
   """Get an image and return segments based on felsenschwab algorithm
   TODO (tolgab) This resize is unnecessary with more intelligent param range
   selection
@@ -61,11 +67,14 @@ def _get_segments_felsenschwab(im, resize_image=True,
   segs = []
   for scale in SCALE_VALUES:
     for sigma in SIGMA_VALUES:
-      seg = segmentation.felzenszwalb(
-          im, scale=scale, sigma=sigma, min_size=20)
+      seg = segmentation.felzenszwalb(im, scale=scale, sigma=sigma, min_size=20)
       if resize_image:
-        seg = resize(seg, original_shape, order=0, preserve_range=True,
-                     mode='constant', anti_aliasing=False).astype(np.uint8)
+        seg = resize(seg,
+                     original_shape,
+                     order=0,
+                     preserve_range=True,
+                     mode='constant',
+                     anti_aliasing=False).astype(np.uint8)
       segs.append(seg)
   masks = _unpack_segs_to_masks(segs)
   if dilation_rad:
@@ -94,21 +103,21 @@ def _get_iou(mask1, mask2):
 
 
 def _get_diff_cnt(mask1, mask2):
-  return (np.sum(np.logical_and(mask1, mask2))/np.min([np.sum(mask1), np.sum(mask2)]))
+  return (np.sum(np.logical_and(mask1, mask2)) /
+          np.min([np.sum(mask1), np.sum(mask2)]))
 
 
 def _unpack_segs_to_masks(segs):
   masks = []
   for seg in segs:
-    for l in xrange(seg.min(), seg.max()+1):
+    for l in xrange(seg.min(), seg.max() + 1):
       masks.append(seg == l)
   return masks
 
 
 class XRAIConfig():
-  def __init__(self,
-               steps=100,
-               verbosity=0):
+
+  def __init__(self, steps=100, verbosity=0):
     # Number of steps to compute integrated gradients, more is slower but better
     self.steps = steps
     # # Automatically resize baseline image to fit the input image size
@@ -125,11 +134,13 @@ class XRAIConfig():
 
 
 class SaliencyOutput:
+
   def __init__(self, attribution_mask):
     self.attribution_mask = attribution_mask
 
 
 class XRAIOutput(SaliencyOutput):
+
   def __init__(self, attribution_mask):
     super(XRAIOutput, self).__init__(attribution_mask)
     self.baselines = None
@@ -140,34 +151,44 @@ class XRAIOutput(SaliencyOutput):
 
 
 class XRAI(saliency.GradientSaliency):
+
   def __init__(self, graph, session, y, images):
     # Initialize integrated gradients
-    self._integrated_gradients = saliency.IntegratedGradients(graph, session, y,
-                                                              images)
+    self._integrated_gradients = saliency.IntegratedGradients(
+        graph, session, y, images)
 
   def _get_integrated_gradients(self, im, feed_dict, baselines, steps):
     """ Takes mean of attributions from all baselines
     """
     grads = []
     for baseline in baselines:
-      grads.append(self._integrated_gradients.GetMask(
-          im, feed_dict=feed_dict, x_baseline=baseline, x_steps=steps))
+      grads.append(
+          self._integrated_gradients.GetMask(im,
+                                             feed_dict=feed_dict,
+                                             x_baseline=baseline,
+                                             x_steps=steps))
     return grads
 
   def _make_baselines(self, x_value, x_baselines):
     # If baseline is not provided default to im min and max values
     if x_baselines is None:
       x_baselines = []
-      x_baselines.append(np.min(x_value)*np.ones_like(x_value))
-      x_baselines.append(np.max(x_value)*np.ones_like(x_value))
+      x_baselines.append(np.min(x_value) * np.ones_like(x_value))
+      x_baselines.append(np.max(x_value) * np.ones_like(x_value))
     else:
       for baseline in x_baselines:
         if baseline.shape != x_value.shape:
-          raise ValueError("Baseline size {} does not match input size {}".format(
-              baseline.shape, x_value.shape))
+          raise ValueError(
+              "Baseline size {} does not match input size {}".format(
+                  baseline.shape, x_value.shape))
     return x_baselines
 
-  def GetMask(self, x_value, feed_dict={}, baselines=None, segments=None, extra_parameters=None):
+  def GetMask(self,
+              x_value,
+              feed_dict={},
+              baselines=None,
+              segments=None,
+              extra_parameters=None):
     """ Output a np.ndarray heatmap of XRAI attributions with input shape.
     """
     results = self.GetMaskWithDetails(x_value,
@@ -177,7 +198,12 @@ class XRAI(saliency.GradientSaliency):
                                       extra_parameters=extra_parameters)
     return results.attribution_mask
 
-  def GetMaskWithDetails(self, x_value, feed_dict={}, baselines=None, segments=None, extra_parameters=None):
+  def GetMaskWithDetails(self,
+                         x_value,
+                         feed_dict={},
+                         baselines=None,
+                         segments=None,
+                         extra_parameters=None):
     """ Applies XRAI method on an input image and returns the result saliency
         mask along with other detailed information.
     Parameters:
@@ -186,7 +212,8 @@ class XRAI(saliency.GradientSaliency):
     """
     x_baselines = self._make_baselines(x_value, baselines)
 
-    attrs = self._get_integrated_gradients(x_value, feed_dict=feed_dict,
+    attrs = self._get_integrated_gradients(x_value,
+                                           feed_dict=feed_dict,
                                            baselines=x_baselines,
                                            steps=extra_parameters.steps)
     # Merge attributions from different baselines
@@ -200,14 +227,20 @@ class XRAI(saliency.GradientSaliency):
       segs = _get_segments_felsenschwab(x_value)
 
     if extra_parameters.algorithm == 'full':
-      attr_map, attr_data = self.xrai(attr=attr, segs=segs,
-                                      max_area_th=extra_parameters.max_area,
-                                      gain_fun=_gain_density,
-                                      verbose=extra_parameters.verbosity,
-                                      integer_segments=extra_parameters.flatten_xrai_segments)
+      attr_map, attr_data = self.xrai(
+          attr=attr,
+          segs=segs,
+          max_area_th=extra_parameters.max_area,
+          gain_fun=_gain_density,
+          verbose=extra_parameters.verbosity,
+          integer_segments=extra_parameters.flatten_xrai_segments)
     elif extra_parameters.algorithm == 'fast':
-      attr_map, attr_data = self.xrai_fast(attr=attr, segs=segs, gain_fun=_gain_density, verbose=0,
-                                           integer_segments=extra_parameters.flatten_xrai_segments)
+      attr_map, attr_data = self.xrai_fast(
+          attr=attr,
+          segs=segs,
+          gain_fun=_gain_density,
+          verbose=0,
+          integer_segments=extra_parameters.flatten_xrai_segments)
     else:
       print('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
 
@@ -225,8 +258,12 @@ class XRAI(saliency.GradientSaliency):
     return results
 
   @staticmethod
-  def _xrai(attr, segs, area_perc_th,
-            gain_fun, verbose=0, max_iou=0.9,
+  def _xrai(attr,
+            segs,
+            area_perc_th,
+            gain_fun,
+            verbose=0,
+            max_iou=0.9,
             integer_segments=True):
     """We expect attr to be 2D, XRAI shape is equal to attr shape
       Segs are list of binary masks, one per segment (pre-dilated if neeeded)
@@ -277,18 +314,18 @@ class XRAI(saliency.GradientSaliency):
       del remaining_masks[best_key]  # delete used key
       if verbose:
         print("{} of {} masks added,"
-              "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(added_masks_cnt,
-                                                                             n_masks, current_attr_sum, current_area_perc,
-                                                                             area_perc_th, len(remaining_masks)))
+              "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
+                  added_masks_cnt, n_masks, current_attr_sum, current_area_perc,
+                  area_perc_th, len(remaining_masks)))
       added_masks_cnt += 1
 
     ig_sum = np.sum(attr)
     uncomputed_mask = output_attr == -np.inf
     assert uncomputed_mask == (attr_ranks == 0)
     # Assign the uncomputed areas a value such that sum is same as ig
-    output_attr[uncomputed_mask] = (
-        ig_sum - current_attr_sum) / np.sum(uncomputed_mask)
-    # Set uncomputed region's ranking to max rank + 1
+    output_attr[uncomputed_mask] = (ig_sum -
+                                    current_attr_sum) / np.sum(uncomputed_mask)
+    # Set uncomputed region's rank to max rank + 1
     attr_ranks[uncomputed_mask] = np.max(attr_ranks) + 1
     if integer_segments:
       return output_attr, attr_ranks
@@ -296,7 +333,11 @@ class XRAI(saliency.GradientSaliency):
       return output_attr, masks_trace
 
   @staticmethod
-  def _xrai_fast(attr, segs, gain_fun, area_perc_th=1.0, verbose=0,
+  def _xrai_fast(attr,
+                 segs,
+                 gain_fun,
+                 area_perc_th=1.0,
+                 verbose=0,
                  integer_segments=True):
     """We expect attr to be 2D, XRAI shape is equal to attr shape
       Segs are list of binary masks, one per segment (pre-dilated if neeeded)
@@ -323,16 +364,16 @@ class XRAI(saliency.GradientSaliency):
       if not integer_segments:
         masks_trace.append(added_mask)
       else:
-        attr_ranks[mask_diff] = i+1
+        attr_ranks[mask_diff] = i + 1
       current_mask = np.logical_or(current_mask, added_mask)
       current_attr_sum = np.sum(attr[current_mask])
       current_area_perc = np.mean(current_mask)
       output_attr[mask_diff] = sorted_sums[i]
       if verbose:
         print("{} of {} masks added,"
-              "attr_sum: {}, area: {:.3g}/{:.3g}".format(i,
-                                                         n_masks, current_attr_sum, current_area_perc,
-                                                         area_perc_th))
+              "attr_sum: {}, area: {:.3g}/{:.3g}".format(
+                  i, n_masks, current_attr_sum, current_area_perc,
+                  area_perc_th))
     if integer_segments:
       return output_attr, attr_ranks
     else:
