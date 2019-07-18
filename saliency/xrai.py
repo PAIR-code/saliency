@@ -102,9 +102,8 @@ def _get_iou(mask1, mask2):
           np.sum(np.logical_or(mask1, mask2)))
 
 
-def _get_diff_cnt(mask1, mask2):
-  return (np.sum(np.logical_and(mask1, mask2)) /
-          np.min([np.sum(mask1), np.sum(mask2)]))
+def _get_diff_cnt(add_mask, base_mask):
+  return np.sum(np.logical_and(add_mask, np.logical_not(base_mask)))
 
 
 def _unpack_segs_to_masks(segs):
@@ -115,7 +114,7 @@ def _unpack_segs_to_masks(segs):
   return masks
 
 
-class XRAIConfig():
+class XRAIConfig(object):
 
   def __init__(self, steps=100, verbosity=0):
     # Number of steps to compute integrated gradients, more is slower but better
@@ -131,9 +130,10 @@ class XRAIConfig():
     self.algorithm = 'full'
     # Verbosity to print status as segments are added
     self.verbosity = verbosity
+    self.max_area = 1.0
 
 
-class SaliencyOutput:
+class SaliencyOutput(object):
 
   def __init__(self, attribution_mask):
     self.attribution_mask = attribution_mask
@@ -183,6 +183,9 @@ class XRAI(saliency.GradientSaliency):
                   baseline.shape, x_value.shape))
     return x_baselines
 
+  def _predict(self, x):
+    raise NotImplementedError
+
   def GetMask(self,
               x_value,
               feed_dict={},
@@ -227,15 +230,15 @@ class XRAI(saliency.GradientSaliency):
       segs = _get_segments_felsenschwab(x_value)
 
     if extra_parameters.algorithm == 'full':
-      attr_map, attr_data = self.xrai(
+      attr_map, attr_data = self._xrai(
           attr=attr,
           segs=segs,
-          max_area_th=extra_parameters.max_area,
+          area_perc_th=extra_parameters.max_area,
           gain_fun=_gain_density,
           verbose=extra_parameters.verbosity,
           integer_segments=extra_parameters.flatten_xrai_segments)
     elif extra_parameters.algorithm == 'fast':
-      attr_map, attr_data = self.xrai_fast(
+      attr_map, attr_data = self._xrai_fast(
           attr=attr,
           segs=segs,
           gain_fun=_gain_density,
@@ -251,19 +254,19 @@ class XRAI(saliency.GradientSaliency):
     if extra_parameters.return_baseline_predictions:
       baseline_predictions = []
       for baseline in x_baselines:
-        baseline_predictions.append(self.predict(baseline))
+        baseline_predictions.append(self._predict(baseline))
       results.baseline_predictions = baseline_predictions
-    if extra_parameters.ig_attributions:
+    if extra_parameters.return_ig_attributions:
       results.ig_attribution = attr
     return results
 
   @staticmethod
   def _xrai(attr,
             segs,
-            area_perc_th,
-            gain_fun,
+            gain_fun=_gain_density,
+            area_perc_th=1.0,
             verbose=0,
-            max_iou=0.9,
+            min_pixel_diff=20,
             integer_segments=True):
     """We expect attr to be 2D, XRAI shape is equal to attr shape
       Segs are list of binary masks, one per segment (pre-dilated if neeeded)
@@ -287,8 +290,8 @@ class XRAI(saliency.GradientSaliency):
       remove_key_queue = []
       for mask_key, mask in remaining_masks.iteritems():
         # If mask overlaps current mask more than max_iou then delete it
-        mask_iou = _get_diff_cnt(mask, current_mask)
-        if mask_iou >= max_iou:
+        mask_pixel_diff = _get_diff_cnt(mask, current_mask)
+        if mask_pixel_diff < min_pixel_diff:
           remove_key_queue.append(mask_key)
           if verbose > 2:
             print("Skipping mask with iou: {:.3g},".format(mask_iou))
@@ -321,7 +324,7 @@ class XRAI(saliency.GradientSaliency):
 
     ig_sum = np.sum(attr)
     uncomputed_mask = output_attr == -np.inf
-    assert uncomputed_mask == (attr_ranks == 0)
+    assert np.all(uncomputed_mask == (attr_ranks == 0))
     # Assign the uncomputed areas a value such that sum is same as ig
     output_attr[uncomputed_mask] = (ig_sum -
                                     current_attr_sum) / np.sum(uncomputed_mask)
@@ -335,7 +338,7 @@ class XRAI(saliency.GradientSaliency):
   @staticmethod
   def _xrai_fast(attr,
                  segs,
-                 gain_fun,
+                 gain_fun=_gain_density,
                  area_perc_th=1.0,
                  verbose=0,
                  integer_segments=True):
