@@ -7,8 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from absl import app
-from absl import flags
+from absl import logging
 
 import numpy as np
 import saliency
@@ -17,9 +16,7 @@ from skimage.morphology import dilation
 from skimage.morphology import disk
 from skimage.transform import resize
 
-FLAGS = flags.FLAGS
-# TODO (tolgab) change all prints to log
-
+# TODO(tolgab) Add all function and variable descriptions from API doc
 
 def _normalize_image(im, value_range, resize_shape=None):
   im_max = np.max(im)
@@ -114,23 +111,25 @@ def _unpack_segs_to_masks(segs):
   return masks
 
 
-class XRAIConfig(object):
+class XRAIParameters(object):
 
-  def __init__(self, steps=100, verbosity=0):
-    # Number of steps to compute integrated gradients, more is slower but better
+  def __init__(self,
+               steps=100,
+               return_baseline_predictions=False,
+               return_ig_attributions=False,
+               return_xrai_segments=False,
+               flatten_xrai_segments=True,
+               algorithm='full',
+               verbosity=0):
+    # TODO(tolgab) add return_ig_for_every_step functionality
     self.steps = steps
-    # # Automatically resize baseline image to fit the input image size
-    # self.baseline_auto_resize = baseline_auto_resize
-    self.return_baseline_predictions = False
-    self.return_ig_attributions = False
-    self.return_ig_for_every_step = False
-    self.return_xrai_segments = False
-    self.flatten_xrai_segments = True
-    # XRAI algorithm.
-    self.algorithm = 'full'
-    # Verbosity to print status as segments are added
+    self.area_threshold = 1.0
+    self.return_baseline_predictions = return_baseline_predictions
+    self.return_ig_attributions = return_ig_attributions
+    self.return_xrai_segments = return_xrai_segments
+    self.flatten_xrai_segments = flatten_xrai_segments
+    self.algorithm = algorithm
     self.verbosity = verbosity
-    self.max_area = 1.0
 
 
 class SaliencyOutput(object):
@@ -212,7 +211,10 @@ class XRAI(saliency.GradientSaliency):
     Parameters:
     Returns:
       A XraiOutput object that contains the output of the XRAI algorithm.
+    TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
+    if extra_parameters.verbosity > 1:
+      logging.info("Computing IG...")
     x_baselines = self._make_baselines(x_value, baselines)
 
     attrs = self._get_integrated_gradients(x_value,
@@ -224,6 +226,8 @@ class XRAI(saliency.GradientSaliency):
     # Merge attribution channels for XRAI input
     attr = _accumulate_attr_max(attr)
 
+    if extra_parameters.verbosity > 1:
+      logging.info("Done with IG. Computing XRAI...")
     if segments is not None:
       segs = segments
     else:
@@ -233,7 +237,7 @@ class XRAI(saliency.GradientSaliency):
       attr_map, attr_data = self._xrai(
           attr=attr,
           segs=segs,
-          area_perc_th=extra_parameters.max_area,
+          area_perc_th=extra_parameters.area_threshold,
           gain_fun=_gain_density,
           verbose=extra_parameters.verbosity,
           integer_segments=extra_parameters.flatten_xrai_segments)
@@ -242,10 +246,11 @@ class XRAI(saliency.GradientSaliency):
           attr=attr,
           segs=segs,
           gain_fun=_gain_density,
-          verbose=0,
+          verbose=extra_parameters.verbosity,
           integer_segments=extra_parameters.flatten_xrai_segments)
     else:
-      print('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
+      logging.error('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
+      raise ValueError
 
     results = XRAIOutput(attr_map)
     results.baselines = x_baselines
@@ -294,7 +299,7 @@ class XRAI(saliency.GradientSaliency):
         if mask_pixel_diff < min_pixel_diff:
           remove_key_queue.append(mask_key)
           if verbose > 2:
-            print("Skipping mask with iou: {:.3g},".format(mask_iou))
+            logging.info("Skipping mask with pixel difference: {:.3g},".format(mask_pixel_diff))
           continue
         gain = gain_fun(mask, attr, mask2=current_mask)
         if gain > best_gain:
@@ -316,7 +321,7 @@ class XRAI(saliency.GradientSaliency):
       output_attr[mask_diff] = best_gain
       del remaining_masks[best_key]  # delete used key
       if verbose:
-        print("{} of {} masks added,"
+        logging.info("{} of {} masks added,"
               "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
                   added_masks_cnt, n_masks, current_attr_sum, current_area_perc,
                   area_perc_th, len(remaining_masks)))
@@ -360,6 +365,7 @@ class XRAI(saliency.GradientSaliency):
     sorted_inds, sorted_sums = zip(
         *sorted(zip(range(len(attr_sums)), attr_sums), key=lambda x: -x[1]))
     sorted_inds = np.array(sorted_inds, dtype=np.int)
+    segs = np.array(segs)
     segs = segs[sorted_inds]
 
     for i, added_mask in enumerate(segs):
@@ -373,7 +379,7 @@ class XRAI(saliency.GradientSaliency):
       current_area_perc = np.mean(current_mask)
       output_attr[mask_diff] = sorted_sums[i]
       if verbose:
-        print("{} of {} masks added,"
+        logging.info("{} of {} masks added,"
               "attr_sum: {}, area: {:.3g}/{:.3g}".format(
                   i, n_masks, current_attr_sum, current_area_perc,
                   area_perc_th))
