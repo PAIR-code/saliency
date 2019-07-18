@@ -16,7 +16,6 @@ from skimage.morphology import dilation
 from skimage.morphology import disk
 from skimage.transform import resize
 
-# TODO(tolgab) Add all function and variable descriptions from API doc
 
 def _normalize_image(im, value_range, resize_shape=None):
   im_max = np.max(im)
@@ -115,6 +114,7 @@ class XRAIParameters(object):
 
   def __init__(self,
                steps=100,
+               area_threshold=1.0,
                return_baseline_predictions=False,
                return_ig_attributions=False,
                return_xrai_segments=False,
@@ -122,19 +122,51 @@ class XRAIParameters(object):
                algorithm='full',
                verbosity=0):
     # TODO(tolgab) add return_ig_for_every_step functionality
+
+    # Number of steps to use for calculating the Integrated Gradients
+    # attribution. The higher the number of steps the higher is the precision
+    # but lower the performance. (see also XRAIOutput.error).
     self.steps = steps
-    self.area_threshold = 1.0
+    # The fraction of the image area that XRAI should calculate the segments
+    # for. All segments that exceed that threshold will be merged into a single
+    # segment. The parameter is used to accelerate the XRAI computation if the
+    # caller is only interested in the top fraction of segments, e.g. 20%. The
+    # value should be in the [0.0, 1.0] range, where 1.0 means that all segments
+    # should be returned (slowest). Fast algorithm ignores this setting.
+    self.area_threshold = area_threshold
+    # If set to True returns predictions for the baselines as float32 [B] array,
+    # where B is the number of baselines. (see XraiOutput.baseline_predictions).
     self.return_baseline_predictions = return_baseline_predictions
+    # If set to True, the XRAI output returns Integrated Gradients attributions
+    # for every baseline. (see XraiOutput.ig_attribution)
     self.return_ig_attributions = return_ig_attributions
+    # If set to True the XRAI output returns XRAI segments in the order of their
+    # importance. This parameter works in conjunction with the
+    # flatten_xrai_sements parameter. (see also XraiOutput.segments)
     self.return_xrai_segments = return_xrai_segments
+    # If set to True, the XRAI segments are returned as an integer array with
+    # the same dimensions as the input (excluding color channels). The elements
+    # of the array are set to values from the [1,N] range, where 1 is the most
+    # important segment and N is the least important segment. If
+    # flatten_xrai_sements is set to False, the segments are returned as a
+    # boolean array, where the first dimension has size N. The [0, ...] mask is
+    # the most important and the [N-1, ...] mask is the least important. This
+    # parameter has an effect only if return_xrai_segments is set to True.
     self.flatten_xrai_segments = flatten_xrai_segments
+    # Specifies a flavor of the XRAI algorithm. full - executes slower but more
+    # precise XRAI algorithm. fast - executes faster but less precise XRAI
+    # algorithm.
     self.algorithm = algorithm
+    # Specifies the level of verbosity. 0 - silent.
     self.verbosity = verbosity
 
 
 class SaliencyOutput(object):
 
   def __init__(self, attribution_mask):
+    # The saliency mask of individual input features. For an [NxMx3] image, the
+    # returned attribution is [N,M,1] float32 array. Where NxM are the
+    # dimensions of the image.
     self.attribution_mask = attribution_mask
 
 
@@ -142,10 +174,23 @@ class XRAIOutput(SaliencyOutput):
 
   def __init__(self, attribution_mask):
     super(XRAIOutput, self).__init__(attribution_mask)
+    # Baselines that were used for IG calculation. The shape is [B,N,M], where B
+    # is the number of baselines, NxM are the image dimensions.
     self.baselines = None
+    # The average error of the IG attributions as a percentage. The error can be
+    # decreased by increasing the number of steps (see XraiParameters.steps).
     self.error = None
+    # Predictions for the baselines that were used for the calculation of IG
+    # attributions. The value is set only when
+    # XraiParameters.return_baseline_predictions is set to True.
     self.baseline_predictions = None
+    # IG attributions for individual baselines. The value is set only when
+    # XraiParameters.ig_attributions is set to True. For the dimensions of the
+    # output see XraiParameters.return_ig_for_every _step.
     self.ig_attribution = None
+    # The result of the XRAI segmentation. The value is set only when
+    # XraiParameters.return_xrai_segments is set to True. For the dimensions of
+    # the output see XraiParameters.flatten_xrai_segments.
     self.segments = None
 
 
@@ -206,11 +251,31 @@ class XRAI(saliency.GradientSaliency):
                          baselines=None,
                          segments=None,
                          extra_parameters=None):
-    """ Applies XRAI method on an input image and returns the result saliency
-        mask along with other detailed information.
-    Parameters:
-    Returns:
-      A XraiOutput object that contains the output of the XRAI algorithm.
+    """ Parameters:
+          x_value - input value, not batched.
+          output_selector=None - the index of the output to calculate the
+                                 saliency for in the output tensor.
+          feed_dict=None - feed dictionary to pass to the TF session.run() call.
+          baselines=None - a list of baselines to use for calculating
+                           Integrated Gradients attribution. Every baseline in
+                           the list should have the same dimensions as the
+                           input. If the value is not set then the algorithm
+                           will make the best effort to select default
+                           baselines.
+          segments=None - the list of precalculated image segments that should
+                          be passed to XRAI. Each element of the list is an
+                          [N,M] integer array, where NxM are the image
+                          dimensions. Each element of the list may provide
+                          information about multiple segments by encoding them
+                          with distinct integer values. If the value is None,
+                          a defaut segmentation algorithm will be applied.
+          extra_parameters=None - a XraiParameters object that specifies
+                                  additional parameters for the XRAI saliency
+                                  method.
+
+        Returns:
+          a XraiOutput object that contains the output of the XRAI algorithm.
+
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
     if extra_parameters.verbosity > 1:
@@ -249,7 +314,8 @@ class XRAI(saliency.GradientSaliency):
           verbose=extra_parameters.verbosity,
           integer_segments=extra_parameters.flatten_xrai_segments)
     else:
-      logging.error('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
+      logging.error('Unknown algorithm type: {}'.format(
+          extra_parameters.algorithm))
       raise ValueError
 
     results = XRAIOutput(attr_map)
@@ -299,7 +365,8 @@ class XRAI(saliency.GradientSaliency):
         if mask_pixel_diff < min_pixel_diff:
           remove_key_queue.append(mask_key)
           if verbose > 2:
-            logging.info("Skipping mask with pixel difference: {:.3g},".format(mask_pixel_diff))
+            logging.info("Skipping mask with pixel difference: {:.3g},".format(
+                mask_pixel_diff))
           continue
         gain = gain_fun(mask, attr, mask2=current_mask)
         if gain > best_gain:
@@ -321,10 +388,11 @@ class XRAI(saliency.GradientSaliency):
       output_attr[mask_diff] = best_gain
       del remaining_masks[best_key]  # delete used key
       if verbose:
-        logging.info("{} of {} masks added,"
-              "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
-                  added_masks_cnt, n_masks, current_attr_sum, current_area_perc,
-                  area_perc_th, len(remaining_masks)))
+        logging.info(
+            "{} of {} masks added,"
+            "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
+                added_masks_cnt, n_masks, current_attr_sum, current_area_perc,
+                area_perc_th, len(remaining_masks)))
       added_masks_cnt += 1
 
     ig_sum = np.sum(attr)
@@ -380,9 +448,9 @@ class XRAI(saliency.GradientSaliency):
       output_attr[mask_diff] = sorted_sums[i]
       if verbose:
         logging.info("{} of {} masks added,"
-              "attr_sum: {}, area: {:.3g}/{:.3g}".format(
-                  i, n_masks, current_attr_sum, current_area_perc,
-                  area_perc_th))
+                     "attr_sum: {}, area: {:.3g}/{:.3g}".format(
+                         i, n_masks, current_attr_sum, current_area_perc,
+                         area_perc_th))
     if integer_segments:
       return output_attr, attr_ranks
     else:
