@@ -20,6 +20,7 @@ from skimage.transform import resize
 FLAGS = flags.FLAGS
 # TODO (tolgab) change all prints to log
 
+
 def _normalize_image(im, value_range, resize_shape=None):
   im_max = np.max(im)
   im_min = np.min(im)
@@ -28,12 +29,13 @@ def _normalize_image(im, value_range, resize_shape=None):
   im *= value_range[1] - value_range[0]
   im += np.mean(value_range)
   if resize_shape is not None:
-    im = resize(im, resize_shape, order=3, mode='constant', preserve_range=True, anti_aliasing=True)
+    im = resize(im, resize_shape, order=3, mode='constant',
+                preserve_range=True, anti_aliasing=True)
   return im
 
 
 def _get_segments_felsenschwab(im, resize_image=True,
-                              scale_range=[-1.0, 1.0], dilation_rad=5):
+                               scale_range=[-1.0, 1.0], dilation_rad=5):
   """Get an image and return segments based on felsenschwab algorithm
   TODO (tolgab) This resize is unnecessary with more intelligent param range
   selection
@@ -62,7 +64,8 @@ def _get_segments_felsenschwab(im, resize_image=True,
       seg = segmentation.felzenszwalb(
           im, scale=scale, sigma=sigma, min_size=20)
       if resize_image:
-        seg = resize(seg, original_shape, order=0, preserve_range=True, mode='constant', anti_aliasing=False).astype(np.uint8)
+        seg = resize(seg, original_shape, order=0, preserve_range=True,
+                     mode='constant', anti_aliasing=False).astype(np.uint8)
       segs.append(seg)
   masks = _unpack_segs_to_masks(segs)
   if dilation_rad:
@@ -114,15 +117,17 @@ class XRAIConfig():
     self.return_ig_attributions = False
     self.return_ig_for_every_step = False
     self.return_xrai_segments = False
-    self.flatten_xrai_segments=True
+    self.flatten_xrai_segments = True
     # XRAI algorithm.
     self.algorithm = 'full'
     # Verbosity to print status as segments are added
     self.verbosity = verbosity
 
+
 class SaliencyOutput:
   def __init__(self, attribution_mask):
     self.attribution_mask = attribution_mask
+
 
 class XRAIOutput(SaliencyOutput):
   def __init__(self, attribution_mask):
@@ -138,7 +143,7 @@ class XRAI(saliency.GradientSaliency):
   def __init__(self, graph, session, y, images):
     # Initialize integrated gradients
     self._integrated_gradients = saliency.IntegratedGradients(graph, session, y,
-                                                             images)
+                                                              images)
 
   def _get_integrated_gradients(self, im, feed_dict, baselines, steps):
     """ Takes mean of attributions from all baselines
@@ -146,7 +151,7 @@ class XRAI(saliency.GradientSaliency):
     grads = []
     for baseline in baselines:
       grads.append(self._integrated_gradients.GetMask(
-        im, feed_dict=feed_dict, x_baseline=baseline, x_steps=steps))
+          im, feed_dict=feed_dict, x_baseline=baseline, x_steps=steps))
     return grads
 
   def _make_baselines(self, x_value, x_baselines):
@@ -158,7 +163,8 @@ class XRAI(saliency.GradientSaliency):
     else:
       for baseline in x_baselines:
         if baseline.shape != x_value.shape:
-          raise ValueError("Baseline size {} does not match input size {}".format(baseline.shape, x_value.shape))
+          raise ValueError("Baseline size {} does not match input size {}".format(
+              baseline.shape, x_value.shape))
     return x_baselines
 
   def GetMask(self, x_value, feed_dict={}, baselines=None, segments=None, extra_parameters=None):
@@ -181,8 +187,8 @@ class XRAI(saliency.GradientSaliency):
     x_baselines = self._make_baselines(x_value, baselines)
 
     attrs = self._get_integrated_gradients(x_value, feed_dict=feed_dict,
-                                              baselines=x_baselines,
-                                              steps=extra_parameters.steps)
+                                           baselines=x_baselines,
+                                           steps=extra_parameters.steps)
     # Merge attributions from different baselines
     attr = np.mean(attrs, axis=0)
     # Merge attribution channels for XRAI input
@@ -205,7 +211,6 @@ class XRAI(saliency.GradientSaliency):
     else:
       print('Unknown algorithm type: {}'.format(extra_parameters.algorithm))
 
-
     results = XRAIOutput(attr_map)
     results.baselines = x_baselines
     if extra_parameters.return_xrai_segments:
@@ -219,15 +224,14 @@ class XRAI(saliency.GradientSaliency):
       results.ig_attribution = attr
     return results
 
-
   @staticmethod
   def _xrai(attr, segs, area_perc_th,
-      gain_fun, verbose=0, max_iou=0.9,
-      integer_segments=True):
-    """We expect attr to be 2D, SIG shape is equal to attr shape
+            gain_fun, verbose=0, max_iou=0.9,
+            integer_segments=True):
+    """We expect attr to be 2D, XRAI shape is equal to attr shape
       Segs are list of binary masks, one per segment (pre-dilated if neeeded)
     """
-    sig_attr_raw = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
+    output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
     n_masks = len(segs)
     current_attr_sum = 0.0
@@ -249,7 +253,7 @@ class XRAI(saliency.GradientSaliency):
         mask_iou = _get_diff_cnt(mask, current_mask)
         if mask_iou >= max_iou:
           remove_key_queue.append(mask_key)
-          if verbose>2:
+          if verbose > 2:
             print("Skipping mask with iou: {:.3g},".format(mask_iou))
           continue
         gain = gain_fun(mask, attr, mask2=current_mask)
@@ -269,32 +273,35 @@ class XRAI(saliency.GradientSaliency):
       current_mask = np.logical_or(current_mask, added_mask)
       current_attr_sum = np.sum(attr[current_mask])
       current_area_perc = np.mean(current_mask)
-      sig_attr_raw[mask_diff] = gain
+      output_attr[mask_diff] = best_gain
       del remaining_masks[best_key]  # delete used key
       if verbose:
         print("{} of {} masks added,"
               "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(added_masks_cnt,
-                                          n_masks, current_attr_sum, current_area_perc,
-                                          area_perc_th, len(remaining_masks)))
+                                                                             n_masks, current_attr_sum, current_area_perc,
+                                                                             area_perc_th, len(remaining_masks)))
       added_masks_cnt += 1
 
     ig_sum = np.sum(attr)
-    uncomputed_mask = sig_attr_raw==-np.inf
+    uncomputed_mask = output_attr == -np.inf
+    assert uncomputed_mask == (attr_ranks == 0)
     # Assign the uncomputed areas a value such that sum is same as ig
-    sig_attr_raw[uncomputed_mask] = (ig_sum - current_attr_sum) / np.sum(uncomputed_mask)
+    output_attr[uncomputed_mask] = (
+        ig_sum - current_attr_sum) / np.sum(uncomputed_mask)
+    # Set uncomputed region's ranking to max rank + 1
+    attr_ranks[uncomputed_mask] = np.max(attr_ranks) + 1
     if integer_segments:
-      return sig_attr_raw, attr_ranks
+      return output_attr, attr_ranks
     else:
-      return sig_attr_raw, masks_trace
-
+      return output_attr, masks_trace
 
   @staticmethod
   def _xrai_fast(attr, segs, gain_fun, area_perc_th=1.0, verbose=0,
-      integer_segments=True):
-    """We expect attr to be 2D, SIG shape is equal to attr shape
+                 integer_segments=True):
+    """We expect attr to be 2D, XRAI shape is equal to attr shape
       Segs are list of binary masks, one per segment (pre-dilated if neeeded)
     """
-    sig_attr_raw = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
+    output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
     n_masks = len(segs)
     current_attr_sum = 0.0
@@ -302,11 +309,13 @@ class XRAI(saliency.GradientSaliency):
     current_mask = np.zeros(attr.shape, dtype=bool)
 
     masks_trace = []
-    attr_ranks = np.array(shape=attr.shape, dtype=np.int)
+    attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
 
     # Sort all masks based on gain, ignore overlaps
-    attr_sums = map(gain_fun, segs)
-    sorted_inds, sorted_sums = sorted(zip(range(n_masks), attr_sums), key=lambda x: x[1])
+    attr_sums = [gain_fun(seg_mask, attr) for seg_mask in segs]
+    sorted_inds, sorted_sums = zip(
+        *sorted(zip(range(len(attr_sums)), attr_sums), key=lambda x: -x[1]))
+    sorted_inds = np.array(sorted_inds, dtype=np.int)
     segs = segs[sorted_inds]
 
     for i, added_mask in enumerate(segs):
@@ -314,112 +323,17 @@ class XRAI(saliency.GradientSaliency):
       if not integer_segments:
         masks_trace.append(added_mask)
       else:
-        attr_ranks[mask_diff] = i
+        attr_ranks[mask_diff] = i+1
       current_mask = np.logical_or(current_mask, added_mask)
       current_attr_sum = np.sum(attr[current_mask])
       current_area_perc = np.mean(current_mask)
-      sig_attr_raw[mask_diff] = sorted_sums[i]
+      output_attr[mask_diff] = sorted_sums[i]
       if verbose:
         print("{} of {} masks added,"
               "attr_sum: {}, area: {:.3g}/{:.3g}".format(i,
-                                          n_masks, current_attr_sum, current_area_perc,
-                                          area_perc_th))
+                                                         n_masks, current_attr_sum, current_area_perc,
+                                                         area_perc_th))
     if integer_segments:
-      return sig_attr_raw, attr_ranks
+      return output_attr, attr_ranks
     else:
-      return sig_attr_raw, masks_trace
-
-
-
-
-  # def GetMask(self, x_value, sig_config, feed_dict={}, percent_areas=[0.1]):
-  #   x_baselines = sig_config.baselines
-  #   # If baseline is not provided default to im min and max values
-  #   if x_baselines is None:
-  #     x_baselines = []
-  #     x_baselines.append(np.min(x_value)*np.ones_like(x_value))
-  #     x_baselines.append(np.max(x_value)*np.ones_like(x_value))
-  #   else:
-  #     for i, baseline in enumerate(x_baselines):
-  #       if baseline.shape != x_value.shape:
-  #         if sig_config.baseline_auto_resize:
-  #           baseline = resize(baseline, x_value.shape, preserve_range=True)
-  #           x_baselines[i] = baseline
-  #         else:
-  #           raise ValueError("Baseline size {} does not match input size {}".format(baseline.shape, x_value.shape))
-
-  #   attr = self.get_integrated_gradients_mean(x_value, feed_dict=feed_dict,
-  #                                             baselines=x_baselines,
-  #                                             steps=sig_config.steps)
-  #   segs = sig_config.segmentation_fun(x_value)
-  #   (percent_masks, masks_trace) = self.sig(im=x_value, attr=attr, segs=segs, percent_areas=percent_areas, verbose=sig_config.verbosity)
-  #   return percent_masks, masks_trace
-
-  # @classmethod
-  # def _sig_heatmap(cls, im, attr, max_area=1.0, verbose=0):
-  #   segs = get_segments_felsenschwab(im)
-  #   # Work in progress
-  #   (percent_masks, masks_trace) = cls.sig(im=im, attr=attr, segs=segs, percent_areas=[max_area], verbose=verbose)
-  #   # Unpack masks
-  #   # TODO(tolgab) seperate baseline generation from mask generation
-  #   # TODO(tolgab) Directly return float heatmap instead of unpacking from trace
-  #   sig_attr_raw = -np.inf * np.ones(shape=im.shape[:2], dtype=np.float)
-  #   # masks_trace : current_mask, added_mask, current_attr_sum, current_area_perc
-  #   for ii in xrange(1, len(masks_trace)):
-  #     mask_diff = np.logical_and(np.logical_not(masks_trace[ii-1][0]), masks_trace[ii][0])
-  #     if np.sum(mask_diff) == 0:
-  #       continue
-  #     sig_attr_raw[mask_diff] = calculate_attr_max(mask_diff, attr)
-  #   sig_attr_raw[sig_attr_raw==-np.inf] = np.min(sig_attr_raw[sig_attr_raw!=-np.inf]) - 0.1
-
-  #   return sig_attr_raw
-
-  # @staticmethod
-  # def sig(im, attr, segs, percent_areas, dilation_rad=5,
-  #     gain_fun=calculate_attr_max, verbose=0):
-
-  #   # Compute superpixels
-  #   all_masks = unpack_segs_to_masks(segs)
-  #   if dilation_rad:
-  #     selem = disk(dilation_rad)
-  #     all_masks = [dilation(mask, selem=selem) for mask in all_masks]
-
-  #   percent_areas = np.array(percent_areas, dtype=float)
-  #   n_masks = len(all_masks)
-  #   area_perc_th = np.max(percent_areas)
-  #   current_attr_sum = 0.0
-  #   current_area_perc = 0.0
-  #   current_mask = np.zeros(im.shape[:2], dtype=bool)
-  #   masks_trace = [[current_mask, current_mask, current_attr_sum, current_area_perc]]
-  #   percent_masks = np.array([None] * len(percent_areas), dtype=object)
-  #   remaining_masks = {ind: mask for ind, mask in enumerate(all_masks)}
-  #   # While the mask area is less than area_th and remaining_masks is not empty
-  #   while remaining_masks and current_area_perc <= area_perc_th:
-  #     best_gain = -np.inf
-  #     best_key = None
-  #     for mask_key, mask in remaining_masks.iteritems():
-  #       gain = gain_fun(current_mask, attr, mask2=mask)
-  #       if gain > best_gain:
-  #         best_gain = gain
-  #         best_key = mask_key
-  #     # added_mask = dilation(remaining_masks[best_key], selem=selem)  # for historical reasons, remove after testing
-  #     added_mask = remaining_masks[best_key]
-  #     current_mask = np.logical_or(current_mask, added_mask)
-  #     current_attr_sum = best_gain
-  #     current_area_perc = np.mean(current_mask)
-  #     # TODO(tolgab) Change arrays to namedtuples
-  #     masks_trace.append([current_mask, added_mask, current_attr_sum, current_area_perc])
-  #     del remaining_masks[best_key]  # delete used key
-  #     if verbose:
-  #       print("{} of {} masks added,"
-  #             "area: {:.3g}/{:.3g}".format(n_masks-len(remaining_masks),
-  #                                         n_masks, current_area_perc,
-  #                                         area_perc_th))
-  #     area_check = (current_area_perc > percent_areas) & (percent_masks == None)
-  #     for ind in np.where(area_check)[0]:
-  #       percent_masks[ind] = masks_trace[-2][:1] + [percent_areas[ind]]
-
-  #   if percent_areas[-1] == 1.0 and percent_masks[-1] is None:
-  #     percent_masks[-1] = [np.ones(shape=current_mask.shape, dtype=np.bool), 1.0]
-
-  #   return percent_masks, masks_trace
+      return output_attr, masks_trace
