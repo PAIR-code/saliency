@@ -13,6 +13,7 @@ from skimage import segmentation
 from skimage.morphology import dilation
 from skimage.morphology import disk
 from skimage.transform import resize
+from future.utils import iteritems
 
 from .base import GradientSaliency
 from .integrated_gradients import IntegratedGradients
@@ -360,7 +361,7 @@ class XRAI(GradientSaliency):
             gain_fun=_gain_density,
             area_perc_th=1.0,
             verbose=0,
-            min_pixel_diff=20,
+            min_pixel_diff=1,
             integer_segments=True):
     """We expect attr to be 2D, XRAI shape is equal to attr shape
       Segs are list of binary masks, one per segment (pre-dilated if neeeded)
@@ -368,6 +369,8 @@ class XRAI(GradientSaliency):
     output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
     n_masks = len(segs)
+    current_attr_sum = 0.0
+    current_area_perc = 0.0
     current_mask = np.zeros(attr.shape, dtype=bool)
 
     masks_trace = []
@@ -380,8 +383,8 @@ class XRAI(GradientSaliency):
       best_gain = -np.inf
       best_key = None
       remove_key_queue = []
-      for mask_key, mask in remaining_masks.iteritems():
-        # If mask overlaps current mask more than max_iou then delete it
+      for mask_key, mask in iteritems(remaining_masks):
+        # If mask does not add more than min_pixel_diff to current mask, remove
         mask_pixel_diff = _get_diff_cnt(mask, current_mask)
         if mask_pixel_diff < min_pixel_diff:
           remove_key_queue.append(mask_key)
@@ -404,11 +407,11 @@ class XRAI(GradientSaliency):
       else:
         attr_ranks[mask_diff] = added_masks_cnt
       current_mask = np.logical_or(current_mask, added_mask)
+      current_attr_sum = np.sum(attr[current_mask])
+      current_area_perc = np.mean(current_mask)
       output_attr[mask_diff] = best_gain
       del remaining_masks[best_key]  # delete used key
       if verbose:
-        current_attr_sum = np.sum(attr[current_mask])
-        current_area_perc = np.mean(current_mask)
         logging.info(
             "{} of {} masks added,"
             "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
@@ -468,7 +471,7 @@ class XRAI(GradientSaliency):
         current_area_perc = np.mean(current_mask)
         logging.info("{} of {} masks added,"
                      "attr_sum: {}, area: {:.3g}/{:.3g}".format(
-                         i, n_masks, current_attr_sum, current_area_perc,
+                         i + 1, n_masks, current_attr_sum, current_area_perc,
                          area_perc_th))
     if integer_segments:
       return output_attr, attr_ranks
