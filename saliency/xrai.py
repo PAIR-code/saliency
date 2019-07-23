@@ -1,6 +1,5 @@
-"""Implementation of segment integrated gradients code.
-
-This code is based on the structure of third_party/py/saliency.
+"""Implementation of XRAI algorithm from the paper:
+https://arxiv.org/abs/1906.02825
 """
 
 from __future__ import absolute_import
@@ -10,11 +9,13 @@ from __future__ import print_function
 from absl import logging
 
 import numpy as np
-import saliency
 from skimage import segmentation
 from skimage.morphology import dilation
 from skimage.morphology import disk
 from skimage.transform import resize
+
+from .base import GradientSaliency
+from .integrated_gradients import IntegratedGradients
 
 
 def _normalize_image(im, value_range, resize_shape=None):
@@ -36,26 +37,37 @@ def _normalize_image(im, value_range, resize_shape=None):
 
 def _get_segments_felsenschwab(im,
                                resize_image=True,
-                               scale_range=[-1.0, 1.0],
+                               scale_range=None,
                                dilation_rad=5):
-  """Get an image and return segments based on felsenschwab algorithm
-  TODO (tolgab) This resize is unnecessary with more intelligent param range
-  selection
-  If resize_image is True, images are resized to 224,224 for segmentation
-    output segments are always the same size as a the input image. This is
-    for consistency w.r.t. segmentation parameter range
-  TODO (tolgab) Set this to default float range of 0.0 - 1.0 and tune parameters
-  for that
-  scale_range is the range of image values to use for segmentation algorithm.
-  Segmentation algorithm is sensitive to the input image values, therefore we
-  need to be consistent with the range for all images.
-  dilation_rad sets how much each segment is dilated to include edges, larger
-  values cause more blobby segments, smaller values get sharper areas.
+  """Compute image segments based on felsenschwab algorithm
+
+  Args:
+    im: Input image.
+    resize_image: If resize_image is True, images are resized to 224,224 for
+                  segmentation output segments are always the same size as a
+                  the input image. This is for consistency w.r.t. segmentation
+                  parameter range. Defaults to True.
+    scale_range: Range of image values to use for segmentation algorithm.
+                  Segmentation algorithm is sensitive to the input image
+                  values, therefore we need to be consistent with the range
+                  for all images. Defaults to None.
+    dilation_rad: Sets how much each segment is dilated to include edges,
+                  larger values cause more blobby segments, smaller values
+                  get sharper areas. Defaults to 5.
+  Returns:
+      masks:
   """
+
+  # TODO (tolgab) Set this to default float range of 0.0 - 1.0 and tune
+  # parameters for that
+  if scale_range is None:
+    scale_range = [-1.0, 1.0]
   SCALE_VALUES = [50, 100, 150, 250, 500, 1200]
   SIGMA_VALUES = [0.8]
   # Normalize image value range and size
   original_shape = im.shape[:2]
+  # TODO (tolgab) This resize is unnecessary with more intelligent param range
+  # selection
   if resize_image:
     im = _normalize_image(im, scale_range, (224, 224))
   else:
@@ -70,7 +82,7 @@ def _get_segments_felsenschwab(im,
                      order=0,
                      preserve_range=True,
                      mode='constant',
-                     anti_aliasing=False).astype(np.uint8)
+                     anti_aliasing=False).astype(np.int)
       segs.append(seg)
   masks = _unpack_segs_to_masks(segs)
   if dilation_rad:
@@ -79,7 +91,7 @@ def _get_segments_felsenschwab(im,
   return masks
 
 
-def _accumulate_attr_max(attr, axis=-1):
+def _attr_aggregation_max(attr, axis=-1):
   return attr.max(axis=axis)
 
 
@@ -89,17 +101,16 @@ def _gain_density(mask1, attr, mask2=None):
   if mask2 is None:
     added_mask = mask1
   else:
-    added_mask = np.logical_and(mask1, np.logical_not(mask2))
+    added_mask = _get_diff_mask(mask1, mask2)
   return attr[added_mask].mean()
 
 
-def _get_iou(mask1, mask2):
-  return (np.sum(np.logical_and(mask1, mask2)) /
-          np.sum(np.logical_or(mask1, mask2)))
+def _get_diff_mask(add_mask, base_mask):
+  return np.logical_and(add_mask, np.logical_not(base_mask))
 
 
 def _get_diff_cnt(add_mask, base_mask):
-  return np.sum(np.logical_and(add_mask, np.logical_not(base_mask)))
+  return np.sum(_get_diff_mask(add_mask, base_mask))
 
 
 def _unpack_segs_to_masks(segs):
@@ -161,21 +172,15 @@ class XRAIParameters(object):
     self.verbosity = verbosity
 
 
-class SaliencyOutput(object):
+class XRAIOutput(object):
 
   def __init__(self, attribution_mask):
-    # The saliency mask of individual input features. For an [NxMx3] image, the
-    # returned attribution is [N,M,1] float32 array. Where NxM are the
+    # The saliency mask of individual input features. For an [HxWx3] image, the
+    # returned attribution is [H,W,1] float32 array. Where HxW are the
     # dimensions of the image.
     self.attribution_mask = attribution_mask
-
-
-class XRAIOutput(SaliencyOutput):
-
-  def __init__(self, attribution_mask):
-    super(XRAIOutput, self).__init__(attribution_mask)
-    # Baselines that were used for IG calculation. The shape is [B,N,M], where B
-    # is the number of baselines, NxM are the image dimensions.
+    # Baselines that were used for IG calculation. The shape is [B,H,W,C], where
+    # B is the number of baselines, HxWxC are the image dimensions.
     self.baselines = None
     # The average error of the IG attributions as a percentage. The error can be
     # decreased by increasing the number of steps (see XraiParameters.steps).
@@ -194,12 +199,13 @@ class XRAIOutput(SaliencyOutput):
     self.segments = None
 
 
-class XRAI(saliency.GradientSaliency):
+class XRAI(GradientSaliency):
 
-  def __init__(self, graph, session, y, images):
+  def __init__(self, graph, session, y, x):
     # Initialize integrated gradients
-    self._integrated_gradients = saliency.IntegratedGradients(
-        graph, session, y, images)
+    super(XRAI, self).__init__(graph, session, y, x)
+    self._integrated_gradients = IntegratedGradients(
+        graph, session, y, x)
 
   def _get_integrated_gradients(self, im, feed_dict, baselines, steps):
     """ Takes mean of attributions from all baselines
@@ -237,6 +243,8 @@ class XRAI(saliency.GradientSaliency):
               segments=None,
               extra_parameters=None):
     """ Output a np.ndarray heatmap of XRAI attributions with input shape.
+
+    TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
     results = self.GetMaskWithDetails(x_value,
                                       feed_dict=feed_dict,
@@ -251,11 +259,26 @@ class XRAI(saliency.GradientSaliency):
                          baselines=None,
                          segments=None,
                          extra_parameters=None):
+    """[summary]
+
+    Args:
+        x_value: input value, not batched.
+        feed_dict: [description]. Defaults to {}.
+        baselines: [description]. Defaults to None.
+        segments: [description]. Defaults to None.
+        extra_parameters: [description]. Defaults to None.
+
+    Raises:
+        ValueError: If algorithm type is unknown (not full or fast)
+
+    Returns:
+        XRAIOutput: an object that contains the output of the XRAI algorithm.
+    """
     """ Parameters:
-          x_value - input value, not batched.
+          x_value -
           output_selector=None - the index of the output to calculate the
                                  saliency for in the output tensor.
-          feed_dict=None - feed dictionary to pass to the TF session.run() call.
+          feed_dict:     - feed dictionary to pass to the TF session.run() call.
           baselines=None - a list of baselines to use for calculating
                            Integrated Gradients attribution. Every baseline in
                            the list should have the same dimensions as the
@@ -274,7 +297,7 @@ class XRAI(saliency.GradientSaliency):
                                   method.
 
         Returns:
-          a XraiOutput object that contains the output of the XRAI algorithm.
+
 
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
@@ -289,7 +312,7 @@ class XRAI(saliency.GradientSaliency):
     # Merge attributions from different baselines
     attr = np.mean(attrs, axis=0)
     # Merge attribution channels for XRAI input
-    attr = _accumulate_attr_max(attr)
+    attr = _attr_aggregation_max(attr)
 
     if extra_parameters.verbosity > 1:
       logging.info("Done with IG. Computing XRAI...")
@@ -345,8 +368,6 @@ class XRAI(saliency.GradientSaliency):
     output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
     n_masks = len(segs)
-    current_attr_sum = 0.0
-    current_area_perc = 0.0
     current_mask = np.zeros(attr.shape, dtype=bool)
 
     masks_trace = []
@@ -383,11 +404,11 @@ class XRAI(saliency.GradientSaliency):
       else:
         attr_ranks[mask_diff] = added_masks_cnt
       current_mask = np.logical_or(current_mask, added_mask)
-      current_attr_sum = np.sum(attr[current_mask])
-      current_area_perc = np.mean(current_mask)
       output_attr[mask_diff] = best_gain
       del remaining_masks[best_key]  # delete used key
       if verbose:
+        current_attr_sum = np.sum(attr[current_mask])
+        current_area_perc = np.mean(current_mask)
         logging.info(
             "{} of {} masks added,"
             "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
@@ -416,13 +437,11 @@ class XRAI(saliency.GradientSaliency):
                  verbose=0,
                  integer_segments=True):
     """We expect attr to be 2D, XRAI shape is equal to attr shape
-      Segs are list of binary masks, one per segment (pre-dilated if neeeded)
+      Segs are list of binary masks, one per segment
     """
     output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
     n_masks = len(segs)
-    current_attr_sum = 0.0
-    current_area_perc = 0.0
     current_mask = np.zeros(attr.shape, dtype=bool)
 
     masks_trace = []
@@ -443,10 +462,10 @@ class XRAI(saliency.GradientSaliency):
       else:
         attr_ranks[mask_diff] = i + 1
       current_mask = np.logical_or(current_mask, added_mask)
-      current_attr_sum = np.sum(attr[current_mask])
-      current_area_perc = np.mean(current_mask)
       output_attr[mask_diff] = sorted_sums[i]
       if verbose:
+        current_attr_sum = np.sum(attr[current_mask])
+        current_area_perc = np.mean(current_mask)
         logging.info("{} of {} masks added,"
                      "attr_sum: {}, area: {:.3g}/{:.3g}".format(
                          i, n_masks, current_attr_sum, current_area_perc,
