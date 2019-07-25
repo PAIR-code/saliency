@@ -15,7 +15,7 @@ from skimage.morphology import disk
 from skimage.transform import resize
 from future.utils import iteritems
 
-from .base import GradientSaliency
+from .base import SaliencyMask
 from .integrated_gradients import IntegratedGradients
 
 
@@ -23,9 +23,7 @@ def _normalize_image(im, value_range, resize_shape=None):
   im_max = np.max(im)
   im_min = np.min(im)
   im = (im - im_min) / (im_max - im_min)
-  im -= 0.5
-  im *= value_range[1] - value_range[0]
-  im += np.mean(value_range)
+  im = im * (value_range[1] - value_range[0]) + value_range[0]
   if resize_shape is not None:
     im = resize(im,
                 resize_shape,
@@ -56,7 +54,7 @@ def _get_segments_felsenschwab(im,
                   larger values cause more blobby segments, smaller values
                   get sharper areas. Defaults to 5.
   Returns:
-      masks:
+      masks: List of np.ndarrays size of HxW for im size of HxWxC
   """
 
   # TODO (tolgab) Set this to default float range of 0.0 - 1.0 and tune
@@ -200,7 +198,7 @@ class XRAIOutput(object):
     self.segments = None
 
 
-class XRAI(GradientSaliency):
+class XRAI(SaliencyMask):
 
   def __init__(self, graph, session, y, x):
     # Initialize integrated gradients
@@ -260,45 +258,37 @@ class XRAI(GradientSaliency):
                          baselines=None,
                          segments=None,
                          extra_parameters=None):
-    """[summary]
+    """Applies XRAI method on an input image and returns the result saliency
+    mask along with other detailed information.
+
 
     Args:
         x_value: input value, not batched.
-        feed_dict: [description]. Defaults to {}.
-        baselines: [description]. Defaults to None.
-        segments: [description]. Defaults to None.
-        extra_parameters: [description]. Defaults to None.
+        feed_dict: feed dictionary to pass to the TF session.run() call.
+                   Defaults to {}.
+        baselines: a list of baselines to use for calculating
+                   Integrated Gradients attribution. Every baseline in
+                   the list should have the same dimensions as the
+                   input. If the value is not set then the algorithm
+                   will make the best effort to select default
+                   baselines. Defaults to None.
+        segments: the list of precalculated image segments that should
+                  be passed to XRAI. Each element of the list is an
+                  [N,M] integer array, where NxM are the image
+                  dimensions. Each element of the list may provide
+                  information about multiple segments by encoding them
+                  with distinct integer values. If the value is None,
+                  a defaut segmentation algorithm will be applied. Defaults to
+                  None.
+        extra_parameters: an XraiParameters object that specifies
+                          additional parameters for the XRAI saliency
+                          method. Defaults to None.
 
     Raises:
         ValueError: If algorithm type is unknown (not full or fast)
 
     Returns:
         XRAIOutput: an object that contains the output of the XRAI algorithm.
-    """
-    """ Parameters:
-          x_value -
-          output_selector=None - the index of the output to calculate the
-                                 saliency for in the output tensor.
-          feed_dict:     - feed dictionary to pass to the TF session.run() call.
-          baselines=None - a list of baselines to use for calculating
-                           Integrated Gradients attribution. Every baseline in
-                           the list should have the same dimensions as the
-                           input. If the value is not set then the algorithm
-                           will make the best effort to select default
-                           baselines.
-          segments=None - the list of precalculated image segments that should
-                          be passed to XRAI. Each element of the list is an
-                          [N,M] integer array, where NxM are the image
-                          dimensions. Each element of the list may provide
-                          information about multiple segments by encoding them
-                          with distinct integer values. If the value is None,
-                          a defaut segmentation algorithm will be applied.
-          extra_parameters=None - a XraiParameters object that specifies
-                                  additional parameters for the XRAI saliency
-                                  method.
-
-        Returns:
-
 
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
@@ -451,12 +441,9 @@ class XRAI(GradientSaliency):
     attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
 
     # Sort all masks based on gain, ignore overlaps
-    attr_sums = [gain_fun(seg_mask, attr) for seg_mask in segs]
-    sorted_inds, sorted_sums = zip(
-        *sorted(zip(range(len(attr_sums)), attr_sums), key=lambda x: -x[1]))
-    sorted_inds = np.array(sorted_inds, dtype=np.int)
-    segs = np.array(segs)
-    segs = segs[sorted_inds]
+    seg_attrs = [gain_fun(seg_mask, attr) for seg_mask in segs]
+    segs, seg_attrs = zip(
+        *sorted(zip(segs, seg_attrs), key=lambda x: -x[1]))
 
     for i, added_mask in enumerate(segs):
       mask_diff = np.logical_and(np.logical_not(current_mask), added_mask)
