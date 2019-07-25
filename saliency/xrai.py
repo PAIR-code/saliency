@@ -241,7 +241,8 @@ class XRAI(SaliencyMask):
               baselines=None,
               segments=None,
               extra_parameters=None):
-    """ Output a np.ndarray heatmap of XRAI attributions with input shape.
+    """ Applies XRAI method on an input image and returns the result saliency
+    mask.
 
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
@@ -259,7 +260,7 @@ class XRAI(SaliencyMask):
                          segments=None,
                          extra_parameters=None):
     """Applies XRAI method on an input image and returns the result saliency
-    mask along with other detailed information.
+    heatmap along with other detailed information.
 
 
     Args:
@@ -409,12 +410,10 @@ class XRAI(SaliencyMask):
                 area_perc_th, len(remaining_masks)))
       added_masks_cnt += 1
 
-    ig_sum = np.sum(attr)
     uncomputed_mask = output_attr == -np.inf
     assert np.all(uncomputed_mask == (attr_ranks == 0))
     # Assign the uncomputed areas a value such that sum is same as ig
-    output_attr[uncomputed_mask] = (ig_sum -
-                                    current_attr_sum) / np.sum(uncomputed_mask)
+    output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
     # Set uncomputed region's rank to max rank + 1
     attr_ranks[uncomputed_mask] = np.max(attr_ranks) + 1
     if integer_segments:
