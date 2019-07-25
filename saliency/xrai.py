@@ -392,7 +392,7 @@ class XRAI(SaliencyMask):
       if len(remaining_masks) == 0:
         break
       added_mask = remaining_masks[best_key]
-      mask_diff = np.logical_and(np.logical_not(current_mask), added_mask)
+      mask_diff = _get_diff_mask(added_mask, current_mask)
       if not integer_segments:
         masks_trace.append(added_mask)
       else:
@@ -451,7 +451,7 @@ class XRAI(SaliencyMask):
       else:
         attr_ranks[mask_diff] = i + 1
       current_mask = np.logical_or(current_mask, added_mask)
-      output_attr[mask_diff] = sorted_sums[i]
+      output_attr[mask_diff] = seg_attrs[i]
       if verbose:
         current_attr_sum = np.sum(attr[current_mask])
         current_area_perc = np.mean(current_mask)
