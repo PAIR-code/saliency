@@ -13,7 +13,6 @@ from skimage import segmentation
 from skimage.morphology import dilation
 from skimage.morphology import disk
 from skimage.transform import resize
-from future.utils import iteritems
 
 from .base import SaliencyMask
 from .integrated_gradients import IntegratedGradients
@@ -374,7 +373,8 @@ class XRAI(SaliencyMask):
       best_gain = -np.inf
       best_key = None
       remove_key_queue = []
-      for mask_key, mask in iteritems(remaining_masks):
+      for mask_key in remaining_masks:
+        mask = remaining_masks[mask_key]
         # If mask does not add more than min_pixel_diff to current mask, remove
         mask_pixel_diff = _get_diff_cnt(mask, current_mask)
         if mask_pixel_diff < min_pixel_diff:
