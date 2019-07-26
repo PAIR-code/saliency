@@ -241,7 +241,37 @@ class XRAI(SaliencyMask):
               segments=None,
               extra_parameters=None):
     """ Applies XRAI method on an input image and returns the result saliency
-    mask.
+    heatmap.
+
+
+    Args:
+        x_value: input value, not batched.
+        feed_dict: feed dictionary to pass to the TF session.run() call.
+                   Defaults to {}.
+        baselines: a list of baselines to use for calculating
+                   Integrated Gradients attribution. Every baseline in
+                   the list should have the same dimensions as the
+                   input. If the value is not set then the algorithm
+                   will make the best effort to select default
+                   baselines. Defaults to None.
+        segments: the list of precalculated image segments that should
+                  be passed to XRAI. Each element of the list is an
+                  [N,M] integer array, where NxM are the image
+                  dimensions. Each element of the list may provide
+                  information about multiple segments by encoding them
+                  with distinct integer values. If the value is None,
+                  a defaut segmentation algorithm will be applied. Defaults to
+                  None.
+        extra_parameters: an XRAIParameters object that specifies
+                          additional parameters for the XRAI saliency
+                          method. Defaults to None.
+
+    Raises:
+        ValueError: If algorithm type is unknown (not full or fast)
+
+    Returns:
+        np.ndarray: A numpy array that contains the saliency heatmap.
+
 
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
@@ -280,7 +310,7 @@ class XRAI(SaliencyMask):
                   with distinct integer values. If the value is None,
                   a defaut segmentation algorithm will be applied. Defaults to
                   None.
-        extra_parameters: an XraiParameters object that specifies
+        extra_parameters: an XRAIParameters object that specifies
                           additional parameters for the XRAI saliency
                           method. Defaults to None.
 
@@ -353,6 +383,27 @@ class XRAI(SaliencyMask):
             verbose=0,
             min_pixel_diff=1,
             integer_segments=True):
+    """[summary]
+
+    Args:
+        attr: Source attributions for XRAI. XRAI attributions will be same size
+              as the input attr.
+        segs: Input segments as a list of boolean masks. XRAI uses these to
+              compute attribution sums.
+        gain_fun: The function that computes XRAI area attribution from source
+                  attributions. Defaults to _gain_density, which calculates the
+                  density of attributions of the mask (mean).
+        area_perc_th: [description]. Defaults to 1.0.
+        verbose: [description]. Defaults to 0.
+        min_pixel_diff: Do not consider masks that have difference less than
+                        this number compared to the current mask. Defaults to 1,
+                        meaning remove the masks that completely overlap with
+                        the current mask.
+        integer_segments: See XRAIParameters. Defaults to True.
+
+    Returns:
+        [type]: [description]
+    """
     """We expect attr to be 2D, XRAI shape is equal to attr shape
       Segs are list of binary masks, one per segment (pre-dilated if neeeded)
     """
@@ -429,6 +480,19 @@ class XRAI(SaliencyMask):
                  area_perc_th=1.0,
                  verbose=0,
                  integer_segments=True):
+    """[summary]
+
+    Args:
+        attr ([type]): [description]
+        segs ([type]): [description]
+        gain_fun ([type], optional): [description]. Defaults to _gain_density.
+        area_perc_th (float, optional): [description]. Defaults to 1.0.
+        verbose (int, optional): [description]. Defaults to 0.
+        integer_segments (bool, optional): [description]. Defaults to True.
+
+    Returns:
+        [type]: [description]
+    """
     """We expect attr to be 2D, XRAI shape is equal to attr shape
       Segs are list of binary masks, one per segment
     """
