@@ -73,7 +73,7 @@ def _get_segments_felsenschwab(im,
   segs = []
   for scale in SCALE_VALUES:
     for sigma in SIGMA_VALUES:
-      seg = segmentation.felzenszwalb(im, scale=scale, sigma=sigma, min_size=20)
+      seg = segmentation.felzenszwalb(im, scale=scale, sigma=sigma, min_size=200)
       if resize_image:
         seg = resize(seg,
                      original_shape,
@@ -381,7 +381,7 @@ class XRAI(SaliencyMask):
             gain_fun=_gain_density,
             area_perc_th=1.0,
             verbose=0,
-            min_pixel_diff=1,
+            min_pixel_diff=100,
             integer_segments=True):
     """[summary]
 
@@ -463,6 +463,7 @@ class XRAI(SaliencyMask):
     output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
     # Set uncomputed region's rank to max rank + 1
     masks_trace = zip(*sorted(masks_trace, key=lambda x: -x[1]))[0]
+    # masks_trace = zip(*masks_trace)[0]
     if integer_segments:
       attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
       for i, mask in enumerate(masks_trace):
@@ -479,6 +480,7 @@ class XRAI(SaliencyMask):
                  gain_fun=_gain_density,
                  area_perc_th=1.0,
                  verbose=0,
+                 min_pixel_diff=100,
                  integer_segments=True):
     """[summary]
 
