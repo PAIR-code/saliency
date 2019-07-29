@@ -383,7 +383,7 @@ class XRAI(SaliencyMask):
             verbose=0,
             min_pixel_diff=50,
             integer_segments=True):
-    """[summary]
+    """Run XRAI saliency given attributions and segments.
 
     Args:
         attr: Source attributions for XRAI. XRAI attributions will be same size
@@ -392,20 +392,23 @@ class XRAI(SaliencyMask):
               compute attribution sums.
         gain_fun: The function that computes XRAI area attribution from source
                   attributions. Defaults to _gain_density, which calculates the
-                  density of attributions of the mask (mean).
-        area_perc_th: [description]. Defaults to 1.0.
-        verbose: [description]. Defaults to 0.
+                  density of attributions in a mask.
+        area_perc_th: The saliency map is computed to cover area_perc_th of
+                      the image. Lower values will run faster, but produce
+                      uncomputed areas in the image that will be filled to
+                      satisfy completeness. Defaults to 1.0.
+        verbose: 1 prints information about every added mask. >2 prints
+                 information about skipped masks due to min_pixel_diff.
+                 Defaults to 0, which is silent.
         min_pixel_diff: Do not consider masks that have difference less than
-                        this number compared to the current mask. Defaults to 1,
-                        meaning remove the masks that completely overlap with
-                        the current mask.
+                        this number compared to the current mask. Set it to 1
+                        to remove masks that completely overlap with the
+                        current mask.
         integer_segments: See XRAIParameters. Defaults to True.
 
     Returns:
-        [type]: [description]
-    """
-    """We expect attr to be 2D, XRAI shape is equal to attr shape
-      Segs are list of binary masks, one per segment (pre-dilated if neeeded)
+        tuple: saliency heatmap and list of masks or an integer image with
+               area ranks depending on the parameter integer_segments.
     """
     output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
@@ -482,21 +485,32 @@ class XRAI(SaliencyMask):
                  verbose=0,
                  min_pixel_diff=50,
                  integer_segments=True):
-    """[summary]
+    """Run approximate XRAI saliency given attributions and segments. This
+       version does not consider mask overlap during importance ranking,
+       significantly speeding up the algorithm for less accurate results.
 
     Args:
-        attr ([type]): [description]
-        segs ([type]): [description]
-        gain_fun ([type], optional): [description]. Defaults to _gain_density.
-        area_perc_th (float, optional): [description]. Defaults to 1.0.
-        verbose (int, optional): [description]. Defaults to 0.
-        integer_segments (bool, optional): [description]. Defaults to True.
+        attr: Source attributions for XRAI. XRAI attributions will be same size
+              as the input attr.
+        segs: Input segments as a list of boolean masks. XRAI uses these to
+              compute attribution sums.
+        gain_fun: The function that computes XRAI area attribution from source
+                  attributions. Defaults to _gain_density, which calculates the
+                  density of attributions in a mask.
+        area_perc_th: This parameter is ignored. Fast version always computes
+                      to 1.0. It is left here for API compatibility.
+        verbose: 1 prints information about every added mask. >2 prints
+                 information about skipped masks due to min_pixel_diff.
+                 Defaults to 0, which is silent.
+        min_pixel_diff: Do not consider masks that have difference less than
+                        this number compared to the current mask. Set it to 1
+                        to remove masks that completely overlap with the
+                        current mask.
+        integer_segments: See XRAIParameters. Defaults to True.
 
     Returns:
-        [type]: [description]
-    """
-    """We expect attr to be 2D, XRAI shape is equal to attr shape
-      Segs are list of binary masks, one per segment
+        tuple: saliency heatmap and list of masks or an integer image with
+               area ranks depending on the parameter integer_segments.
     """
     output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
