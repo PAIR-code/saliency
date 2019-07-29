@@ -114,7 +114,7 @@ def _get_diff_cnt(add_mask, base_mask):
 def _unpack_segs_to_masks(segs):
   masks = []
   for seg in segs:
-    for l in xrange(seg.min(), seg.max() + 1):
+    for l in range(seg.min(), seg.max() + 1):
       masks.append(seg == l)
   return masks
 
@@ -381,7 +381,7 @@ class XRAI(SaliencyMask):
             gain_fun=_gain_density,
             area_perc_th=1.0,
             verbose=0,
-            min_pixel_diff=100,
+            min_pixel_diff=50,
             integer_segments=True):
     """[summary]
 
@@ -462,8 +462,8 @@ class XRAI(SaliencyMask):
     # Assign the uncomputed areas a value such that sum is same as ig
     output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
     # Set uncomputed region's rank to max rank + 1
-    masks_trace = zip(*sorted(masks_trace, key=lambda x: -x[1]))[0]
-    # masks_trace = zip(*masks_trace)[0]
+    masks_trace = list(zip(*sorted(masks_trace, key=lambda x: -x[1])))[0]
+    # masks_trace = list(zip(*masks_trace))[0]
     if integer_segments:
       attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
       for i, mask in enumerate(masks_trace):
@@ -480,7 +480,7 @@ class XRAI(SaliencyMask):
                  gain_fun=_gain_density,
                  area_perc_th=1.0,
                  verbose=0,
-                 min_pixel_diff=100,
+                 min_pixel_diff=50,
                  integer_segments=True):
     """[summary]
 
@@ -507,11 +507,18 @@ class XRAI(SaliencyMask):
 
     # Sort all masks based on gain, ignore overlaps
     seg_attrs = [gain_fun(seg_mask, attr) for seg_mask in segs]
-    segs, seg_attrs = zip(
-        *sorted(zip(segs, seg_attrs), key=lambda x: -x[1]))
+    segs, seg_attrs = list(zip(
+        *sorted(zip(segs, seg_attrs), key=lambda x: -x[1])))
 
     for i, added_mask in enumerate(segs):
       mask_diff = _get_diff_mask(added_mask, current_mask)
+       # If mask does not add more than min_pixel_diff to current mask, skip
+      mask_pixel_diff = _get_diff_cnt(added_mask, current_mask)
+      if mask_pixel_diff < min_pixel_diff:
+        if verbose > 2:
+          logging.info("Skipping mask with pixel difference: {:.3g},".format(
+              mask_pixel_diff))
+        continue
       mask_gain = gain_fun(mask_diff, attr)
       masks_trace.append((mask_diff, mask_gain))
       output_attr[mask_diff] = mask_gain
@@ -519,15 +526,16 @@ class XRAI(SaliencyMask):
       if verbose:
         current_attr_sum = np.sum(attr[current_mask])
         current_area_perc = np.mean(current_mask)
-        logging.info("{} of {} masks added,"
+        logging.info("{} of {} masks processed,"
                      "attr_sum: {}, area: {:.3g}/{:.3g}".format(
                          i + 1, n_masks, current_attr_sum, current_area_perc,
                          area_perc_th))
-    masks_trace = zip(*sorted(masks_trace, key=lambda x: -x[1]))[0]
+    masks_trace = list(zip(*sorted(masks_trace, key=lambda x: -x[1])))[0]
     if integer_segments:
       attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
       for i, mask in enumerate(masks_trace):
         attr_ranks[mask] = i + 1
+      attr_ranks[attr_ranks==0] = np.max(attr_ranks) + 1
       return output_attr, attr_ranks
     else:
       return output_attr, masks_trace
