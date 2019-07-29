@@ -413,7 +413,6 @@ class XRAI(SaliencyMask):
     output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
     n_masks = len(segs)
-    current_attr_sum = 0.0
     current_area_perc = 0.0
     current_mask = np.zeros(attr.shape, dtype=bool)
 
@@ -449,11 +448,11 @@ class XRAI(SaliencyMask):
       masks_trace.append((mask_diff, best_gain))
 
       current_mask = np.logical_or(current_mask, added_mask)
-      current_attr_sum = np.sum(attr[current_mask])
       current_area_perc = np.mean(current_mask)
       output_attr[mask_diff] = best_gain
       del remaining_masks[best_key]  # delete used key
       if verbose:
+        current_attr_sum = np.sum(attr[current_mask])
         logging.info(
             "{} of {} masks added,"
             "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
