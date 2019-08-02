@@ -462,7 +462,8 @@ class XRAI(SaliencyMask):
     # Assign the uncomputed areas a value such that sum is same as ig
     output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
     masks_trace = [v[0] for v in sorted(masks_trace, key=lambda x: -x[1])]
-    masks_trace.append(uncomputed_mask)
+    if np.any(uncomputed_mask):
+      masks_trace.append(uncomputed_mask)
     if integer_segments:
       attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
       for i, mask in enumerate(masks_trace):
@@ -534,8 +535,11 @@ class XRAI(SaliencyMask):
                      "attr_sum: {}, area: {:.3g}/{:.3g}".format(
                          i + 1, n_masks, current_attr_sum, current_area_perc,
                          area_perc_th))
-    masks_trace = [v[0] for v in sorted(masks_trace, key=lambda x: -x[1])]
     uncomputed_mask = output_attr == -np.inf
+    output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
+    masks_trace = [v[0] for v in sorted(masks_trace, key=lambda x: -x[1])]
+    if np.any(uncomputed_mask):
+      masks_trace.append(uncomputed_mask)
     masks_trace.append(uncomputed_mask)
     if integer_segments:
       attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
