@@ -148,9 +148,10 @@ class XRAIParameters(object):
     # value should be in the [0.0, 1.0] range, where 1.0 means that all segments
     # should be returned (slowest). Fast algorithm ignores this setting.
     self.area_threshold = area_threshold
+    # TODO(tolgab) Enable return_baseline_predictions
     # If set to True returns predictions for the baselines as float32 [B] array,
     # where B is the number of baselines. (see XraiOutput.baseline_predictions).
-    self.return_baseline_predictions = return_baseline_predictions
+    # self.return_baseline_predictions = return_baseline_predictions
     # If set to True, the XRAI output returns Integrated Gradients attributions
     # for every baseline. (see XraiOutput.ig_attribution)
     self.return_ig_attributions = return_ig_attributions
@@ -368,11 +369,12 @@ class XRAI(SaliencyMask):
     results.baselines = x_baselines
     if extra_parameters.return_xrai_segments:
       results.segments = attr_data
-    if extra_parameters.return_baseline_predictions:
-      baseline_predictions = []
-      for baseline in x_baselines:
-        baseline_predictions.append(self._predict(baseline))
-      results.baseline_predictions = baseline_predictions
+    # TODO(tolgab) Enable return_baseline_predictions
+    # if extra_parameters.return_baseline_predictions:
+    #   baseline_predictions = []
+    #   for baseline in x_baselines:
+    #     baseline_predictions.append(self._predict(baseline))
+    #   results.baseline_predictions = baseline_predictions
     if extra_parameters.return_ig_attributions:
       results.ig_attribution = attrs
     return results
@@ -536,6 +538,7 @@ class XRAI(SaliencyMask):
                          i + 1, n_masks, current_attr_sum, current_area_perc,
                          area_perc_th))
     uncomputed_mask = output_attr == -np.inf
+    # Assign the uncomputed areas a value such that sum is same as ig
     output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
     masks_trace = [v[0] for v in sorted(masks_trace, key=lambda x: -x[1])]
     if np.any(uncomputed_mask):
