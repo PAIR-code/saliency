@@ -172,7 +172,7 @@ class XRAIParameters(object):
     # algorithm.
     self.algorithm = algorithm
     # EXPERIMENTAL - Contains experimental parameters that may change in future.
-    self.experimental_params = {}
+    self.experimental_params = {'min_pixel_diff':50}
 
 
 class XRAIOutput(object):
@@ -350,12 +350,14 @@ class XRAI(SaliencyMask):
           attr=attr,
           segs=segs,
           area_perc_th=extra_parameters.area_threshold,
+          min_pixel_diff=extra_parameters.experimental_params['min_pixel_diff'],
           gain_fun=_gain_density,
           integer_segments=extra_parameters.flatten_xrai_segments)
     elif extra_parameters.algorithm == 'fast':
       attr_map, attr_data = self._xrai_fast(
           attr=attr,
           segs=segs,
+          min_pixel_diff=extra_parameters.experimental_params['min_pixel_diff'],
           gain_fun=_gain_density,
           integer_segments=extra_parameters.flatten_xrai_segments)
     else:
@@ -459,7 +461,7 @@ class XRAI(SaliencyMask):
     uncomputed_mask = output_attr == -np.inf
     # Assign the uncomputed areas a value such that sum is same as ig
     output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
-    masks_trace = list(zip(*sorted(masks_trace, key=lambda x: -x[1])))[0]
+    masks_trace = [v[0] for v in sorted(masks_trace, key=lambda x: -x[1])]
     masks_trace.append(uncomputed_mask)
     if integer_segments:
       attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
@@ -532,7 +534,7 @@ class XRAI(SaliencyMask):
                      "attr_sum: {}, area: {:.3g}/{:.3g}".format(
                          i + 1, n_masks, current_attr_sum, current_area_perc,
                          area_perc_th))
-    masks_trace = list(zip(*sorted(masks_trace, key=lambda x: -x[1])))[0]
+    masks_trace = [v[0] for v in sorted(masks_trace, key=lambda x: -x[1])]
     uncomputed_mask = output_attr == -np.inf
     masks_trace.append(uncomputed_mask)
     if integer_segments:
