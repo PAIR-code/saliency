@@ -328,6 +328,9 @@ class XRAI(SaliencyMask):
 
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
+    if extra_parameters is None:
+      extra_parameters = XRAIParameters()
+
     logger.info("Computing IG...")
     x_baselines = self._make_baselines(x_value, baselines)
 
