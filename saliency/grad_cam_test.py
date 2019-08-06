@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from grad_cam import *
+from .grad_cam import GradCam
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.platform import googletest

@@ -15,7 +15,7 @@
 
 import numpy as np
 import tensorflow as tf
-import integrated_gradients
+from . import integrated_gradients
 from tensorflow.python.platform import googletest
 
 
