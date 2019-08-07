@@ -18,8 +18,24 @@ from skimage.transform import resize
 from .base import SaliencyMask
 from .integrated_gradients import IntegratedGradients
 
+_FELZENSZWALB_SCALE_VALUES = [50, 100, 150, 250, 500, 1200]
+_FELZENSZWALB_SIGMA_VALUES = [0.8]
+_FELZENSZWALB_IM_RESIZE = (224, 224)
+_FELZENSZWALB_IM_VALUE_RANGE = [-1.0, 1.0]
+_FELZENSZWALB_MIN_SEGMENT_SIZE = 200
+
 
 def _normalize_image(im, value_range, resize_shape=None):
+  """Normalize an image by resizing it and rescaling its values
+
+  Args:
+      im: Input image.
+      value_range: [min_value, max_value]
+      resize_shape: New image shape. Defaults to None.
+
+  Returns:
+      Resized and rescaled image.
+  """
   im_max = np.max(im)
   im_min = np.min(im)
   im = (im - im_min) / (im_max - im_min)
@@ -34,11 +50,14 @@ def _normalize_image(im, value_range, resize_shape=None):
   return im
 
 
-def _get_segments_felsenschwab(im,
+def _get_segments_felzenszwalb(im,
                                resize_image=True,
                                scale_range=None,
                                dilation_rad=5):
-  """Compute image segments based on felsenschwab algorithm.
+  """Compute image segments based on Felzenszwalb's algorithm.
+
+  Efficient graph-based image segmentation, Felzenszwalb, P.F.
+  and Huttenlocher, D.P. International Journal of Computer Vision, 2004
 
   Args:
     im: Input image.
@@ -62,21 +81,22 @@ def _get_segments_felsenschwab(im,
   # TODO (tolgab) Set this to default float range of 0.0 - 1.0 and tune
   # parameters for that
   if scale_range is None:
-    scale_range = [-1.0, 1.0]
-  SCALE_VALUES = [50, 100, 150, 250, 500, 1200]
-  SIGMA_VALUES = [0.8]
+    scale_range = _FELZENSZWALB_IM_VALUE_RANGE
   # Normalize image value range and size
   original_shape = im.shape[:2]
   # TODO (tolgab) This resize is unnecessary with more intelligent param range
   # selection
   if resize_image:
-    im = _normalize_image(im, scale_range, (224, 224))
+    im = _normalize_image(im, scale_range, _FELZENSZWALB_IM_RESIZE)
   else:
     im = _normalize_image(im, scale_range)
   segs = []
-  for scale in SCALE_VALUES:
-    for sigma in SIGMA_VALUES:
-      seg = segmentation.felzenszwalb(im, scale=scale, sigma=sigma, min_size=200)
+  for scale in _FELZENSZWALB_SCALE_VALUES:
+    for sigma in _FELZENSZWALB_SIGMA_VALUES:
+      seg = segmentation.felzenszwalb(im,
+                                      scale=scale,
+                                      sigma=sigma,
+                                      min_size=_FELZENSZWALB_MIN_SEGMENT_SIZE)
       if resize_image:
         seg = resize(seg,
                      original_shape,
@@ -173,7 +193,7 @@ class XRAIParameters(object):
     # algorithm.
     self.algorithm = algorithm
     # EXPERIMENTAL - Contains experimental parameters that may change in future.
-    self.experimental_params = {'min_pixel_diff':50}
+    self.experimental_params = {'min_pixel_diff': 50}
 
 
 class XRAIOutput(object):
@@ -210,8 +230,7 @@ class XRAI(SaliencyMask):
   def __init__(self, graph, session, y, x):
     super(XRAI, self).__init__(graph, session, y, x)
     # Initialize integrated gradients.
-    self._integrated_gradients = IntegratedGradients(
-        graph, session, y, x)
+    self._integrated_gradients = IntegratedGradients(graph, session, y, x)
 
   def _get_integrated_gradients(self, im, feed_dict, baselines, steps):
     """ Takes mean of attributions from all baselines
@@ -267,11 +286,13 @@ class XRAI(SaliencyMask):
                   [N,M] boolean array, where NxM are the image
                   dimensions. Each elemeent on the list contains exactly the
                   mask that corresponds to one segment. If the value is None,
-                  a defaut segmentation algorithm will be applied. Defaults to
-                  None.
+                  Felzenszwalb's segmentation algorithm will be applied.
+                  Defaults to None.
         extra_parameters: an XRAIParameters object that specifies
                           additional parameters for the XRAI saliency
-                          method. Defaults to None.
+                          method. If it is None, an XRAIParameters object
+                          will be created with default parameters. See
+                          XRAIParameters for more details.
 
     Raises:
         ValueError: If algorithm type is unknown (not full or fast)
@@ -314,11 +335,13 @@ class XRAI(SaliencyMask):
                   [N,M] boolean array, where NxM are the image
                   dimensions. Each elemeent on the list contains exactly the
                   mask that corresponds to one segment. If the value is None,
-                  a defaut segmentation algorithm will be applied. Defaults to
-                  None.
+                  Felzenszwalb's segmentation algorithm will be applied.
+                  Defaults to None.
         extra_parameters: an XRAIParameters object that specifies
                           additional parameters for the XRAI saliency
-                          method. Defaults to None.
+                          method. If it is None, an XRAIParameters object
+                          will be created with default parameters. See
+                          XRAIParameters for more details.
 
     Raises:
         ValueError: If algorithm type is unknown (not full or fast)
@@ -347,7 +370,7 @@ class XRAI(SaliencyMask):
     if segments is not None:
       segs = segments
     else:
-      segs = _get_segments_felsenschwab(x_value)
+      segs = _get_segments_felzenszwalb(x_value)
 
     if extra_parameters.algorithm == 'full':
       attr_map, attr_data = self._xrai(
@@ -517,8 +540,8 @@ class XRAI(SaliencyMask):
 
     # Sort all masks based on gain, ignore overlaps
     seg_attrs = [gain_fun(seg_mask, attr) for seg_mask in segs]
-    segs, seg_attrs = list(zip(
-        *sorted(zip(segs, seg_attrs), key=lambda x: -x[1])))
+    segs, seg_attrs = list(
+        zip(*sorted(zip(segs, seg_attrs), key=lambda x: -x[1])))
 
     for i, added_mask in enumerate(segs):
       mask_diff = _get_diff_mask(added_mask, current_mask)
