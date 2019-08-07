@@ -7,7 +7,7 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 import numpy as np
 from skimage import segmentation
@@ -22,7 +22,7 @@ _FELZENSZWALB_SCALE_VALUES = [50, 100, 150, 250, 500, 1200]
 _FELZENSZWALB_SIGMA_VALUES = [0.8]
 _FELZENSZWALB_IM_RESIZE = (224, 224)
 _FELZENSZWALB_IM_VALUE_RANGE = [-1.0, 1.0]
-_FELZENSZWALB_MIN_SEGMENT_SIZE = 200
+_FELZENSZWALB_MIN_SEGMENT_SIZE = 150
 
 
 def _normalize_image(im, value_range, resize_shape=None):
@@ -354,7 +354,7 @@ class XRAI(SaliencyMask):
     if extra_parameters is None:
       extra_parameters = XRAIParameters()
 
-    logger.info("Computing IG...")
+    _logger.info("Computing IG...")
     x_baselines = self._make_baselines(x_value, baselines)
 
     attrs = self._get_integrated_gradients(x_value,
@@ -366,7 +366,7 @@ class XRAI(SaliencyMask):
     # Merge attribution channels for XRAI input
     attr = _attr_aggregation_max(attr)
 
-    logger.info("Done with IG. Computing XRAI...")
+    _logger.info("Done with IG. Computing XRAI...")
     if segments is not None:
       segs = segments
     else:
@@ -457,8 +457,8 @@ class XRAI(SaliencyMask):
         mask_pixel_diff = _get_diff_cnt(mask, current_mask)
         if mask_pixel_diff < min_pixel_diff:
           remove_key_queue.append(mask_key)
-          if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Skipping mask with pixel difference: {:.3g},".format(
+          if _logger.isEnabledFor(logging.DEBUG):
+            _logger.debug("Skipping mask with pixel difference: {:.3g},".format(
                 mask_pixel_diff))
           continue
         gain = gain_fun(mask, attr, mask2=current_mask)
@@ -477,9 +477,9 @@ class XRAI(SaliencyMask):
       current_area_perc = np.mean(current_mask)
       output_attr[mask_diff] = best_gain
       del remaining_masks[best_key]  # delete used key
-      if logger.isEnabledFor(logging.DEBUG):
+      if _logger.isEnabledFor(logging.DEBUG):
         current_attr_sum = np.sum(attr[current_mask])
-        logger.debug(
+        _logger.debug(
             "{} of {} masks added,"
             "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
                 added_masks_cnt, n_masks, current_attr_sum, current_area_perc,
@@ -548,18 +548,18 @@ class XRAI(SaliencyMask):
       # If mask does not add more than min_pixel_diff to current mask, skip
       mask_pixel_diff = _get_diff_cnt(added_mask, current_mask)
       if mask_pixel_diff < min_pixel_diff:
-        if logger.isEnabledFor(logging.DEBUG):
-          logger.debug("Skipping mask with pixel difference: {:.3g},".format(
+        if _logger.isEnabledFor(logging.DEBUG):
+          _logger.debug("Skipping mask with pixel difference: {:.3g},".format(
               mask_pixel_diff))
         continue
       mask_gain = gain_fun(mask_diff, attr)
       masks_trace.append((mask_diff, mask_gain))
       output_attr[mask_diff] = mask_gain
       current_mask = np.logical_or(current_mask, added_mask)
-      if logger.isEnabledFor(logging.DEBUG):
+      if _logger.isEnabledFor(logging.DEBUG):
         current_attr_sum = np.sum(attr[current_mask])
         current_area_perc = np.mean(current_mask)
-        logger.debug("{} of {} masks processed,"
+        _logger.debug("{} of {} masks processed,"
                      "attr_sum: {}, area: {:.3g}/{:.3g}".format(
                          i + 1, n_masks, current_attr_sum, current_area_perc,
                          area_perc_th))
