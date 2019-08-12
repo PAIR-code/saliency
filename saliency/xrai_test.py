@@ -1,4 +1,3 @@
-import logging
 import mock
 import numpy as np
 import skimage.draw as sk_draw
@@ -8,7 +7,6 @@ from . import xrai
 from .xrai import XRAI, XRAIParameters
 
 IMAGE_SIZE = 299
-logging.basicConfig(level=logging.DEBUG)
 
 
 class XraiTest(googletest.TestCase):
