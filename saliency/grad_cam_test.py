@@ -84,11 +84,11 @@ class GradCamTest(googletest.TestCase):
 
         #Compare generated mask to expected result
         ref_mask = np.array([[0.  , 0.  , 0.  , 0.  , 0.  ],
-                             [0.5 , 0.75, 1.  , 0.75, 0.5 ],
-                             [0.25, 0.25, 0.25, 0.25, 0.25],
-                             [0.5 , 0.75, 1.  , 0.75, 0.5 ],
+                             [0.33, 0.67, 1.  , 0.67, 0.33],
+                             [0.  , 0.  , 0.  , 0.  , 0.  ],
+                             [0.33, 0.67, 1.  , 0.67, 0.33],
                              [0.  , 0.  , 0.  , 0.  , 0.  ]])
-        self.assertTrue(np.array_equal(mask, ref_mask),
+        self.assertTrue(np.allclose(mask, ref_mask, atol=0.01),
                         "Generated mask did not match reference mask.")
 
 if __name__ == '__main__':
