@@ -186,8 +186,12 @@ class XraiTest(googletest.TestCase):
     # Calculate XRAI attribution using GetMask(...) method.
     heatmap = self.xrai.GetMask(x_value=self.input_image,
                                 base_attribution=base_attribution)
-    # Verify the result.
+    # Make sure that the GetMask() method doesn't return the same attribution
+    # that was passed to it.
     self.assertFalse(np.array_equal(base_attribution.max(axis=2), heatmap))
+    # The sum of XRAI attribution should be equal to the sum of the underlying
+    # base attribution. Internally the attribution that is used by XRAI is
+    # the max over color channels.
     self.assertAlmostEqual(base_attribution.max(axis=2).sum(), heatmap.sum())
 
     # Verify that the XRAI object didn't called Integrated Gradients.
