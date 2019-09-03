@@ -266,6 +266,7 @@ class XRAI(SaliencyMask):
               feed_dict={},
               baselines=None,
               segments=None,
+              base_attribution=None,
               extra_parameters=None):
     """ Applies XRAI method on an input image and returns the result saliency
     heatmap.
@@ -288,6 +289,11 @@ class XRAI(SaliencyMask):
                   mask that corresponds to one segment. If the value is None,
                   Felzenszwalb's segmentation algorithm will be applied.
                   Defaults to None.
+        base_attribution: an optional pre-calculated base attribution that XRAI
+                          should use. The shape of the parameter should match
+                          the shape of `x_value`. If the value is None, the
+                          method calculates Integrated Gradients attribution and
+                          uses it.
         extra_parameters: an XRAIParameters object that specifies
                           additional parameters for the XRAI saliency
                           method. If it is None, an XRAIParameters object
@@ -295,7 +301,8 @@ class XRAI(SaliencyMask):
                           XRAIParameters for more details.
 
     Raises:
-        ValueError: If algorithm type is unknown (not full or fast)
+        ValueError: If algorithm type is unknown (not full or fast).
+                    If the shape of `base_attribution` dosn't match the shape of `x_value`.
 
     Returns:
         np.ndarray: A numpy array that contains the saliency heatmap.
@@ -307,6 +314,7 @@ class XRAI(SaliencyMask):
                                       feed_dict=feed_dict,
                                       baselines=baselines,
                                       segments=segments,
+                                      base_attribution=base_attribution,
                                       extra_parameters=extra_parameters)
     return results.attribution_mask
 
@@ -315,6 +323,7 @@ class XRAI(SaliencyMask):
                          feed_dict={},
                          baselines=None,
                          segments=None,
+                         base_attribution=None,
                          extra_parameters=None):
     """Applies XRAI method on an input image and returns the result saliency
     heatmap along with other detailed information.
@@ -337,6 +346,11 @@ class XRAI(SaliencyMask):
                   mask that corresponds to one segment. If the value is None,
                   Felzenszwalb's segmentation algorithm will be applied.
                   Defaults to None.
+        base_attribution: an optional pre-calculated base attribution that XRAI
+                          should use. The shape of the parameter should match
+                          the shape of `x_value`. If the value is None, the
+                          method calculates Integrated Gradients attribution and
+                          uses it.
         extra_parameters: an XRAIParameters object that specifies
                           additional parameters for the XRAI saliency
                           method. If it is None, an XRAIParameters object
@@ -344,7 +358,8 @@ class XRAI(SaliencyMask):
                           XRAIParameters for more details.
 
     Raises:
-        ValueError: If algorithm type is unknown (not full or fast)
+        ValueError: If algorithm type is unknown (not full or fast).
+                    If the shape of `base_attribution` dosn't match the shape of `x_value`.
 
     Returns:
         XRAIOutput: an object that contains the output of the XRAI algorithm.
@@ -354,15 +369,32 @@ class XRAI(SaliencyMask):
     if extra_parameters is None:
       extra_parameters = XRAIParameters()
 
-    _logger.info("Computing IG...")
-    x_baselines = self._make_baselines(x_value, baselines)
+    # Check the shape of base_attribution.
+    if base_attribution is not None:
+      if not isinstance(base_attribution, np.ndarray):
+        base_attribution = np.array(base_attribution)
+      if base_attribution.shape != x_value.shape:
+        raise ValueError(
+          'The base attribution shape should be the same as the shape of '
+          '`x_value`. Expected {}, got {}'.format(
+            x_value.shape, base_attribution.shape))
 
-    attrs = self._get_integrated_gradients(x_value,
-                                           feed_dict=feed_dict,
-                                           baselines=x_baselines,
-                                           steps=extra_parameters.steps)
-    # Merge attributions from different baselines
-    attr = np.mean(attrs, axis=0)
+    # Calculate IG attribution if not provided by the caller.
+    if base_attribution is None:
+      _logger.info("Computing IG...")
+      x_baselines = self._make_baselines(x_value, baselines)
+
+      attrs = self._get_integrated_gradients(x_value,
+                                             feed_dict=feed_dict,
+                                             baselines=x_baselines,
+                                             steps=extra_parameters.steps)
+      # Merge attributions from different baselines.
+      attr = np.mean(attrs, axis=0)
+    else:
+      x_baselines = None
+      attrs = base_attribution
+      attr = base_attribution
+
     # Merge attribution channels for XRAI input
     attr = _attr_aggregation_max(attr)
 
