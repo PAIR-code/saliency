@@ -4,7 +4,7 @@
 
 This repository contains code for the following saliency techniques:
 
-*   XRAI* ([paper](https://arxiv.org/abs/1906.02825))
+*   XRAI* ([paper](https://arxiv.org/abs/1906.02825), [poster](https://github.com/PAIR-code/saliency/blob/poster/docs/ICCV_XRAI_Poster.pdf))
 *   SmoothGrad* ([paper](https://arxiv.org/abs/1706.03825))
 *   Vanilla Gradients
     ([paper](https://scholar.google.com/scholar?q=Visualizing+higher-layer+features+of+a+deep+network&btnG=&hl=en&as_sdt=0%2C22),
