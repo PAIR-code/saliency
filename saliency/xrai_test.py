@@ -180,6 +180,36 @@ class XraiTest(googletest.TestCase):
     self.assertTrue(np.array_equal(baseline_2, calls[1][2]['x_baseline']),
                     msg='IG was called with incorrect baseline.')
 
+  def testBaseAttribution(self):
+    base_attribution = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3)
+
+    # Calculate XRAI attribution using GetMask(...) method.
+    heatmap = self.xrai.GetMask(x_value=self.input_image,
+                                base_attribution=base_attribution)
+    # Make sure that the GetMask() method doesn't return the same attribution
+    # that was passed to it.
+    self.assertFalse(np.array_equal(base_attribution.max(axis=2), heatmap))
+    # The sum of XRAI attribution should be equal to the sum of the underlying
+    # base attribution. Internally the attribution that is used by XRAI is
+    # the max over color channels.
+    self.assertAlmostEqual(base_attribution.max(axis=2).sum(), heatmap.sum())
+
+    # Verify that the XRAI object didn't called Integrated Gradients.
+    calls = self.mock_ig_instance.method_calls
+    self.assertEqual(0, len(calls),
+                     'XRAI should not call Integrated Gradients.')
+
+  def testBaseAttributionMismatchedShape(self):
+    # Create base_attribution that shape doesn't match the input.
+    base_attribution = np.random.rand(IMAGE_SIZE, IMAGE_SIZE + 1, 3)
+
+    # Verify that the exception was raised.
+    with self.assertRaisesRegexp(ValueError, 'The base attribution shape '
+                                             'should'):
+      # Calling GetMask(...) should result in exception.
+      self.xrai.GetMask(x_value=self.input_image,
+                        base_attribution=base_attribution)
+
   def _assert_xrai_correctness(self, xrai_out, is_flatten_segments):
     """Performs general XRAIOutput verification that is applicable for all
        XRAI results.

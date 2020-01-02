@@ -2,10 +2,10 @@
 
 ## Introduction
 
-This repository contains code for [SmoothGrad](https://pair-code.github.io/saliency/), as well as implementations of
-several other saliency techniques. Each of these techniques can also be
-augmented with SmoothGrad. The techniques implemented in this library are:
+This repository contains code for the following saliency techniques:
 
+*   XRAI* ([paper](https://arxiv.org/abs/1906.02825), [poster](https://github.com/PAIR-code/saliency/blob/master/docs/ICCV_XRAI_Poster.pdf))
+*   SmoothGrad* ([paper](https://arxiv.org/abs/1706.03825))
 *   Vanilla Gradients
     ([paper](https://scholar.google.com/scholar?q=Visualizing+higher-layer+features+of+a+deep+network&btnG=&hl=en&as_sdt=0%2C22),
     [paper](https://arxiv.org/abs/1312.6034))
@@ -14,14 +14,23 @@ augmented with SmoothGrad. The techniques implemented in this library are:
 *   Occlusion
 *   Grad-CAM ([paper](https://arxiv.org/abs/1610.02391))
 
+\*Developed by PAIR.
+
 This list is by no means comprehensive. We are accepting pull requests to add
 new methods!
 
 ## Download
+
+```
+pip install saliency
+```
+
+or for the development version:
 ```
 git clone https://github.com/pair-code/saliency
 cd saliency
 ```
+
 
 ## Usage
 
