@@ -13,6 +13,7 @@ This repository contains code for the following saliency techniques:
 *   Integrated Gradients ([paper](https://arxiv.org/abs/1703.01365))
 *   Occlusion
 *   Grad-CAM ([paper](https://arxiv.org/abs/1610.02391))
+*   Blur IG
 
 \*Developed by PAIR.
 
