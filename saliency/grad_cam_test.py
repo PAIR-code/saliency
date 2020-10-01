@@ -82,7 +82,7 @@ class GradCamTest(googletest.TestCase):
                                 should_resize = True,
                                 three_dims = False)
 
-        #Compare generated mask to expected result
+        # Compare generated mask to expected result
         ref_mask = np.array([[0.  , 0.  , 0.  , 0.  , 0.  ],
                              [0.33, 0.67, 1.  , 0.67, 0.33],
                              [0.  , 0.  , 0.  , 0.  , 0.  ],

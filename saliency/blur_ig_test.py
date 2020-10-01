@@ -14,12 +14,10 @@
 
 """Tests completeness axiom for blur_ig.
 """
-
+from . import blur_ig
 import numpy as np
 import tensorflow.compat.v1 as tf
 from tensorflow.compat.v1.python.platform import googletest
-
-from . import blur_ig
 
 
 class BlurIgTest(googletest.TestCase):

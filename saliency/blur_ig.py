@@ -16,24 +16,26 @@
 
 Implementation of Integrated Gradients along the blur path.
 """
-
-import tensorflow.compat.v1 as tf
 import math
+
+from .base import GradientSaliency
 import numpy as np
 from scipy import ndimage
-from .base import GradientSaliency
+
 
 def gaussian_blur(image, sigma):
   """Returns Gaussian blur filtered 3d (WxHxC) image.
 
-  image: 3 dimensional ndarray / input image (W x H x C).
-  sigma: Standard deviation for Gaussian blur kernel.
+  Args:
+    image: 3 dimensional ndarray / input image (W x H x C).
+    sigma: Standard deviation for Gaussian blur kernel.
   """
   if sigma == 0:
     return image
   return ndimage.gaussian_filter(image,
                                  sigma=[sigma, sigma, 0],
                                  mode='constant')
+
 
 class BlurIG(GradientSaliency):
   """A SaliencyMask class that implements integrated gradients along blur path.
@@ -52,6 +54,7 @@ class BlurIG(GradientSaliency):
 
     Args:
       x_value: Input ndarray.
+      feed_dict: Feed dictionary for the model.
       max_sigma: Maximum size of the gaussian blur kernel.
       steps: Number of successive blur applications between x and until fully
        blurred image (with kernel max_sigma).

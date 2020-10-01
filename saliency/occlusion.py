@@ -15,7 +15,6 @@
 """Utilities to compute an Occlusion SaliencyMask."""
 
 import numpy as np
-import tensorflow.compat.v1 as tf
 
 from .base import SaliencyMask
 
