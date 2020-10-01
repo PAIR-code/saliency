@@ -17,7 +17,7 @@
 
 import numpy as np
 import tensorflow.compat.v1 as tf
-from tensorflow.python.platform import googletest
+from tensorflow.compat.v1.python.platform import googletest
 
 from . import blur_ig
 
