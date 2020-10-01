@@ -14,13 +14,13 @@
 # ==============================================================================
 from .grad_cam import GradCam
 import numpy as np
-import tensorflow as tf
-from tensorflow.python.platform import googletest
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.python.platform import googletest
 
 
 class GradCamTest(googletest.TestCase):
   """
-  To run: 
+  To run:
   "python -m saliency.grad_cam_test" from the PAIR-code/saliency directory.
   """
 
@@ -82,7 +82,7 @@ class GradCamTest(googletest.TestCase):
                                 should_resize = True,
                                 three_dims = False)
 
-        #Compare generated mask to expected result
+        # Compare generated mask to expected result
         ref_mask = np.array([[0.  , 0.  , 0.  , 0.  , 0.  ],
                              [0.33, 0.67, 1.  , 0.67, 0.33],
                              [0.  , 0.  , 0.  , 0.  , 0.  ],

@@ -14,7 +14,7 @@
 
 """Utilities to compute SaliencyMasks."""
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 class SaliencyMask(object):
   """Base class for saliency masks. Alone, this class doesn't do anything."""

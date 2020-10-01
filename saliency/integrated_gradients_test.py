@@ -14,9 +14,9 @@
 # ==============================================================================
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from . import integrated_gradients
-from tensorflow.python.platform import googletest
+from tensorflow.compat.v1.python.platform import googletest
 
 
 class IntegratedGradientsTest(googletest.TestCase):

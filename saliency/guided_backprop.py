@@ -15,7 +15,7 @@
 """Utilites to computed GuidedBackprop SaliencyMasks"""
 
 from .base import SaliencyMask
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 class GuidedBackprop(SaliencyMask):
   """A SaliencyMask class that computes saliency masks with GuidedBackProp.
