@@ -74,7 +74,7 @@ class GradCam(SaliencyMask):
         if should_resize:
             grad_cam = grad_cam / np.max(grad_cam) # values need to be [0,1] to be resized
             with self.graph.as_default():
-                grad_cam = np.squeeze(tf.image.resize_bilinear(
+                grad_cam = np.squeeze(tf.compat.v2.image.resize(
                     np.expand_dims(np.expand_dims(grad_cam, 0), 3), 
                     x_value.shape[:2]).eval(session=self.session))
 
