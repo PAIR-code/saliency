@@ -1,8 +1,8 @@
 import mock
 import numpy as np
 import skimage.draw as sk_draw
-import tensorflow as tf
-from tensorflow.python.platform import googletest
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.python.platform import googletest
 from . import xrai
 from .xrai import XRAI, XRAIParameters
 

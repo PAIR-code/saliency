@@ -15,7 +15,7 @@
 """Utilites to computed GuidedBackprop SaliencyMasks"""
 
 from .base import SaliencyMask
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 class GuidedBackprop(SaliencyMask):
   """A SaliencyMask class that computes saliency masks with GuidedBackProp.
@@ -30,7 +30,12 @@ class GuidedBackprop(SaliencyMask):
 
   GuidedReluRegistered = False
 
-  def __init__(self, graph, session, y, x):
+  def __init__(self,
+               graph,
+               session,
+               y,
+               x,
+               tmp_ckpt_path='/tmp/guided_backprop_ckpt'):
     """Constructs a GuidedBackprop SaliencyMask."""
     super(GuidedBackprop, self).__init__(graph, session, y, x)
 
@@ -47,7 +52,7 @@ class GuidedBackprop(SaliencyMask):
 
     with graph.as_default():
       saver = tf.train.Saver()
-      saver.save(session, '/tmp/guided_backprop_ckpt')
+      saver.save(session, tmp_ckpt_path)
 
     graph_def = graph.as_graph_def()
 
@@ -57,7 +62,7 @@ class GuidedBackprop(SaliencyMask):
       with self.guided_graph.gradient_override_map({'Relu': 'GuidedRelu'}):
         # Import the graph def, and all the variables.
         tf.import_graph_def(graph_def, name='')
-        saver.restore(self.guided_sess, '/tmp/guided_backprop_ckpt')
+        saver.restore(self.guided_sess, tmp_ckpt_path)
 
         imported_y = self.guided_graph.get_tensor_by_name(y.name)
         imported_x = self.guided_graph.get_tensor_by_name(x.name)

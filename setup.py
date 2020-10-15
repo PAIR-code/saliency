@@ -22,7 +22,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.0.5',
+    version='0.0.6',
 
     description='Saliency methods for TensorFlow',
     long_description=long_description,
@@ -76,5 +76,5 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy', 'tensorflow'],
+    install_requires=['numpy', 'tensorflow>=1.15'],
 )

@@ -14,7 +14,6 @@
 
 """Utilities to compute an IntegratedGradients SaliencyMask."""
 
-import tensorflow as tf
 import numpy as np
 from .base import GradientSaliency
 

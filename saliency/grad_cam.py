@@ -14,23 +14,23 @@
 
 """Utilities to compute SaliencyMasks."""
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from .base import SaliencyMask
 
 class GradCam(SaliencyMask):
     """A SaliencyMask class that computes saliency masks with Grad-CAM.
-  
+
     https://arxiv.org/abs/1610.02391
 
     Example usage (based on Examples.ipynb):
 
     grad_cam = GradCam(graph, sess, y, images, conv_layer = end_points['Mixed_7c'])
-    grad_mask_2d = grad_cam.GetMask(im, feed_dict = {neuron_selector: prediction_class}, 
-                                    should_resize = False, 
+    grad_mask_2d = grad_cam.GetMask(im, feed_dict = {neuron_selector: prediction_class},
+                                    should_resize = False,
                                     three_dims = False)
 
-    The Grad-CAM paper suggests using the last convolutional layer, which would 
+    The Grad-CAM paper suggests using the last convolutional layer, which would
     be 'Mixed_5c' in inception_v2 and 'Mixed_7c' in inception_v3.
 
     """
@@ -42,20 +42,20 @@ class GradCam(SaliencyMask):
     def GetMask(self, x_value, feed_dict={}, should_resize = True, three_dims = True):
         """
         Returns a Grad-CAM mask.
-        
+
         Modified from https://github.com/Ankush96/grad-cam.tensorflow/blob/master/main.py#L29-L62
 
         Args:
           x_value: Input value, not batched.
           feed_dict: (Optional) feed dictionary to pass to the session.run call.
-          should_resize: boolean that determines whether a low-res Grad-CAM mask should be 
+          should_resize: boolean that determines whether a low-res Grad-CAM mask should be
               upsampled to match the size of the input image
           three_dims: boolean that determines whether the grayscale mask should be converted
               into a 3D mask by copying the 2D mask value's into each color channel
-            
+
         """
         feed_dict[self.x] = [x_value]
-        (output, grad) = self.session.run([self.conv_layer, self.gradients_node], 
+        (output, grad) = self.session.run([self.conv_layer, self.gradients_node],
                                                feed_dict=feed_dict)
         output = output[0]
         grad = grad[0]
