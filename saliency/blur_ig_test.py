@@ -17,10 +17,10 @@
 from . import blur_ig
 import numpy as np
 import tensorflow.compat.v1 as tf
-from tensorflow.compat.v1.python.platform import googletest
+from tensorflow import test
 
 
-class BlurIgTest(googletest.TestCase):
+class BlurIgTest(test.TestCase):
   """
   To run:
   "python -m saliency.blur_ig_test" from the PAIR-code/saliency directory.
@@ -64,4 +64,4 @@ class BlurIgTest(googletest.TestCase):
 
 
 if __name__ == '__main__':
-  googletest.main()
+  test.main()

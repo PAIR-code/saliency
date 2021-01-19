@@ -15,10 +15,10 @@
 from .grad_cam import GradCam
 import numpy as np
 import tensorflow.compat.v1 as tf
-from tensorflow.compat.v1.python.platform import googletest
+from tensorflow import test
 
 
-class GradCamTest(googletest.TestCase):
+class GradCamTest(test.TestCase):
   """
   To run:
   "python -m saliency.grad_cam_test" from the PAIR-code/saliency directory.
@@ -92,4 +92,4 @@ class GradCamTest(googletest.TestCase):
                         "Generated mask did not match reference mask.")
 
 if __name__ == '__main__':
-  googletest.main()
+  test.main()

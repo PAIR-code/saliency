@@ -16,10 +16,10 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 from . import integrated_gradients
-from tensorflow.compat.v1.python.platform import googletest
+from tensorflow import test
 
 
-class IntegratedGradientsTest(googletest.TestCase):
+class IntegratedGradientsTest(test.TestCase):
   """
   To run:
   "python -m saliency.integrated_gradients_test" from the PAIR-code/saliency
@@ -54,4 +54,4 @@ class IntegratedGradientsTest(googletest.TestCase):
 
 
 if __name__ == '__main__':
-  googletest.main()
+  test.main()

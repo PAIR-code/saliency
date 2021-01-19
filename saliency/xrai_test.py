@@ -2,14 +2,14 @@ import mock
 import numpy as np
 import skimage.draw as sk_draw
 import tensorflow.compat.v1 as tf
-from tensorflow.compat.v1.python.platform import googletest
+from tensorflow import test
 from . import xrai
 from .xrai import XRAI, XRAIParameters
 
 IMAGE_SIZE = 299
 
 
-class XraiTest(googletest.TestCase):
+class XraiTest(test.TestCase):
   """
   To run:
   "python -m saliency.xrai_test" from the PAIR-code/saliency directory.
@@ -278,4 +278,4 @@ class XraiTest(googletest.TestCase):
 
 
 if __name__ == '__main__':
-  googletest.main()
+  test.main()
