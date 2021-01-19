@@ -15,19 +15,27 @@
 """Utilities to compute an IntegratedGradients SaliencyMask."""
 
 import numpy as np
-from .base import GradientSaliency
+from .base import CallModelSaliency
 
-class IntegratedGradients(GradientSaliency):
-  """A SaliencyMask class that implements the integrated gradients method.
+class IntegratedGradients(CallModelSaliency):
+  """A CallModelSaliency class that implements the integrated gradients method.
 
   https://arxiv.org/abs/1703.01365
   """
 
-  def GetMask(self, x_value, feed_dict={}, x_baseline=None, x_steps=25):
+  def GetMask(self, x_value, call_model_function, call_model_args=None,
+              x_baseline=None, x_steps=25):
     """Returns a integrated gradients mask.
 
     Args:
-      x_value: input ndarray.
+      x_value: Input values to be passed to call_model function.
+      call_model_function: Function that when called with an np.ndarray with
+        shape equal to the input value and call_model_args, returns relevant
+        outputs read from the model in the form of a dict of np.ndarrays.
+        For this method, call_model_function should return the following keys:
+          - 'output_gradients'
+      call_model_args: (Optional) Extra parameters that are passed to the
+        call_model_function.
       x_baseline: Baseline value used in integration. Defaults to 0.
       x_steps: Number of integrated steps between baseline and x.
     """
@@ -43,7 +51,8 @@ class IntegratedGradients(GradientSaliency):
     for alpha in np.linspace(0, 1, x_steps):
       x_step = x_baseline + alpha * x_diff
 
-      total_gradients += super(IntegratedGradients, self).GetMask(
-          x_step, feed_dict)
+      call_model_data = call_model_function(
+          x_step, call_model_args, expected_keys=['gradients'])
+      total_gradients += call_model_data['output_gradients']
 
     return total_gradients * x_diff / x_steps

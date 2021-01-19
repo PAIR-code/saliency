@@ -17,7 +17,7 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 
 class SaliencyMask(object):
-  """Base class for saliency masks. Alone, this class doesn't do anything."""
+  """Base class for TF saliency masks. Alone, this class doesn't do anything."""
   def __init__(self, graph, session, y, x):
     """Constructs a SaliencyMask by computing dy/dx.
 
@@ -95,3 +95,62 @@ class GradientSaliency(SaliencyMask):
     """
     feed_dict[self.x] = [x_value]
     return self.session.run(self.gradients_node, feed_dict=feed_dict)[0]
+
+
+class CallModelSaliency(object):
+  r"""Base class for saliency masks. Alone, this class doesn't do anything."""
+
+  def __init__(self):
+    pass
+
+  def GetMask(self, x_value, call_model_function, call_model_args=None):
+    """Returns an unsmoothed mask.
+
+    Args:
+      x_value: Input values to be passed to call_model function.
+      call_model_function: Function that when called with an np.ndarray with
+        shape equal to the input value and call_model_args, returns relevant
+        outputs read from the model in the form of a dict of np.ndarrays.
+      call_model_args: (Optional) Extra parameters that are passed to the
+        call_model_function.
+
+    """
+    raise NotImplementedError('A derived class should implemented GetMask()')
+
+  def GetSmoothedMask(self,
+                      x_value,
+                      call_model_function,
+                      call_model_args=None,
+                      stdev_spread=.15,
+                      nsamples=25,
+                      magnitude=True,
+                      **kwargs):
+    """Returns a mask that is smoothed with the SmoothGrad method.
+
+    Args:
+      x_value: Input value, not batched.
+      call_model_function: Function that when called with an np.ndarray with
+        shape equal to the input value and call_model_args, returns relevant
+        outputs read from the model in the form of a dict of np.ndarrays.
+      call_model_args: (Optional) Extra parameters that are passed to the
+        call_model_function.
+      stdev_spread: Amount of noise to add to the input, as fraction of the
+                    total spread (x_max - x_min). Defaults to 15%.
+      nsamples: Number of samples to average across to get the smooth gradient.
+      magnitude: If true, computes the sum of squares of gradients instead of
+                 just the sum. Defaults to true.
+    """
+    stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
+
+    total_gradients = np.zeros_like(x_value)
+    for _ in range(nsamples):
+      noise = np.random.normal(0, stdev, x_value.shape)
+      x_plus_noise = x_value + noise
+      grad = self.GetMask(x_plus_noise, call_model_function, call_model_args,
+                          **kwargs)
+      if magnitude:
+        total_gradients += (grad * grad)
+      else:
+        total_gradients += grad
+
+    return total_gradients / nsamples

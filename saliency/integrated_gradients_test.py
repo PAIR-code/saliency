@@ -27,30 +27,46 @@ class IntegratedGradientsTest(test.TestCase):
   """
 
   def testIntegratedGradientsGetMask(self):
+    
+    def create_call_model_function(session, grad_node, x):
+      def call_model(x_value, call_model_args={}, expected_keys=None):
+        call_model_args[x] = [x_value]
+        data = session.run(grad_node, feed_dict=call_model_args)
+        return {'output_gradients' : data[0]}
+      return call_model
+
     with tf.Graph().as_default() as graph:
       x = tf.placeholder(shape=[None, 3], dtype=tf.float32)
       y = 5 * x[:, 0] + x[:, 0] * x[:, 1] + tf.sin(x[:, 2])
-      with tf.Session() as sess:
-        # Calculate the value of `y` at the baseline.
-        x_baseline_val = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-        y_baseline_val = sess.run(y, feed_dict={x: x_baseline_val})
+      gradients_node = tf.gradients(y, x)[0]
+      sess = tf.Session(graph=graph)
 
-        # Calculate the value of `y` at the input.
-        x_input_val = np.array([[1.0, 2.0, 3.0]], dtype=np.float)
-        y_input_val = sess.run(y, feed_dict={x: x_input_val})
+      # Calculate the value of `y` at the baseline.
+      x_baseline_val = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
+      y_baseline_val = sess.run(y, feed_dict={x: x_baseline_val})
 
-        # Due to mathematical properties of the integrated gradients,
-        # the expected IG value is equal to the difference between
-        # the `y` value at the input and the `y` value at the baseline.
-        expected_val = y_input_val[0] - y_baseline_val[0]
+      # Calculate the value of `y` at the input.
+      x_input_val = np.array([[1.0, 2.0, 3.0]], dtype=np.float)
+      y_input_val = sess.run(y, feed_dict={x: x_input_val})
 
-        # Calculate the integrated gradients attribution of the input.
-        ig = integrated_gradients.IntegratedGradients(graph, sess, y[0], x)
-        mask = ig.GetMask(x_value=x_input_val[0], feed_dict={},
-                          x_baseline=x_baseline_val[0], x_steps=1000)
+      # Due to mathematical properties of the integrated gradients,
+      # the expected IG value is equal to the difference between
+      # the `y` value at the input and the `y` value at the baseline.
+      expected_val = y_input_val[0] - y_baseline_val[0]
 
-        # Verify the result.
-        self.assertAlmostEqual(expected_val, mask.sum(), places=3)
+      # Create a call_model_function using sess and tensors.
+      call_model_function = create_call_model_function(sess, gradients_node, x)
+
+      # Calculate the integrated gradients attribution of the input.
+      ig = integrated_gradients.IntegratedGradients()
+      mask = ig.GetMask(x_value=x_input_val[0], 
+                        call_model_function=call_model_function,
+                        call_model_args={},
+                        x_baseline=x_baseline_val[0], 
+                        x_steps=1000)
+
+      # Verify the result.
+      self.assertAlmostEqual(expected_val, mask.sum(), places=3)
 
 
 if __name__ == '__main__':
