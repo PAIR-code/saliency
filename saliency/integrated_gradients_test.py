@@ -18,6 +18,7 @@ import tensorflow.compat.v1 as tf
 from . import integrated_gradients
 from tensorflow import test
 
+OUTPUT_GRADIENTS = integrated_gradients.OUTPUT_GRADIENTS
 
 class IntegratedGradientsTest(test.TestCase):
   """
@@ -30,9 +31,9 @@ class IntegratedGradientsTest(test.TestCase):
     
     def create_call_model_function(session, grad_node, x):
       def call_model(x_value, call_model_args={}, expected_keys=None):
-        call_model_args[x] = [x_value]
+        call_model_args[x] = x_value
         data = session.run(grad_node, feed_dict=call_model_args)
-        return {'output_gradients' : data[0]}
+        return {OUTPUT_GRADIENTS : data[0]}
       return call_model
 
     with tf.Graph().as_default() as graph:

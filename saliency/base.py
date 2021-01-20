@@ -97,6 +97,9 @@ class GradientSaliency(SaliencyMask):
     return self.session.run(self.gradients_node, feed_dict=feed_dict)[0]
 
 
+OUTPUT_GRADIENTS = 'OUTPUT_GRADIENTS'
+
+
 class CallModelSaliency(object):
   r"""Base class for saliency masks. Alone, this class doesn't do anything."""
 

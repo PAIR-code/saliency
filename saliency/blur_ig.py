@@ -18,7 +18,7 @@ Implementation of Integrated Gradients along the blur path.
 """
 import math
 
-from .base import GradientSaliency
+from .base import CallModelSaliency, OUTPUT_GRADIENTS
 import numpy as np
 from scipy import ndimage
 
@@ -37,7 +37,7 @@ def gaussian_blur(image, sigma):
                                  mode='constant')
 
 
-class BlurIG(GradientSaliency):
+class BlurIG(CallModelSaliency):
   """A SaliencyMask class that implements integrated gradients along blur path.
 
   Generates a saliency mask by computing integrated gradients for a given input
@@ -45,8 +45,9 @@ class BlurIG(GradientSaliency):
   TODO(vsubhashini): Add link to paper after it goes up on arxiv.
   """
 
-  def GetMask(self, x_value, feed_dict={}, max_sigma=50, steps=100,
-              grad_step=0.01, sqrt=False):
+  def GetMask(self, x_value, call_model_function, call_model_args=None, 
+                feed_dict={}, max_sigma=50, steps=100, 
+                grad_step=0.01, sqrt=False):
     """Returns an integrated gradients mask.
 
     TODO(vsubhashini): Decide if we want to restrict and find explanation
@@ -75,8 +76,10 @@ class BlurIG(GradientSaliency):
       x_step = gaussian_blur(x_value, sigmas[i])
       gaussian_gradient = (gaussian_blur(x_value, sigmas[i] + grad_step)
                            - x_step) / grad_step
+      call_model_data = call_model_function(
+          [x_step], call_model_args, expected_keys=[OUTPUT_GRADIENTS])
       total_gradients += step_vector_diff[i] * np.multiply(
-          gaussian_gradient, super(BlurIG, self).GetMask(x_step, feed_dict))
+          gaussian_gradient, call_model_data[OUTPUT_GRADIENTS])
 
     total_gradients *= -1.0
     return total_gradients

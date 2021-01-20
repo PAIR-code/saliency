@@ -19,6 +19,7 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 from tensorflow import test
 
+OUTPUT_GRADIENTS = blur_ig.OUTPUT_GRADIENTS
 
 class BlurIgTest(test.TestCase):
   """
@@ -27,11 +28,21 @@ class BlurIgTest(test.TestCase):
   """
 
   def testBlurIGGetMask(self):
+    
+    def create_call_model_function(session, grad_node, x):
+      def call_model(x_value, call_model_args={}, expected_keys=None):
+        call_model_args[x] = x_value
+        data = session.run(grad_node, feed_dict=call_model_args)
+        return {OUTPUT_GRADIENTS : data[0]}
+      return call_model
+
     max_sigma = 10
     with tf.Graph().as_default() as graph:
       x = tf.placeholder(shape=[None, 5, 5, 1], dtype=tf.float32)
       # Define function to just look at center pixel.
       y = x[:, 2, 2, 0] * 1.0
+      gradients_node = tf.gradients(y, x)[0]
+
       with tf.Session() as sess:
         # All black except 1 white pixel at the center.
         x_input_val = np.array([[0.0, 0.0, 0.0, 0.0, 0.0],
@@ -53,10 +64,15 @@ class BlurIgTest(test.TestCase):
         # the `y` value at the input and the `y` value at the baseline.
         expected_val = y_input_val[0] - y_baseline_val[0]
 
+        # Create a call_model_function using sess and tensors.
+        call_model_function = create_call_model_function(
+          sess, gradients_node, x)
+
         # Calculate the Blur IG attribution of the input.
-        blur_ig_instance = blur_ig.BlurIG(graph, sess, y[0], x)
+        blur_ig_instance = blur_ig.BlurIG()
         mask = blur_ig_instance.GetMask(
-            x_input_val, feed_dict={}, max_sigma=max_sigma, steps=200)
+            x_value=x_input_val, call_model_function=call_model_function,
+            call_model_args={}, feed_dict={}, max_sigma=max_sigma, steps=200)
         # Verify the result for completeness..
         # Expected (for max_sigma=10): 0.9984083
         # mask.sum (for max_sigma=10): 0.99832882...

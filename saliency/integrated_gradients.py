@@ -15,7 +15,8 @@
 """Utilities to compute an IntegratedGradients SaliencyMask."""
 
 import numpy as np
-from .base import CallModelSaliency
+from .base import CallModelSaliency, OUTPUT_GRADIENTS
+
 
 class IntegratedGradients(CallModelSaliency):
   """A CallModelSaliency class that implements the integrated gradients method.
@@ -52,7 +53,7 @@ class IntegratedGradients(CallModelSaliency):
       x_step = x_baseline + alpha * x_diff
 
       call_model_data = call_model_function(
-          x_step, call_model_args, expected_keys=['gradients'])
-      total_gradients += call_model_data['output_gradients']
+          [x_step], call_model_args, expected_keys=[OUTPUT_GRADIENTS])
+      total_gradients += call_model_data[OUTPUT_GRADIENTS]
 
     return total_gradients * x_diff / x_steps
