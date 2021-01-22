@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from .grad_cam import GradCam
+from .grad_cam import GradCam, CONVOLUTION_GRADIENTS, CONVOLUTION_LAYER
 import numpy as np
 import tensorflow.compat.v1 as tf
 from tensorflow import test
@@ -34,6 +34,20 @@ class GradCamTest(test.TestCase):
     be along the two horizontal lines in the image (exact expected values stored
     in ref_mask).
     """
+    
+    def create_call_model_function(session, conv_layer, x):
+      gradients_node = tf.gradients(conv_layer, x)[0]
+
+      def call_model(x_value, call_model_args={}, expected_keys=None):
+        call_model_args[x] = x_value
+        (output, grad) = session.run([conv_layer, gradients_node], 
+                                      feed_dict=call_model_args)
+        return {CONVOLUTION_GRADIENTS : grad[0],
+                CONVOLUTION_LAYER : output[0]}
+
+      return call_model
+
+
     with tf.Graph().as_default() as graph:
       # Input placeholder
       num_pix = 5 # width and height of input images in pixels
@@ -57,8 +71,6 @@ class GradCamTest(test.TestCase):
       logits = tf.layers.dense(inputs = flat, units = 2,
                                kernel_initializer = sum_weights,
                                name = "Logits")
-      predictions = {"classes": tf.argmax(input=logits, axis=1),
-                     "probs": tf.nn.softmax(logits, name="softmax")}
 
       with tf.Session() as sess:
         init = tf.global_variables_initializer()
@@ -70,15 +82,16 @@ class GradCamTest(test.TestCase):
         y = logits[0][neuron_selector]
         conv_layer = graph.get_tensor_by_name("Conv/BiasAdd:0")
 
-        grad_cam = GradCam(graph, sess, y, images, conv_layer)
+        call_model_function = create_call_model_function(sess, conv_layer, images)
+        grad_cam = GradCam()
 
         # Generate test input (centered matrix of 1s surrounded by 0s)
         # and generate corresponding GradCAM mask
         img = np.zeros([num_pix,num_pix])
         img[1:-1,1:-1] = 1
         img = img.reshape([num_pix,num_pix,1])
-        mask = grad_cam.GetMask(img,
-                                feed_dict={neuron_selector: 0},
+        mask = grad_cam.GetMask(img, call_model_function=call_model_function,
+                                call_model_args={neuron_selector: 0},
                                 should_resize = True,
                                 three_dims = False)
 

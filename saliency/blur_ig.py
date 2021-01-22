@@ -45,9 +45,8 @@ class BlurIG(CallModelSaliency):
   TODO(vsubhashini): Add link to paper after it goes up on arxiv.
   """
 
-  def GetMask(self, x_value, call_model_function, call_model_args=None, 
-                feed_dict={}, max_sigma=50, steps=100, 
-                grad_step=0.01, sqrt=False):
+  def GetMask(self, x_value, call_model_function, call_model_args=None,
+                max_sigma=50, steps=100, grad_step=0.01, sqrt=False):
     """Returns an integrated gradients mask.
 
     TODO(vsubhashini): Decide if we want to restrict and find explanation

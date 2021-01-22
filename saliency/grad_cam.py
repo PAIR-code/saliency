@@ -16,17 +16,18 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 
-from .base import SaliencyMask
+from .base import CallModelSaliency, CONVOLUTION_LAYER, CONVOLUTION_GRADIENTS
 
-class GradCam(SaliencyMask):
-    """A SaliencyMask class that computes saliency masks with Grad-CAM.
+class GradCam(CallModelSaliency):
+    """A CallModelSaliency class that computes saliency masks with Grad-CAM.
 
     https://arxiv.org/abs/1610.02391
 
     Example usage (based on Examples.ipynb):
 
-    grad_cam = GradCam(graph, sess, y, images, conv_layer = end_points['Mixed_7c'])
-    grad_mask_2d = grad_cam.GetMask(im, feed_dict = {neuron_selector: prediction_class},
+    grad_cam = GradCam()
+    grad_mask_2d = grad_cam.GetMask(im, call_model_function,
+                                    call_model_args = {neuron_selector: prediction_class},
                                     should_resize = False,
                                     three_dims = False)
 
@@ -34,12 +35,9 @@ class GradCam(SaliencyMask):
     be 'Mixed_5c' in inception_v2 and 'Mixed_7c' in inception_v3.
 
     """
-    def __init__(self, graph, session, y, x, conv_layer):
-        super(GradCam, self).__init__(graph, session, y, x)
-        self.conv_layer = conv_layer
-        self.gradients_node = tf.gradients(y, conv_layer)[0]
 
-    def GetMask(self, x_value, feed_dict={}, should_resize = True, three_dims = True):
+    def GetMask(self, x_value, call_model_function, call_model_args=None,
+                    should_resize = True, three_dims = True):
         """
         Returns a Grad-CAM mask.
 
@@ -54,18 +52,17 @@ class GradCam(SaliencyMask):
               into a 3D mask by copying the 2D mask value's into each color channel
 
         """
-        feed_dict[self.x] = [x_value]
-        (output, grad) = self.session.run([self.conv_layer, self.gradients_node],
-                                               feed_dict=feed_dict)
-        output = output[0]
-        grad = grad[0]
+        data = call_model_function(
+                [x_value], call_model_args, 
+                expected_keys=[CONVOLUTION_LAYER, CONVOLUTION_GRADIENTS])
 
-        weights = np.mean(grad, axis=(0,1))
-        grad_cam = np.zeros(output.shape[0:2], dtype=np.float32)
+        weights = np.mean(data[CONVOLUTION_GRADIENTS], axis=(0,1))
+        grad_cam = np.zeros(data[CONVOLUTION_LAYER].shape[0:2], 
+                                dtype=np.float32)
 
         # weighted average
         for i, w in enumerate(weights):
-            grad_cam += w * output[:, :, i]
+            grad_cam += w * data[CONVOLUTION_LAYER][:, :, i]
 
         # pass through relu
         grad_cam = np.maximum(grad_cam, 0)
@@ -73,10 +70,10 @@ class GradCam(SaliencyMask):
         # resize heatmap to be the same size as the input
         if should_resize:
             grad_cam = grad_cam / np.max(grad_cam) # values need to be [0,1] to be resized
-            with self.graph.as_default():
+            with tf.Graph().as_default():
                 grad_cam = np.squeeze(tf.image.resize_bilinear(
                     np.expand_dims(np.expand_dims(grad_cam, 0), 3),
-                    x_value.shape[:2]).eval(session=self.session))
+                    x_value.shape[:2]).eval(session=tf.Session()))
 
         # convert grayscale to 3-D
         if three_dims:

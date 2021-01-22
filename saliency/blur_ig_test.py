@@ -72,7 +72,7 @@ class BlurIgTest(test.TestCase):
         blur_ig_instance = blur_ig.BlurIG()
         mask = blur_ig_instance.GetMask(
             x_value=x_input_val, call_model_function=call_model_function,
-            call_model_args={}, feed_dict={}, max_sigma=max_sigma, steps=200)
+            call_model_args={}, max_sigma=max_sigma, steps=200)
         # Verify the result for completeness..
         # Expected (for max_sigma=10): 0.9984083
         # mask.sum (for max_sigma=10): 0.99832882...
