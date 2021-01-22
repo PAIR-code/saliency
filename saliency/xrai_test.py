@@ -16,6 +16,8 @@ class XraiTest(test.TestCase):
   """
 
   def setUp(self):
+    def call_model_function():
+      return
     # Mock IntegratedGradients.
     self.mock_ig = mock.patch(__name__ + '.xrai.IntegratedGradients').start()
     self.input_image = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) * 0.3 + 0.5
@@ -32,7 +34,8 @@ class XraiTest(test.TestCase):
     self.ig_mask = np.asarray([self.ig_bl_1_attr, self.ig_bl_2_attr]).mean(
         axis=0)
     # A mocked XRAI object that uses neither the graph, session, x or y values.
-    self.xrai = XRAI(tf.Graph(), tf.Session(), y=np.array([0]), x=np.array([0]))
+    self.xrai = XRAI()
+    self.call_model_function = call_model_function
 
   def tearDown(self):
     self.mock_ig.stop()
@@ -45,6 +48,7 @@ class XraiTest(test.TestCase):
                                  area_threshold=1.0,
                                  return_ig_attributions=True)
     xrai_out = self.xrai.GetMaskWithDetails(x_value=self.input_image,
+                                            call_model_function=self.call_model_function,
                                             extra_parameters=xrai_params)
 
     # Verify the result.
@@ -52,6 +56,7 @@ class XraiTest(test.TestCase):
 
     # Calculate XRAI attribution using GetMask(...) method.
     heatmap = self.xrai.GetMask(x_value=self.input_image,
+                                call_model_function=self.call_model_function,
                                 extra_parameters=xrai_params)
 
     # Verify that the heatmaps returned by GetMaskWithDetails(...) and
@@ -65,6 +70,7 @@ class XraiTest(test.TestCase):
                                  algorithm='fast',
                                  return_ig_attributions=True)
     xrai_out = self.xrai.GetMaskWithDetails(x_value=self.input_image,
+                                            call_model_function=self.call_model_function,
                                             extra_parameters=xrai_params)
 
     # Verify the result.
@@ -72,6 +78,7 @@ class XraiTest(test.TestCase):
 
     # Calculate XRAI attribution using GetMask(...) method.
     heatmap = self.xrai.GetMask(x_value=self.input_image,
+                                call_model_function=self.call_model_function,
                                 extra_parameters=xrai_params)
 
     # Verify that the heatmaps returned by GetMaskWithDetails(...) and
@@ -86,6 +93,7 @@ class XraiTest(test.TestCase):
                                  algorithm='full',
                                  return_ig_attributions=True)
     xrai_out = self.xrai.GetMaskWithDetails(x_value=self.input_image,
+                                            call_model_function=self.call_model_function,
                                             extra_parameters=xrai_params)
 
     # Verify the result.
@@ -93,6 +101,7 @@ class XraiTest(test.TestCase):
 
     # Calculate XRAI attribution using GetMask(...) method.
     heatmap = self.xrai.GetMask(x_value=self.input_image,
+                                call_model_function=self.call_model_function,
                                 extra_parameters=xrai_params)
 
     # Verify that the heatmaps returned by GetMaskWithDetails(...) and
@@ -106,12 +115,14 @@ class XraiTest(test.TestCase):
                                  algorithm='fast',
                                  return_ig_attributions=True)
     xrai_out = self.xrai.GetMaskWithDetails(x_value=self.input_image,
+                                            call_model_function=self.call_model_function,
                                             extra_parameters=xrai_params)
     # Verify the result.
     self._assert_xrai_correctness(xrai_out, is_flatten_segments=False)
 
     # Calculate XRAI attribution using GetMask(...) method.
     heatmap = self.xrai.GetMask(x_value=self.input_image,
+                                call_model_function=self.call_model_function,
                                 extra_parameters=xrai_params)
 
     # Verify that the heatmaps returned by GetMaskWithDetails(...) and
@@ -137,6 +148,7 @@ class XraiTest(test.TestCase):
                                  area_threshold=1.0,
                                  return_ig_attributions=True)
     xrai_out = self.xrai.GetMaskWithDetails(x_value=self.input_image,
+                                            call_model_function=self.call_model_function,
                                             extra_parameters=xrai_params,
                                             segments=[seg_1, seg_2])
 
@@ -168,6 +180,7 @@ class XraiTest(test.TestCase):
     baseline_1 = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3)
     baseline_2 = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3)
     self.xrai.GetMask(x_value=self.input_image,
+                      call_model_function=self.call_model_function,
                       baselines=[baseline_1, baseline_2])
 
     # Verify that the XRAI object called Integrated Gradients with the baselines
@@ -185,6 +198,7 @@ class XraiTest(test.TestCase):
 
     # Calculate XRAI attribution using GetMask(...) method.
     heatmap = self.xrai.GetMask(x_value=self.input_image,
+                                call_model_function=self.call_model_function,
                                 base_attribution=base_attribution)
     # Make sure that the GetMask() method doesn't return the same attribution
     # that was passed to it.
@@ -208,6 +222,7 @@ class XraiTest(test.TestCase):
                                              'should'):
       # Calling GetMask(...) should result in exception.
       self.xrai.GetMask(x_value=self.input_image,
+                        call_model_function=self.call_model_function,
                         base_attribution=base_attribution)
 
   def _assert_xrai_correctness(self, xrai_out, is_flatten_segments):

@@ -15,7 +15,7 @@ from skimage.morphology import dilation
 from skimage.morphology import disk
 from skimage.transform import resize
 
-from .base import SaliencyMask
+from .base import CallModelSaliency, OUTPUT_GRADIENTS
 from .integrated_gradients import IntegratedGradients
 
 _FELZENSZWALB_SCALE_VALUES = [50, 100, 150, 250, 500, 1200]
@@ -225,23 +225,24 @@ class XRAIOutput(object):
     self.segments = None
 
 
-class XRAI(SaliencyMask):
+class XRAI(CallModelSaliency):
 
-  def __init__(self, graph, session, y, x):
-    super(XRAI, self).__init__(graph, session, y, x)
+  def __init__(self):
+    super(XRAI, self).__init__()
     # Initialize integrated gradients.
-    self._integrated_gradients = IntegratedGradients(graph, session, y, x)
+    self._integrated_gradients = IntegratedGradients()
 
-  def _get_integrated_gradients(self, im, feed_dict, baselines, steps):
+  def _get_integrated_gradients(self, im, call_model_function, 
+                                  call_model_args, baselines, steps):
     """ Takes mean of attributions from all baselines
     """
     grads = []
     for baseline in baselines:
-      grads.append(
-          self._integrated_gradients.GetMask(im,
-                                             feed_dict=feed_dict,
-                                             x_baseline=baseline,
-                                             x_steps=steps))
+      grads.append(self._integrated_gradients.GetMask(im, call_model_function,
+                    call_model_args=call_model_args,
+                    x_baseline=baseline,
+                    x_steps=steps))
+          
     return grads
 
   def _make_baselines(self, x_value, x_baselines):
@@ -263,7 +264,8 @@ class XRAI(SaliencyMask):
 
   def GetMask(self,
               x_value,
-              feed_dict={},
+              call_model_function,
+              call_model_args={},
               baselines=None,
               segments=None,
               base_attribution=None,
@@ -311,7 +313,8 @@ class XRAI(SaliencyMask):
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
     results = self.GetMaskWithDetails(x_value,
-                                      feed_dict=feed_dict,
+                                      call_model_function,
+                                      call_model_args=call_model_args,
                                       baselines=baselines,
                                       segments=segments,
                                       base_attribution=base_attribution,
@@ -320,7 +323,8 @@ class XRAI(SaliencyMask):
 
   def GetMaskWithDetails(self,
                          x_value,
-                         feed_dict={},
+                         call_model_function,
+                         call_model_args={},
                          baselines=None,
                          segments=None,
                          base_attribution=None,
@@ -385,7 +389,8 @@ class XRAI(SaliencyMask):
       x_baselines = self._make_baselines(x_value, baselines)
 
       attrs = self._get_integrated_gradients(x_value,
-                                             feed_dict=feed_dict,
+                                             call_model_function,
+                                             call_model_args=call_model_args,
                                              baselines=x_baselines,
                                              steps=extra_parameters.steps)
       # Merge attributions from different baselines.
