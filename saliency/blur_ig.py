@@ -61,7 +61,23 @@ class BlurIG(CallModelSaliency):
 
     Args:
       x_value: Input ndarray.
-      feed_dict: Feed dictionary for the model.
+      call_model_function: A function that interfaces with a model to return
+        specific data in a dictionary when given an input and other arguments.
+        Expected function signature:
+        - call_model_function(x_value_batch,
+                              call_model_args=None,
+                              expected_keys=None):
+          x_value_batch - Input for the model, given as a batch (i.e. dimension
+            0 is the batch dimension, dimensions 1 through n represent a single
+            input).
+          call_model_args - Other arguments used to call and run the model.
+          expected_keys - List of keys that are expected in the output. For this
+            method (Blur IG), the expected keys are
+            OUTPUT_GRADIENTS - Gradients of the output layer (logit/softmax)
+              with respect to the input. Shape should be the same shape as
+              x_value_batch.
+      call_model_args: The arguments that will be passed to the call model
+        function, for every call of the model.
       max_sigma: Maximum size of the gaussian blur kernel.
       steps: Number of successive blur applications between x and until fully
        blurred image (with kernel max_sigma).

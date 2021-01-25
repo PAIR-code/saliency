@@ -27,8 +27,8 @@ class IntegratedGradientsTest(test.TestCase):
   def testIntegratedGradientsGetMask(self):
 
     def create_call_model_function(session, grad_node, x):
-      def call_model(x_value, call_model_args={}, expected_keys=None):
-        call_model_args[x] = x_value
+      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+        call_model_args[x] = x_value_batch
         data = session.run(grad_node, feed_dict=call_model_args)
         return {OUTPUT_GRADIENTS: data[0]}
 

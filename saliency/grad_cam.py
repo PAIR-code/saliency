@@ -51,8 +51,25 @@ class GradCam(CallModelSaliency):
     https://github.com/Ankush96/grad-cam.tensorflow/blob/master/main.py#L29-L62
 
     Args:
-      x_value: Input value, not batched.
-      feed_dict: (Optional) feed dictionary to pass to the session.run call.
+      x_value: Input ndarray.
+      call_model_function: A function that interfaces with a model to return
+        specific data in a dictionary when given an input and other arguments.
+        Expected function signature:
+        - call_model_function(x_value_batch,
+                              call_model_args=None,
+                              expected_keys=None):
+          x_value_batch - Input for the model, given as a batch (i.e. dimension
+            0 is the batch dimension, dimensions 1 through n represent a single
+            input).
+          call_model_args - Other arguments used to call and run the model.
+          expected_keys - List of keys that are expected in the output. For this
+            method (GradCAM), the expected keys are
+            CONVOLUTION_GRADIENTS - Gradients of the last convolution layer
+              with respect to the input.
+            CONVOLUTION_OUTPUT - Output of the last convolution layer
+              for the given input.
+      call_model_args: The arguments that will be passed to the call model
+        function, for every call of the model.
       should_resize: boolean that determines whether a low-res Grad-CAM mask
         should be upsampled to match the size of the input image
       three_dims: boolean that determines whether the grayscale mask should be

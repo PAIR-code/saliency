@@ -38,8 +38,8 @@ class GradCamTest(test.TestCase):
     def create_call_model_function(session, conv_layer, x):
       gradients_node = tf.gradients(conv_layer, x)[0]
 
-      def call_model(x_value, call_model_args={}, expected_keys=None):
-        call_model_args[x] = x_value
+      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+        call_model_args[x] = x_value_batch
         (output, grad) = session.run([conv_layer, gradients_node],
                                      feed_dict=call_model_args)
         return {CONVOLUTION_GRADIENTS: grad[0], CONVOLUTION_LAYER: output[0]}

@@ -30,14 +30,24 @@ class IntegratedGradients(CallModelSaliency):
     """Returns a integrated gradients mask.
 
     Args:
-      x_value: Input values to be passed to call_model function.
-      call_model_function: Function that when called with an np.ndarray with
-        shape equal to the input value and call_model_args, returns relevant
-        outputs read from the model in the form of a dict of np.ndarrays.
-        For this method, call_model_function should return the following keys:
-          - 'output_gradients'
-      call_model_args: (Optional) Extra parameters that are passed to the
-        call_model_function.
+      x_value: Input ndarray.
+      call_model_function: A function that interfaces with a model to return
+        specific data in a dictionary when given an input and other arguments.
+        Expected function signature:
+        - call_model_function(x_value_batch,
+                              call_model_args=None,
+                              expected_keys=None):
+          x_value_batch - Input for the model, given as a batch (i.e. dimension
+            0 is the batch dimension, dimensions 1 through n represent a single
+            input).
+          call_model_args - Other arguments used to call and run the model.
+          expected_keys - List of keys that are expected in the output. For this
+            method (Integrated Gradients), the expected keys are
+            OUTPUT_GRADIENTS - Gradients of the output layer (logit/softmax)
+              with respect to the input. Shape should be the same shape as
+              x_value_batch.
+      call_model_args: The arguments that will be passed to the call model
+        function, for every call of the model.
       x_baseline: Baseline value used in integration. Defaults to 0.
       x_steps: Number of integrated steps between baseline and x.
     """

@@ -1,7 +1,9 @@
+import mock
 import numpy as np
 import skimage.draw as sk_draw
 from tensorflow import test
 import tensorflow.compat.v1 as tf
+from . import xrai
 from .xrai import XRAI
 from .xrai import XRAIParameters
 
@@ -12,7 +14,6 @@ class XraiTest(test.TestCase):
   """To run: "python -m saliency.xrai_test" from the top-level directory."""
 
   def setUp(self):
-    super(test.TestCase, self).setUp()
     def call_model_function():
       return
     # Mock IntegratedGradients.
@@ -35,7 +36,6 @@ class XraiTest(test.TestCase):
     self.call_model_function = call_model_function
 
   def tearDown(self):
-    super(test.TestCase, self).tearDown()
     self.mock_ig.stop()
 
   def testXraiGetMaskFullFlat(self):

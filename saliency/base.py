@@ -115,12 +115,20 @@ class CallModelSaliency(object):
     """Returns an unsmoothed mask.
 
     Args:
-      x_value: Input values to be passed to call_model function.
-      call_model_function: Function that when called with an np.ndarray with
-        shape equal to the input value and call_model_args, returns relevant
-        outputs read from the model in the form of a dict of np.ndarrays.
-      call_model_args: (Optional) Extra parameters that are passed to the
-        call_model_function.
+      x_value: Input ndarray.
+      call_model_function: A function that interfaces with a model to return
+        specific data in a dictionary when given an input and other arguments.
+        Expected function signature:
+        - call_model_function(x_value_batch,
+                              call_model_args=None,
+                              expected_keys=None):
+          x_value_batch - Input for the model, given as a batch (i.e. dimension
+            0 is the batch dimension, dimensions 1 through n represent a single
+            input).
+          call_model_args - Other arguments used to call and run the model.
+          expected_keys - List of keys that are expected in the output.
+      call_model_args: The arguments that will be passed to the call model
+        function, for every call of the model.
 
     """
     raise NotImplementedError('A derived class should implemented GetMask()')
@@ -136,12 +144,20 @@ class CallModelSaliency(object):
     """Returns a mask that is smoothed with the SmoothGrad method.
 
     Args:
-      x_value: Input value, not batched.
-      call_model_function: Function that when called with an np.ndarray with
-        shape equal to the input value and call_model_args, returns relevant
-        outputs read from the model in the form of a dict of np.ndarrays.
-      call_model_args: (Optional) Extra parameters that are passed to the
-        call_model_function.
+      x_value: Input ndarray.
+      call_model_function: A function that interfaces with a model to return
+        specific data in a dictionary when given an input and other arguments.
+        Expected function signature:
+        - call_model_function(x_value_batch,
+                              call_model_args=None,
+                              expected_keys=None):
+          x_value_batch - Input for the model, given as a batch (i.e. dimension
+            0 is the batch dimension, dimensions 1 through n represent a single
+            input).
+          call_model_args - Other arguments used to call and run the model.
+          expected_keys - List of keys that are expected in the output.
+      call_model_args: The arguments that will be passed to the call model
+        function, for every call of the model.
       stdev_spread: Amount of noise to add to the input, as fraction of the
                     total spread (x_max - x_min). Defaults to 15%.
       nsamples: Number of samples to average across to get the smooth gradient.
