@@ -13,27 +13,25 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
-import tensorflow.compat.v1 as tf
 from . import integrated_gradients
+import numpy as np
 from tensorflow import test
+import tensorflow.compat.v1 as tf
 
 OUTPUT_GRADIENTS = integrated_gradients.OUTPUT_GRADIENTS
 
+
 class IntegratedGradientsTest(test.TestCase):
-  """
-  To run:
-  "python -m saliency.integrated_gradients_test" from the PAIR-code/saliency
-  directory.
-  """
+  """To run: "python -m saliency.integrated_gradients_test" from the top-level directory."""
 
   def testIntegratedGradientsGetMask(self):
-    
+
     def create_call_model_function(session, grad_node, x):
       def call_model(x_value, call_model_args={}, expected_keys=None):
         call_model_args[x] = x_value
         data = session.run(grad_node, feed_dict=call_model_args)
-        return {OUTPUT_GRADIENTS : data[0]}
+        return {OUTPUT_GRADIENTS: data[0]}
+
       return call_model
 
     with tf.Graph().as_default() as graph:
@@ -60,10 +58,10 @@ class IntegratedGradientsTest(test.TestCase):
 
       # Calculate the integrated gradients attribution of the input.
       ig = integrated_gradients.IntegratedGradients()
-      mask = ig.GetMask(x_value=x_input_val[0], 
+      mask = ig.GetMask(x_value=x_input_val[0],
                         call_model_function=call_model_function,
                         call_model_args={},
-                        x_baseline=x_baseline_val[0], 
+                        x_baseline=x_baseline_val[0],
                         x_steps=1000)
 
       # Verify the result.

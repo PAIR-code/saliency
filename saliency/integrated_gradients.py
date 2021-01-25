@@ -14,8 +14,9 @@
 
 """Utilities to compute an IntegratedGradients SaliencyMask."""
 
+from .base import CallModelSaliency
+from .base import OUTPUT_GRADIENTS
 import numpy as np
-from .base import CallModelSaliency, OUTPUT_GRADIENTS
 
 
 class IntegratedGradients(CallModelSaliency):

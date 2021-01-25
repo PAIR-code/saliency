@@ -16,24 +16,23 @@
 """
 from . import blur_ig
 import numpy as np
-import tensorflow.compat.v1 as tf
 from tensorflow import test
+import tensorflow.compat.v1 as tf
 
 OUTPUT_GRADIENTS = blur_ig.OUTPUT_GRADIENTS
 
+
 class BlurIgTest(test.TestCase):
-  """
-  To run:
-  "python -m saliency.blur_ig_test" from the PAIR-code/saliency directory.
-  """
+  """To run: "python -m saliency.blur_ig_test" top-level saliency directory."""
 
   def testBlurIGGetMask(self):
-    
+
     def create_call_model_function(session, grad_node, x):
       def call_model(x_value, call_model_args={}, expected_keys=None):
         call_model_args[x] = x_value
         data = session.run(grad_node, feed_dict=call_model_args)
-        return {OUTPUT_GRADIENTS : data[0]}
+        return {OUTPUT_GRADIENTS: data[0]}
+
       return call_model
 
     max_sigma = 10
@@ -66,7 +65,7 @@ class BlurIgTest(test.TestCase):
 
         # Create a call_model_function using sess and tensors.
         call_model_function = create_call_model_function(
-          sess, gradients_node, x)
+            sess, gradients_node, x)
 
         # Calculate the Blur IG attribution of the input.
         blur_ig_instance = blur_ig.BlurIG()

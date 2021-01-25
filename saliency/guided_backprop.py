@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilites to computed GuidedBackprop SaliencyMasks"""
+"""Utilites to computed GuidedBackprop SaliencyMasks."""
 
 from .base import SaliencyMask
 import tensorflow.compat.v1 as tf
+
 
 class GuidedBackprop(SaliencyMask):
   """A SaliencyMask class that computes saliency masks with GuidedBackProp.
@@ -28,7 +29,7 @@ class GuidedBackprop(SaliencyMask):
   backprop.
   """
 
-  GuidedReluRegistered = False
+  guided_relu_registered = False
 
   def __init__(self,
                graph,
@@ -41,14 +42,14 @@ class GuidedBackprop(SaliencyMask):
 
     self.x = x
 
-    if GuidedBackprop.GuidedReluRegistered is False:
+    if not GuidedBackprop.guided_relu_registered:
       #### Acknowledgement to Chris Olah ####
-      @tf.RegisterGradient("GuidedRelu")
+      @tf.RegisterGradient('GuidedRelu')
       def _GuidedReluGrad(op, grad):
-        gate_g = tf.cast(grad > 0, "float32")
-        gate_y = tf.cast(op.outputs[0] > 0, "float32")
+        gate_g = tf.cast(grad > 0, 'float32')
+        gate_y = tf.cast(op.outputs[0] > 0, 'float32')
         return gate_y * gate_g * grad
-    GuidedBackprop.GuidedReluRegistered = True
+    GuidedBackprop.guided_relu_registered = True
 
     with graph.as_default():
       saver = tf.train.Saver()
@@ -58,7 +59,7 @@ class GuidedBackprop(SaliencyMask):
 
     self.guided_graph = tf.Graph()
     with self.guided_graph.as_default():
-      self.guided_sess = tf.Session(graph = self.guided_graph)
+      self.guided_sess = tf.Session(graph=self.guided_graph)
       with self.guided_graph.gradient_override_map({'Relu': 'GuidedRelu'}):
         # Import the graph def, and all the variables.
         tf.import_graph_def(graph_def, name='')
@@ -69,7 +70,7 @@ class GuidedBackprop(SaliencyMask):
 
         self.guided_grads_node = tf.gradients(imported_y, imported_x)[0]
 
-  def GetMask(self, x_value, feed_dict = {}):
+  def GetMask(self, x_value, feed_dict={}):
     """Returns a GuidedBackprop mask."""
     with self.guided_graph.as_default():
       # Move all the feed dict tensor keys to refer to the same tensor on the
@@ -80,4 +81,4 @@ class GuidedBackprop(SaliencyMask):
       guided_feed_dict[self.x.name] = [x_value]
 
     return self.guided_sess.run(
-        self.guided_grads_node, feed_dict = guided_feed_dict)[0]
+        self.guided_grads_node, feed_dict=guided_feed_dict)[0]

@@ -16,8 +16,10 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 
+
 class SaliencyMask(object):
   """Base class for TF saliency masks. Alone, this class doesn't do anything."""
+
   def __init__(self, graph, session, y, x):
     """Constructs a SaliencyMask by computing dy/dx.
 
@@ -68,7 +70,7 @@ class SaliencyMask(object):
     stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
 
     total_gradients = np.zeros_like(x_value)
-    for i in range(nsamples):
+    for _ in range(nsamples):
       noise = np.random.normal(0, stdev, x_value.shape)
       x_plus_noise = x_value + noise
       grad = self.GetMask(x_plus_noise, feed_dict, **kwargs)
@@ -78,6 +80,7 @@ class SaliencyMask(object):
         total_gradients += grad
 
     return total_gradients / nsamples
+
 
 class GradientSaliency(SaliencyMask):
   r"""A SaliencyMask class that computes saliency masks with a gradient."""

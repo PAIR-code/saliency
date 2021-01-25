@@ -14,9 +14,9 @@
 
 """Utilities to compute an Occlusion SaliencyMask."""
 
+from .base import SaliencyMask
 import numpy as np
 
-from .base import SaliencyMask
 
 class Occlusion(SaliencyMask):
   """A SaliencyMask class that computes saliency masks by occluding the image.
@@ -26,10 +26,7 @@ class Occlusion(SaliencyMask):
   evidence for the class, otherwise it is negative evidence.
   """
 
-  def __init__(self, graph, session, y, x):
-    super(Occlusion, self).__init__(graph, session, y, x)
-
-  def GetMask(self, x_value, feed_dict = {}, size = 15, value = 0):
+  def GetMask(self, x_value, feed_dict={}, size=15, value=0):
     """Returns an occlusion mask."""
     occlusion_window = np.array([size, size, x_value.shape[2]])
     occlusion_window.fill(value)

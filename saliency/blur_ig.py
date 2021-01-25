@@ -18,7 +18,8 @@ Implementation of Integrated Gradients along the blur path.
 """
 import math
 
-from .base import CallModelSaliency, OUTPUT_GRADIENTS
+from .base import CallModelSaliency
+from .base import OUTPUT_GRADIENTS
 import numpy as np
 from scipy import ndimage
 
@@ -45,8 +46,14 @@ class BlurIG(CallModelSaliency):
   TODO(vsubhashini): Add link to paper after it goes up on arxiv.
   """
 
-  def GetMask(self, x_value, call_model_function, call_model_args=None,
-                max_sigma=50, steps=100, grad_step=0.01, sqrt=False):
+  def GetMask(self,
+              x_value,
+              call_model_function,
+              call_model_args=None,
+              max_sigma=50,
+              steps=100,
+              grad_step=0.01,
+              sqrt=False):
     """Returns an integrated gradients mask.
 
     TODO(vsubhashini): Decide if we want to restrict and find explanation

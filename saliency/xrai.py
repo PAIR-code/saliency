@@ -1,5 +1,6 @@
-"""Implementation of XRAI algorithm from the paper:
-https://arxiv.org/abs/1906.02825
+"""Implementation of XRAI algorithm.
+
+Paper: https://arxiv.org/abs/1906.02825
 """
 
 from __future__ import absolute_import
@@ -7,16 +8,17 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-_logger = logging.getLogger(__name__)
 
+from .base import CallModelSaliency
+from .base import OUTPUT_GRADIENTS
+from .integrated_gradients import IntegratedGradients
 import numpy as np
 from skimage import segmentation
 from skimage.morphology import dilation
 from skimage.morphology import disk
 from skimage.transform import resize
 
-from .base import CallModelSaliency, OUTPUT_GRADIENTS
-from .integrated_gradients import IntegratedGradients
+_logger = logging.getLogger(__name__)
 
 _FELZENSZWALB_SCALE_VALUES = [50, 100, 150, 250, 500, 1200]
 _FELZENSZWALB_SIGMA_VALUES = [0.8]
@@ -26,7 +28,7 @@ _FELZENSZWALB_MIN_SEGMENT_SIZE = 150
 
 
 def _normalize_image(im, value_range, resize_shape=None):
-  """Normalize an image by resizing it and rescaling its values
+  """Normalize an image by resizing it and rescaling its values.
 
   Args:
       im: Input image.
@@ -232,17 +234,19 @@ class XRAI(CallModelSaliency):
     # Initialize integrated gradients.
     self._integrated_gradients = IntegratedGradients()
 
-  def _get_integrated_gradients(self, im, call_model_function, 
-                                  call_model_args, baselines, steps):
-    """ Takes mean of attributions from all baselines
-    """
+  def _get_integrated_gradients(self, im, call_model_function,
+                                call_model_args, baselines, steps):
+    """ Takes mean of attributions from all baselines."""
     grads = []
     for baseline in baselines:
-      grads.append(self._integrated_gradients.GetMask(im, call_model_function,
-                    call_model_args=call_model_args,
-                    x_baseline=baseline,
-                    x_steps=steps))
-          
+      grads.append(
+          self._integrated_gradients.GetMask(
+              im,
+              call_model_function,
+              call_model_args=call_model_args,
+              x_baseline=baseline,
+              x_steps=steps))
+
     return grads
 
   def _make_baselines(self, x_value, x_baselines):
@@ -255,7 +259,7 @@ class XRAI(CallModelSaliency):
       for baseline in x_baselines:
         if baseline.shape != x_value.shape:
           raise ValueError(
-              "Baseline size {} does not match input size {}".format(
+              'Baseline size {} does not match input size {}'.format(
                   baseline.shape, x_value.shape))
     return x_baselines
 
@@ -304,7 +308,8 @@ class XRAI(CallModelSaliency):
 
     Raises:
         ValueError: If algorithm type is unknown (not full or fast).
-                    If the shape of `base_attribution` dosn't match the shape of `x_value`.
+                    If the shape of `base_attribution` dosn't match the shape of
+                    `x_value`.
 
     Returns:
         np.ndarray: A numpy array that contains the saliency heatmap.
@@ -329,8 +334,7 @@ class XRAI(CallModelSaliency):
                          segments=None,
                          base_attribution=None,
                          extra_parameters=None):
-    """Applies XRAI method on an input image and returns the result saliency
-    heatmap along with other detailed information.
+    """Applies XRAI method on an input image and returns detailed information.
 
 
     Args:
@@ -363,7 +367,8 @@ class XRAI(CallModelSaliency):
 
     Raises:
         ValueError: If algorithm type is unknown (not full or fast).
-                    If the shape of `base_attribution` dosn't match the shape of `x_value`.
+                    If the shape of `base_attribution` dosn't match the shape of
+                    `x_value`.
 
     Returns:
         XRAIOutput: an object that contains the output of the XRAI algorithm.
@@ -379,13 +384,13 @@ class XRAI(CallModelSaliency):
         base_attribution = np.array(base_attribution)
       if base_attribution.shape != x_value.shape:
         raise ValueError(
-          'The base attribution shape should be the same as the shape of '
-          '`x_value`. Expected {}, got {}'.format(
-            x_value.shape, base_attribution.shape))
+            'The base attribution shape should be the same as the shape of '
+            '`x_value`. Expected {}, got {}'.format(x_value.shape,
+                                                    base_attribution.shape))
 
     # Calculate IG attribution if not provided by the caller.
     if base_attribution is None:
-      _logger.info("Computing IG...")
+      _logger.info('Computing IG...')
       x_baselines = self._make_baselines(x_value, baselines)
 
       attrs = self._get_integrated_gradients(x_value,
@@ -403,7 +408,7 @@ class XRAI(CallModelSaliency):
     # Merge attribution channels for XRAI input
     attr = _attr_aggregation_max(attr)
 
-    _logger.info("Done with IG. Computing XRAI...")
+    _logger.info('Done with IG. Computing XRAI...')
     if segments is not None:
       segs = segments
     else:
@@ -495,7 +500,7 @@ class XRAI(CallModelSaliency):
         if mask_pixel_diff < min_pixel_diff:
           remove_key_queue.append(mask_key)
           if _logger.isEnabledFor(logging.DEBUG):
-            _logger.debug("Skipping mask with pixel difference: {:.3g},".format(
+            _logger.debug('Skipping mask with pixel difference: {:.3g},'.format(
                 mask_pixel_diff))
           continue
         gain = gain_fun(mask, attr, mask2=current_mask)
@@ -504,7 +509,7 @@ class XRAI(CallModelSaliency):
           best_key = mask_key
       for key in remove_key_queue:
         del remaining_masks[key]
-      if len(remaining_masks) == 0:
+      if not remaining_masks:
         break
       added_mask = remaining_masks[best_key]
       mask_diff = _get_diff_mask(added_mask, current_mask)
@@ -517,8 +522,8 @@ class XRAI(CallModelSaliency):
       if _logger.isEnabledFor(logging.DEBUG):
         current_attr_sum = np.sum(attr[current_mask])
         _logger.debug(
-            "{} of {} masks added,"
-            "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
+            '{} of {} masks added,'
+            'attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks'.format(
                 added_masks_cnt, n_masks, current_attr_sum, current_area_perc,
                 area_perc_th, len(remaining_masks)))
       added_masks_cnt += 1
@@ -544,8 +549,9 @@ class XRAI(CallModelSaliency):
                  area_perc_th=1.0,
                  min_pixel_diff=50,
                  integer_segments=True):
-    """Run approximate XRAI saliency given attributions and segments. This
-       version does not consider mask overlap during importance ranking,
+    """Run approximate XRAI saliency given attributions and segments.
+
+    Note: This version does not consider mask overlap during importance ranking,
        significantly speeding up the algorithm for less accurate results.
 
     Args:
@@ -586,7 +592,7 @@ class XRAI(CallModelSaliency):
       mask_pixel_diff = _get_diff_cnt(added_mask, current_mask)
       if mask_pixel_diff < min_pixel_diff:
         if _logger.isEnabledFor(logging.DEBUG):
-          _logger.debug("Skipping mask with pixel difference: {:.3g},".format(
+          _logger.debug('Skipping mask with pixel difference: {:.3g},'.format(
               mask_pixel_diff))
         continue
       mask_gain = gain_fun(mask_diff, attr)
@@ -596,10 +602,10 @@ class XRAI(CallModelSaliency):
       if _logger.isEnabledFor(logging.DEBUG):
         current_attr_sum = np.sum(attr[current_mask])
         current_area_perc = np.mean(current_mask)
-        _logger.debug("{} of {} masks processed,"
-                     "attr_sum: {}, area: {:.3g}/{:.3g}".format(
-                         i + 1, n_masks, current_attr_sum, current_area_perc,
-                         area_perc_th))
+        _logger.debug('{} of {} masks processed,'
+                      'attr_sum: {}, area: {:.3g}/{:.3g}'.format(
+                          i + 1, n_masks, current_attr_sum, current_area_perc,
+                          area_perc_th))
     uncomputed_mask = output_attr == -np.inf
     # Assign the uncomputed areas a value such that sum is same as ig
     output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
