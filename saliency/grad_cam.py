@@ -65,9 +65,9 @@ class GradCam(CallModelSaliency):
           expected_keys - List of keys that are expected in the output. For this
             method (GradCAM), the expected keys are
             CONVOLUTION_GRADIENTS - Gradients of the last convolution layer
-              with respect to the input.
+              with respect to the input, including the batch dimension.
             CONVOLUTION_OUTPUT - Output of the last convolution layer
-              for the given input.
+              for the given input, including the batch dimension.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
       should_resize: boolean that determines whether a low-res Grad-CAM mask
@@ -81,13 +81,13 @@ class GradCam(CallModelSaliency):
         call_model_args,
         expected_keys=[CONVOLUTION_LAYER, CONVOLUTION_GRADIENTS])
 
-    weights = np.mean(data[CONVOLUTION_GRADIENTS], axis=(0, 1))
-    grad_cam = np.zeros(data[CONVOLUTION_LAYER].shape[0:2],
+    weights = np.mean(data[CONVOLUTION_GRADIENTS][0], axis=(0, 1))
+    grad_cam = np.zeros(data[CONVOLUTION_LAYER][0].shape[0:2],
                         dtype=np.float32)
 
     # weighted average
     for i, w in enumerate(weights):
-      grad_cam += w * data[CONVOLUTION_LAYER][:, :, i]
+      grad_cam += w * data[CONVOLUTION_LAYER][0][:, :, i]
 
     # pass through relu
     grad_cam = np.maximum(grad_cam, 0)

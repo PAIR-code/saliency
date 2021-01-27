@@ -235,7 +235,7 @@ class XRAI(CallModelSaliency):
     self._integrated_gradients = IntegratedGradients()
 
   def _get_integrated_gradients(self, im, call_model_function,
-                                call_model_args, baselines, steps):
+                                call_model_args, baselines, steps, batch_size):
     """ Takes mean of attributions from all baselines."""
     grads = []
     for baseline in baselines:
@@ -245,7 +245,8 @@ class XRAI(CallModelSaliency):
               call_model_function,
               call_model_args=call_model_args,
               x_baseline=baseline,
-              x_steps=steps))
+              x_steps=steps,
+              batch_size=batch_size))
 
     return grads
 
@@ -348,6 +349,7 @@ class XRAI(CallModelSaliency):
                          baselines=None,
                          segments=None,
                          base_attribution=None,
+                         batch_size=1,
                          extra_parameters=None):
     """Applies XRAI method on an input image and returns detailed information.
 
@@ -412,7 +414,8 @@ class XRAI(CallModelSaliency):
                                              call_model_function,
                                              call_model_args=call_model_args,
                                              baselines=x_baselines,
-                                             steps=extra_parameters.steps)
+                                             steps=extra_parameters.steps,
+                                             batch_size=batch_size)
       # Merge attributions from different baselines.
       attr = np.mean(attrs, axis=0)
     else:

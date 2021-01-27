@@ -26,7 +26,7 @@ class IntegratedGradients(CallModelSaliency):
   """
 
   def GetMask(self, x_value, call_model_function, call_model_args=None,
-              x_baseline=None, x_steps=25):
+              x_baseline=None, x_steps=25, batch_size=1):
     """Returns a integrated gradients mask.
 
     Args:
@@ -60,11 +60,14 @@ class IntegratedGradients(CallModelSaliency):
 
     total_gradients = np.zeros_like(x_value)
 
+    x_step_batched = []
     for alpha in np.linspace(0, 1, x_steps):
       x_step = x_baseline + alpha * x_diff
-
-      call_model_data = call_model_function(
-          [x_step], call_model_args, expected_keys=[OUTPUT_GRADIENTS])
-      total_gradients += call_model_data[OUTPUT_GRADIENTS]
+      x_step_batched.append(x_step)
+      if len(x_step_batched)==batch_size or alpha==1:
+        call_model_data = call_model_function(
+            x_step_batched, call_model_args, expected_keys=[OUTPUT_GRADIENTS])
+        total_gradients += call_model_data[OUTPUT_GRADIENTS].sum(axis=0)
+        x_step_batched = []
 
     return total_gradients * x_diff / x_steps

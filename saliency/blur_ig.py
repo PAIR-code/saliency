@@ -53,7 +53,8 @@ class BlurIG(CallModelSaliency):
               max_sigma=50,
               steps=100,
               grad_step=0.01,
-              sqrt=False):
+              sqrt=False,
+              batch_size=1):
     """Returns an integrated gradients mask.
 
     TODO(vsubhashini): Decide if we want to restrict and find explanation
@@ -94,14 +95,24 @@ class BlurIG(CallModelSaliency):
     step_vector_diff = [sigmas[i+1] - sigmas[i] for i in range(0, steps)]
 
     total_gradients = np.zeros_like(x_value)
+    x_step_batched = []
+    gaussian_gradient_batched = []
     for i in range(steps):
       x_step = gaussian_blur(x_value, sigmas[i])
       gaussian_gradient = (gaussian_blur(x_value, sigmas[i] + grad_step)
                            - x_step) / grad_step
-      call_model_data = call_model_function(
-          [x_step], call_model_args, expected_keys=[OUTPUT_GRADIENTS])
-      total_gradients += step_vector_diff[i] * np.multiply(
-          gaussian_gradient, call_model_data[OUTPUT_GRADIENTS])
+      x_step_batched.append(x_step)
+      gaussian_gradient_batched.append(gaussian_gradient)
+      if len(x_step_batched)==batch_size or i==steps-1:
+        call_model_data = call_model_function(
+            x_step_batched, call_model_args, expected_keys=[OUTPUT_GRADIENTS])
+        tmp = (
+          step_vector_diff[i] * 
+          np.multiply(gaussian_gradient_batched, 
+          call_model_data[OUTPUT_GRADIENTS]))
+        total_gradients += tmp.sum(axis=0)
+        x_step_batched = []
+        gaussian_gradient_batched = []
 
     total_gradients *= -1.0
     return total_gradients
