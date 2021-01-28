@@ -274,6 +274,7 @@ class XRAI(CallModelSaliency):
               baselines=None,
               segments=None,
               base_attribution=None,
+              batch_size=1,
               extra_parameters=None):
     """ Applies XRAI method on an input image and returns the result saliency
     heatmap.
@@ -339,6 +340,7 @@ class XRAI(CallModelSaliency):
                                       baselines=baselines,
                                       segments=segments,
                                       base_attribution=base_attribution,
+                                      batch_size=batch_size,
                                       extra_parameters=extra_parameters)
     return results.attribution_mask
 
