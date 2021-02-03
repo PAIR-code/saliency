@@ -6,3 +6,4 @@ from .integrated_gradients import *
 from .grad_cam import *
 from .xrai import *
 from .blur_ig import *
+from .utils_tf1 import *
