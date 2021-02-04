@@ -31,18 +31,19 @@ def create_tf1_call_model_function(graph, session, y=None, x=None, conv_layer=No
     conv_layer: The convolution layer tensor of the model. The outer
         dimension should be the batch size.
   """
-  if x is None:
-    raise ValueError('Expected input tensor for x but is equal to None.')
-  if y is not None:
-    # y must be of size one, otherwise the gradient we get from tf.gradients
-    # will be summed over all ys.
-    size = 1
-    for shape in y.shape:
-      size *= shape
-    assert size == 1
-    output_gradients = tf.gradients(y, x)[0]
-  if conv_layer is not None:
-    conv_gradients = tf.gradients(conv_layer, x)[0]
+  with graph.as_default():
+    if x is None:
+      raise ValueError('Expected input tensor for x but is equal to None.')
+    if y is not None:
+      # y must be of size one, otherwise the gradient we get from tf.gradients
+      # will be summed over all ys.
+      size = 1
+      for shape in y.shape:
+        size *= shape
+      assert size == 1
+      output_gradients = tf.gradients(y, x)[0]
+    if conv_layer is not None:
+      conv_gradients = tf.gradients(conv_layer, x)[0]
 
   def convert_keys_to_fetches(expected_keys):
     fetches = []
@@ -63,13 +64,14 @@ def create_tf1_call_model_function(graph, session, y=None, x=None, conv_layer=No
     return fetches
 
   def call_model_function(x_value_batch, call_model_args={}, expected_keys=None):
-    call_model_args[x] = x_value_batch
-    fetches = convert_keys_to_fetches(expected_keys)
     # (output, grad) = session.run([conv_layer, gradients_node],
     #                              feed_dict=call_model_args)
     # return {CONVOLUTION_GRADIENTS: grad, CONVOLUTION_LAYER: output}
-    data = session.run(fetches, feed_dict=call_model_args)
-    return {expected_key: data[i] for 
-      (i, expected_key) in enumerate(expected_keys)}
+    with graph.as_default():
+      fetches = convert_keys_to_fetches(expected_keys)
+      call_model_args[x] = x_value_batch
+      data = session.run(fetches, feed_dict=call_model_args)
+      return {expected_key: data[i] for 
+        (i, expected_key) in enumerate(expected_keys)}
 
   return call_model_function
