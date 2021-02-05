@@ -30,25 +30,25 @@ class BlurIgTest(test.TestCase):
       call_model.num_calls += 1
       call_model_args[x] = x_value_batch
       data = session.run(grad_node, feed_dict=call_model_args)
-      return {OUTPUT_GRADIENTS: data[0]}
+      return {OUTPUT_GRADIENTS: data}
     call_model.num_calls = 0
 
     return call_model
   
   def testBlurIGGetMask(self):
-    x_steps = 200
+    x_steps = 2000
 
     max_sigma = 10
     with tf.Graph().as_default() as graph:
       x = tf.placeholder(shape=[None, 5, 5, 1], dtype=tf.float32)
       # Define function to just look at center pixel.
-      y = x[:, 2, 2, 0] * 1.0
+      y = x[:, 2, 2, 0] * 1.0 + tf.sin(x[:, 1, 1, 0])
       gradients_node = tf.gradients(y, x)[0]
 
       with tf.Session() as sess:
         # All black except 1 white pixel at the center.
         x_input_val = np.array([[0.0, 0.0, 0.0, 0.0, 0.0],
-                                [0.0, 0.0, 0.0, 0.0, 0.0],
+                                [0.0, 0.5, 0.0, 0.0, 0.0],
                                 [0.0, 0.0, 1.0, 0.0, 0.0],
                                 [0.0, 0.0, 0.0, 0.0, 0.0],
                                 [0.0, 0.0, 0.0, 0.0, 0.0],
@@ -76,26 +76,26 @@ class BlurIgTest(test.TestCase):
             x_value=x_input_val, call_model_function=call_model_function,
             call_model_args={}, max_sigma=max_sigma, steps=x_steps)
         # Verify the result for completeness..
-        # Expected (for max_sigma=10): 0.9984083
-        # mask.sum (for max_sigma=10): 0.99832882...
+        # Expected (for max_sigma=10): 1.4746742
+        # mask.sum (for max_sigma=10): 1.4742470...
         self.assertAlmostEqual(expected_val, mask.sum(), places=3)
         self.assertEqual(x_steps, call_model_function.num_calls)
   
   def testBlurIGGetMaskBatched(self):
-    x_steps = 201
-    expected_calls = 5 # batch size is 50, ceil(201/50)=5
+    x_steps = 2001
+    expected_calls = 21 # batch size is 100, ceil(2001/100)=21
 
     max_sigma = 10
     with tf.Graph().as_default() as graph:
       x = tf.placeholder(shape=[None, 5, 5, 1], dtype=tf.float32)
       # Define function to just look at center pixel.
-      y = x[:, 2, 2, 0] * 1.0
+      y = x[:, 2, 2, 0] * 1.0 + tf.sin(x[:, 1, 1, 0])
       gradients_node = tf.gradients(y, x)[0]
 
       with tf.Session() as sess:
         # All black except 1 white pixel at the center.
         x_input_val = np.array([[0.0, 0.0, 0.0, 0.0, 0.0],
-                                [0.0, 0.0, 0.0, 0.0, 0.0],
+                                [0.0, 0.5, 0.0, 0.0, 0.0],
                                 [0.0, 0.0, 1.0, 0.0, 0.0],
                                 [0.0, 0.0, 0.0, 0.0, 0.0],
                                 [0.0, 0.0, 0.0, 0.0, 0.0],
@@ -122,10 +122,10 @@ class BlurIgTest(test.TestCase):
         mask = blur_ig_instance.GetMask(
             x_value=x_input_val, call_model_function=call_model_function,
             call_model_args={}, max_sigma=max_sigma, steps=x_steps, 
-            batch_size=50)
+            batch_size=100)
         # Verify the result for completeness..
-        # Expected (for max_sigma=10): 0.9984083
-        # mask.sum (for max_sigma=10): 0.99832882...
+        # Expected (for max_sigma=10): 1.4746742
+        # mask.sum (for max_sigma=10): 1.4742470...
         self.assertAlmostEqual(expected_val, mask.sum(), places=3)
         self.assertEqual(expected_calls, call_model_function.num_calls)
 
