@@ -12,24 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilities to run CallModelSaliency methods."""
-from .base import OUTPUT_GRADIENTS
-from .base import CONVOLUTION_LAYER
+"""Utilities to run CallModelSaliency methods using TF1 models."""
 from .base import CONVOLUTION_GRADIENTS
+from .base import CONVOLUTION_LAYER
+from .base import OUTPUT_GRADIENTS
 import tensorflow.compat.v1 as tf
 
+MISSING_Y_ERROR_MESSAGE = 'Cannot return key {} because no y was specified'
+MISSING_CONV_LAYER_ERROR_MESSAGE = ('Cannot return key {} because no conv_layer'
+                                    ' was specified')
 
-def create_tf1_call_model_function(graph, session, y=None, x=None, conv_layer=None):
+
+def create_tf1_call_model_function(graph,
+                                   session,
+                                   y=None,
+                                   x=None,
+                                   conv_layer=None):
   """Constructs a SaliencyMask by computing dy/dx.
 
   Args:
     graph: The TensorFlow graph to evaluate masks on.
     session: The current TensorFlow session.
     y: The output tensor of the model. This tensor should be of size 1.
-    x: The input tensor of the model. The outer dimension should be the batch 
+    x: The input tensor of the model. The outer dimension should be the batch
         size.
     conv_layer: The convolution layer tensor of the model. The outer
         dimension should be the batch size.
+
+  Returns:
+    call_model_function: A function that accepts the arguments used in the
+        CallModelSaliency methods.
   """
   with graph.as_default():
     if x is None:
@@ -50,11 +62,12 @@ def create_tf1_call_model_function(graph, session, y=None, x=None, conv_layer=No
     for expected_key in expected_keys:
       if expected_key == OUTPUT_GRADIENTS:
         if y is None:
-          raise RuntimeError('Cannot return key {} because no y was specified'.format(OUTPUT_GRADIENTS))
+          raise RuntimeError(MISSING_Y_ERROR_MESSAGE.format(OUTPUT_GRADIENTS))
         fetches.append(output_gradients)
       elif expected_key in [CONVOLUTION_LAYER, CONVOLUTION_GRADIENTS]:
         if conv_layer is None:
-          raise RuntimeError('Cannot return key {} because no conv_layer was specified'.format(expected_key))
+          raise RuntimeError(MISSING_CONV_LAYER_ERROR_MESSAGE.format(
+              expected_key))
         if expected_key == CONVOLUTION_LAYER:
           fetches.append(conv_layer)
         else:
@@ -63,7 +76,9 @@ def create_tf1_call_model_function(graph, session, y=None, x=None, conv_layer=No
         raise ValueError('Invalid expected key {}'.format(expected_key))
     return fetches
 
-  def call_model_function(x_value_batch, call_model_args={}, expected_keys=None):
+  def call_model_function(x_value_batch,
+                          call_model_args={},
+                          expected_keys=None):
     # (output, grad) = session.run([conv_layer, gradients_node],
     #                              feed_dict=call_model_args)
     # return {CONVOLUTION_GRADIENTS: grad, CONVOLUTION_LAYER: output}
@@ -71,7 +86,7 @@ def create_tf1_call_model_function(graph, session, y=None, x=None, conv_layer=No
       fetches = convert_keys_to_fetches(expected_keys)
       call_model_args[x] = x_value_batch
       data = session.run(fetches, feed_dict=call_model_args)
-      return {expected_key: data[i] for 
-        (i, expected_key) in enumerate(expected_keys)}
+      return {expected_key: data[i] for (i, expected_key) in
+              enumerate(expected_keys)}
 
   return call_model_function

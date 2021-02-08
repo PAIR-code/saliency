@@ -12,28 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import unittest
+
 from . import grad_cam
 import numpy as np
-from tensorflow import test
 import tensorflow.compat.v1 as tf
 
-INPUT_HEIGHT_WIDTH = 5
+INPUT_HEIGHT_WIDTH = 5  # width and height of input images in pixels
 
-class GradCamTest(test.TestCase):
+
+class GradCamTest(unittest.TestCase):
   """To run: "python -m saliency.grad_cam_test" from top-level saliency directory."""
 
   def setUp(self):
+    super().setUp()
     self.graph = tf.Graph()
     with self.graph.as_default():
-      INPUT_HEIGHT_WIDTH = 5  # width and height of input images in pixels
       # Input placeholder
-      self.images = tf.placeholder(tf.float32, 
-        shape=(1, INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1))
+      self.images = tf.placeholder(
+          tf.float32, shape=(1, INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1))
 
       # Horizontal line detector filter
       horiz_detector = np.array([[-1, -1, -1],
-                                  [2, 2, 2],
-                                  [-1, -1, -1]])
+                                 [2, 2, 2],
+                                 [-1, -1, -1]])
       conv1 = tf.layers.conv2d(
           inputs=self.images,
           filters=1,
@@ -75,15 +77,14 @@ class GradCamTest(test.TestCase):
         call_model_args[x] = x_value_batch
         (output, grad) = session.run([conv_layer, gradients_node],
                                      feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad, 
-              grad_cam.CONVOLUTION_LAYER: output}
+        return {grad_cam.CONVOLUTION_GRADIENTS: grad,
+                grad_cam.CONVOLUTION_LAYER: output}
 
       return call_model
 
-    call_model_function = create_call_model_function(self.graph,
-                                                      self.sess,
-                                                      self.conv_layer,
-                                                      self.images)
+    call_model_function = create_call_model_function(self.graph, self.sess,
+                                                     self.conv_layer,
+                                                     self.images)
 
     # Generate test input (centered matrix of 1s surrounded by 0s)
     # and generate corresponding GradCAM mask
@@ -99,10 +100,10 @@ class GradCamTest(test.TestCase):
 
     # Compare generated mask to expected result
     ref_mask = np.array([[0., 0., 0., 0., 0.],
-                          [0.33, 0.67, 1., 0.67, 0.33],
-                          [0., 0., 0., 0., 0.],
-                          [0.33, 0.67, 1., 0.67, 0.33],
-                          [0., 0., 0., 0., 0.]])
+                         [0.33, 0.67, 1., 0.67, 0.33],
+                         [0., 0., 0., 0., 0.],
+                         [0.33, 0.67, 1., 0.67, 0.33],
+                         [0., 0., 0., 0., 0.]])
     self.assertTrue(
         np.allclose(mask, ref_mask, atol=0.01),
         "Generated mask did not match reference mask.")
@@ -126,15 +127,15 @@ class GradCamTest(test.TestCase):
         call_model_args[x] = x_value_batch
         (output, grad) = session.run([conv_layer, gradients_node],
                                      feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad[0], 
-              grad_cam.CONVOLUTION_LAYER: output}
+        return {grad_cam.CONVOLUTION_GRADIENTS: grad[0],
+                grad_cam.CONVOLUTION_LAYER: output}
 
       return call_model
 
     call_model_function = create_call_model_function(self.graph,
-                                                      self.sess,
-                                                      self.conv_layer,
-                                                      self.images)
+                                                     self.sess,
+                                                     self.conv_layer,
+                                                     self.images)
 
     # Generate test input (centered matrix of 1s surrounded by 0s)
     # and generate corresponding GradCAM mask
@@ -142,15 +143,15 @@ class GradCamTest(test.TestCase):
     img[1:-1, 1:-1] = 1
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
 
-    with self.assertRaisesRegex(ValueError, 
-      grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE):
+    with self.assertRaisesRegex(ValueError,
+                                grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE):
 
       self.grad_cam_instance.GetMask(
-        img,
-        call_model_function=call_model_function,
-        call_model_args={},
-        should_resize=True,
-        three_dims=False)
+          img,
+          call_model_function=call_model_function,
+          call_model_args={},
+          should_resize=True,
+          three_dims=False)
 
   def testGradCamErrorValuesMismatch(self):
     """Tests the GradCAM method using a simple network.
@@ -171,15 +172,15 @@ class GradCamTest(test.TestCase):
         call_model_args[x] = x_value_batch
         (output, grad) = session.run([conv_layer, gradients_node],
                                      feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad, 
-              grad_cam.CONVOLUTION_LAYER: output[0]}
+        return {grad_cam.CONVOLUTION_GRADIENTS: grad,
+                grad_cam.CONVOLUTION_LAYER: output[0]}
 
       return call_model
 
     call_model_function = create_call_model_function(self.graph,
-                                                      self.sess,
-                                                      self.conv_layer,
-                                                      self.images)
+                                                     self.sess,
+                                                     self.conv_layer,
+                                                     self.images)
 
     # Generate test input (centered matrix of 1s surrounded by 0s)
     # and generate corresponding GradCAM mask
@@ -187,15 +188,14 @@ class GradCamTest(test.TestCase):
     img[1:-1, 1:-1] = 1
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
 
-    with self.assertRaisesRegex(ValueError, 
-      grad_cam.VALUES_SHAPE_ERROR_MESSAGE):
-
+    with self.assertRaisesRegex(ValueError,
+                                grad_cam.VALUES_SHAPE_ERROR_MESSAGE):
       self.grad_cam_instance.GetMask(
-        img,
-        call_model_function=call_model_function,
-        call_model_args={},
-        should_resize=True,
-        three_dims=False)
+          img,
+          call_model_function=call_model_function,
+          call_model_args={},
+          should_resize=True,
+          three_dims=False)
 
 if __name__ == "__main__":
-  test.main()
+  unittest.main()

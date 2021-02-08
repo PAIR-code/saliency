@@ -66,14 +66,13 @@ class IntegratedGradients(CallModelSaliency):
     for alpha in np.linspace(0, 1, x_steps):
       x_step = x_baseline + alpha * x_diff
       x_step_batched.append(x_step)
-      if len(x_step_batched)==batch_size or alpha==1:
+      if len(x_step_batched) == batch_size or alpha == 1:
         x_step_batched = np.array(x_step_batched)
         call_model_data = call_model_function(
             x_step_batched, call_model_args, expected_keys=[OUTPUT_GRADIENTS])
         call_model_data[OUTPUT_GRADIENTS] = np.array(
-          call_model_data[OUTPUT_GRADIENTS])
-        if (call_model_data[OUTPUT_GRADIENTS].shape != 
-          x_step_batched.shape):
+            call_model_data[OUTPUT_GRADIENTS])
+        if (call_model_data[OUTPUT_GRADIENTS].shape != x_step_batched.shape):
           raise ValueError(SHAPE_ERROR_MESSAGE)
         total_gradients += call_model_data[OUTPUT_GRADIENTS].sum(axis=0)
         x_step_batched = []
