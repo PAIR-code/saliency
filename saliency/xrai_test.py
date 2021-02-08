@@ -179,6 +179,27 @@ class XraiTest(test.TestCase):
     self.assertEqual(3, len(xrai_out.segments),
                      'Unexpected the number of returned segments.')
 
+  def testBatchSize(self):
+    """Tests batch_size values are passed to IntegratedGradients."""
+    # Create baselines and pass them to XRAI.GetMask(...).
+    batch_size = 123
+    baseline_1 = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3)
+    baseline_2 = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3)
+    self.xrai.GetMask(x_value=self.input_image,
+                      call_model_function=self.call_model_function,
+                      baselines=[baseline_1, baseline_2],
+                      batch_size=batch_size)
+
+    # Verify that the XRAI object called Integrated Gradients with the baselines
+    # that were passed to xrai.GetMask(...).
+    calls = self.mock_ig_instance.method_calls
+    self.assertEqual(2, len(calls),
+                     'There should be only two calls to IG Getmask()')
+    self.assertTrue(np.array_equal(batch_size, calls[0][2]['batch_size']),
+                    msg='IG was called with incorrect batch size.')
+    self.assertTrue(np.array_equal(batch_size, calls[1][2]['batch_size']),
+                    msg='IG was called with incorrect batch size.')
+
   def testBaselines(self):
     """Tests arbitrary baseline values can be used for calculating attributions."""
     # Create baselines and pass them to XRAI.GetMask(...).

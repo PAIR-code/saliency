@@ -18,6 +18,8 @@ from .base import CallModelSaliency
 from .base import OUTPUT_GRADIENTS
 import numpy as np
 
+SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_GRADIENTS to be the same shape"
+                      " as input x_value_batch")
 
 class IntegratedGradients(CallModelSaliency):
   """A CallModelSaliency class that implements the integrated gradients method.
@@ -65,8 +67,14 @@ class IntegratedGradients(CallModelSaliency):
       x_step = x_baseline + alpha * x_diff
       x_step_batched.append(x_step)
       if len(x_step_batched)==batch_size or alpha==1:
+        x_step_batched = np.array(x_step_batched)
         call_model_data = call_model_function(
             x_step_batched, call_model_args, expected_keys=[OUTPUT_GRADIENTS])
+        call_model_data[OUTPUT_GRADIENTS] = np.array(
+          call_model_data[OUTPUT_GRADIENTS])
+        if (call_model_data[OUTPUT_GRADIENTS].shape != 
+          x_step_batched.shape):
+          raise ValueError(SHAPE_ERROR_MESSAGE)
         total_gradients += call_model_data[OUTPUT_GRADIENTS].sum(axis=0)
         x_step_batched = []
 
