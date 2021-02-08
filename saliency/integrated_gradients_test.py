@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import unittest
 
 from . import integrated_gradients
 import numpy as np
-from tensorflow import test
 import tensorflow.compat.v1 as tf
 
 OUTPUT_GRADIENTS = integrated_gradients.OUTPUT_GRADIENTS
 
 
-class IntegratedGradientsTest(test.TestCase):
+class IntegratedGradientsTest(unittest.TestCase):
   """To run: "python -m saliency.integrated_gradients_test" from the top-level directory."""
-  
+
   def setUp(self):
+    super().setUp()
     with tf.Graph().as_default() as graph:
       self.x = tf.placeholder(shape=[None, 3], dtype=tf.float32)
       y = 5 * self.x[:, 0] + self.x[:, 0] * self.x[:, 1] + tf.sin(self.x[:, 2])
@@ -72,13 +73,13 @@ class IntegratedGradientsTest(test.TestCase):
   def testIntegratedGradientsGetMask(self):
     x_steps = 1000
     call_model_function = self.create_call_model_function(
-      self.sess, self.gradients_node, self.x)
+        self.sess, self.gradients_node, self.x)
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                      call_model_function=call_model_function,
-                      call_model_args={},
-                      x_baseline=self.x_baseline_val[0],
-                      x_steps=x_steps)
+                                    call_model_function=call_model_function,
+                                    call_model_args={},
+                                    x_baseline=self.x_baseline_val[0],
+                                    x_steps=x_steps)
 
     # Verify the result.
     self.assertAlmostEqual(self.expected_val, mask.sum(), places=3)
@@ -87,17 +88,17 @@ class IntegratedGradientsTest(test.TestCase):
   def testIntegratedGradientsGetMaskBatched(self):
     x_steps = 1001
     batch_size = 500
-    expected_calls = 3 # batch size is 500, ceil(1001/500)=3
+    expected_calls = 3  # batch size is 500, ceil(1001/500)=3
 
     call_model_function = self.create_call_model_function(
-      self.sess, self.gradients_node, self.x)
+        self.sess, self.gradients_node, self.x)
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                      call_model_function=call_model_function,
-                      call_model_args={},
-                      x_baseline=self.x_baseline_val[0],
-                      x_steps=x_steps,
-                      batch_size=batch_size)
+                                    call_model_function=call_model_function,
+                                    call_model_args={},
+                                    x_baseline=self.x_baseline_val[0],
+                                    x_steps=x_steps,
+                                    batch_size=batch_size)
 
     # Verify the result.
     self.assertAlmostEqual(self.expected_val, mask.sum(), places=3)
@@ -106,17 +107,17 @@ class IntegratedGradientsTest(test.TestCase):
   def testIntegratedGradientsGetMaskSingleBatch(self):
     x_steps = 999
     batch_size = 1000
-    expected_calls = 1 # batch size is 1000, ceil(999/1000)=1
+    expected_calls = 1  # batch size is 1000, ceil(999/1000)=1
 
     call_model_function = self.create_call_model_function(
-      self.sess, self.gradients_node, self.x)
+        self.sess, self.gradients_node, self.x)
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                      call_model_function=call_model_function,
-                      call_model_args={},
-                      x_baseline=self.x_baseline_val[0],
-                      x_steps=x_steps,
-                      batch_size=batch_size)
+                                    call_model_function=call_model_function,
+                                    call_model_args={},
+                                    x_baseline=self.x_baseline_val[0],
+                                    x_steps=x_steps,
+                                    batch_size=batch_size)
 
     # Verify the result.
     self.assertAlmostEqual(self.expected_val, mask.sum(), places=3)
@@ -129,15 +130,15 @@ class IntegratedGradientsTest(test.TestCase):
         self.sess, self.gradients_node, self.x)
 
     with self.assertRaisesRegex(
-      ValueError, integrated_gradients.SHAPE_ERROR_MESSAGE):
-      
+        ValueError, integrated_gradients.SHAPE_ERROR_MESSAGE):
+
       self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                      call_model_function=call_model_function,
-                      call_model_args={},
-                      x_baseline=self.x_baseline_val[0],
-                      x_steps=x_steps,
-                      batch_size=500)
+                               call_model_function=call_model_function,
+                               call_model_args={},
+                               x_baseline=self.x_baseline_val[0],
+                               x_steps=x_steps,
+                               batch_size=500)
 
 
 if __name__ == '__main__':
-  test.main()
+  unittest.main()
