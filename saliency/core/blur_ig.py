@@ -18,12 +18,12 @@ Implementation of Integrated Gradients along the blur path.
 """
 import math
 
-from .base import CallModelSaliency
-from .base import OUTPUT_GRADIENTS
+from .base import CoreSaliency
+from .base import OUTPUT_LAYER_GRADIENTS
 import numpy as np
 from scipy import ndimage
 
-SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_GRADIENTS to be the same shape"
+SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape"
                       " as input x_value_batch")
 
 def gaussian_blur(image, sigma):
@@ -40,8 +40,8 @@ def gaussian_blur(image, sigma):
                                  mode='constant')
 
 
-class BlurIG(CallModelSaliency):
-  """A SaliencyMask class that implements integrated gradients along blur path.
+class BlurIG(CoreSaliency):
+  """A CoreSaliency class that implements integrated gradients along blur path.
 
   Generates a saliency mask by computing integrated gradients for a given input
   and prediction label using a path that successively blurs the image.
@@ -76,7 +76,7 @@ class BlurIG(CallModelSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (Blur IG), the expected keys are
-            OUTPUT_GRADIENTS - Gradients of the output layer (logit/softmax)
+            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer (logit/softmax)
               with respect to the input. Shape should be the same shape as
               x_value_batch.
       call_model_args: The arguments that will be passed to the call model
@@ -110,14 +110,14 @@ class BlurIG(CallModelSaliency):
         call_model_data = call_model_function(
             x_step_batched,
             call_model_args=call_model_args,
-            expected_keys=[OUTPUT_GRADIENTS])
-        call_model_data[OUTPUT_GRADIENTS] = np.array(
-            call_model_data[OUTPUT_GRADIENTS])
-        if call_model_data[OUTPUT_GRADIENTS].shape != x_step_batched.shape:
+            expected_keys=[OUTPUT_LAYER_GRADIENTS])
+        call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
+            call_model_data[OUTPUT_LAYER_GRADIENTS])
+        if call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_step_batched.shape:
           raise ValueError(SHAPE_ERROR_MESSAGE)
         tmp = (
             step_vector_diff[i] * np.multiply(
-                gaussian_gradient_batched, call_model_data[OUTPUT_GRADIENTS]))
+                gaussian_gradient_batched, call_model_data[OUTPUT_LAYER_GRADIENTS]))
         total_gradients += tmp.sum(axis=0)
         x_step_batched = []
         gaussian_gradient_batched = []

@@ -19,7 +19,7 @@ import unittest
 from . import blur_ig
 import numpy as np
 
-OUTPUT_GRADIENTS = blur_ig.OUTPUT_GRADIENTS
+OUTPUT_LAYER_GRADIENTS = blur_ig.OUTPUT_LAYER_GRADIENTS
 
 
 class BlurIgTest(unittest.TestCase):
@@ -56,7 +56,7 @@ class BlurIgTest(unittest.TestCase):
   def create_call_model_function(self):
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
-      return {OUTPUT_GRADIENTS: np.cos(x_value_batch)}
+      return {OUTPUT_LAYER_GRADIENTS: np.cos(x_value_batch)}
     call_model.num_calls = 0
 
     return call_model
@@ -64,7 +64,7 @@ class BlurIgTest(unittest.TestCase):
   def create_bad_call_model_function(self):
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
-      return {OUTPUT_GRADIENTS: np.cos(x_value_batch)[0]}
+      return {OUTPUT_LAYER_GRADIENTS: np.cos(x_value_batch)[0]}
     call_model.num_calls = 0
 
     return call_model
@@ -140,10 +140,10 @@ class BlurIgTest(unittest.TestCase):
 
   def testBlurIGCallModelArgs(self):
     x_steps = 50
-    expected_keys = [OUTPUT_GRADIENTS]
+    expected_keys = [OUTPUT_LAYER_GRADIENTS]
     call_model_args = {'foo': 'bar'}
     mock_call_model = unittest.mock.MagicMock(
-        return_value={OUTPUT_GRADIENTS: [self.x_input_val]})
+        return_value={OUTPUT_LAYER_GRADIENTS: [self.x_input_val]})
 
     self.blur_ig_instance.GetMask(
         x_value=self.x_input_val,

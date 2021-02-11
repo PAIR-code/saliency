@@ -20,7 +20,7 @@ from ..core import blur_ig
 import numpy as np
 import tensorflow.compat.v1 as tf
 
-OUTPUT_GRADIENTS = blur_ig.OUTPUT_GRADIENTS
+OUTPUT_LAYER_GRADIENTS = blur_ig.OUTPUT_LAYER_GRADIENTS
 
 
 class BlurIgTest(unittest.TestCase):
@@ -64,7 +64,7 @@ class BlurIgTest(unittest.TestCase):
       call_model.num_calls += 1
       call_model_args[x] = x_value_batch
       data = session.run(grad_node, feed_dict=call_model_args)
-      return {OUTPUT_GRADIENTS: data}
+      return {OUTPUT_LAYER_GRADIENTS: data}
     call_model.num_calls = 0
 
     return call_model
@@ -74,7 +74,7 @@ class BlurIgTest(unittest.TestCase):
       call_model.num_calls += 1
       call_model_args[x] = x_value_batch
       data = session.run(grad_node, feed_dict=call_model_args)
-      return {OUTPUT_GRADIENTS: data[0]}
+      return {OUTPUT_LAYER_GRADIENTS: data[0]}
     call_model.num_calls = 0
 
     return call_model

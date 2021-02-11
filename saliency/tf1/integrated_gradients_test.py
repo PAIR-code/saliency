@@ -18,7 +18,7 @@ from ..core import integrated_gradients
 import numpy as np
 import tensorflow.compat.v1 as tf
 
-OUTPUT_GRADIENTS = integrated_gradients.OUTPUT_GRADIENTS
+OUTPUT_LAYER_GRADIENTS = integrated_gradients.OUTPUT_LAYER_GRADIENTS
 
 
 class IntegratedGradientsTest(unittest.TestCase):
@@ -54,7 +54,7 @@ class IntegratedGradientsTest(unittest.TestCase):
       call_model.num_calls += 1
       call_model_args[x] = x_value_batch
       data = session.run(grad_node, feed_dict=call_model_args)
-      return {OUTPUT_GRADIENTS: data}
+      return {OUTPUT_LAYER_GRADIENTS: data}
     call_model.num_calls = 0
 
     return call_model
@@ -65,7 +65,7 @@ class IntegratedGradientsTest(unittest.TestCase):
       call_model.num_calls += 1
       call_model_args[x] = x_value_batch
       data = session.run(grad_node, feed_dict=call_model_args)
-      return {OUTPUT_GRADIENTS: data[0]}
+      return {OUTPUT_LAYER_GRADIENTS: data[0]}
     call_model.num_calls = 0
 
     return call_model

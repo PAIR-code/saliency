@@ -13,21 +13,21 @@
 # limitations under the License.
 
 """Utilities to compute saliency using the GradCam method."""
-from .base import CallModelSaliency
-from .base import CONVOLUTION_GRADIENTS
-from .base import CONVOLUTION_LAYER
+from .base import CoreSaliency
+from .base import CONVOLUTION_LAYER_GRADIENTS
+from .base import CONVOLUTION_LAYER_VALUES
 import numpy as np
 from skimage.transform import resize
 
-GRADIENTS_SHAPE_ERROR_MESSAGE = ("Expected key CONVOLUTION_GRADIENTS to be the"
+GRADIENTS_SHAPE_ERROR_MESSAGE = ("Expected key CONVOLUTION_LAYER_GRADIENTS to be the"
                                  " same shape as input x_value_batch")
 VALUES_SHAPE_ERROR_MESSAGE = (
     "Expected outermost dimension of "
-    " CONVOLUTION_LAYER to be the same as x_value_batch")
+    " CONVOLUTION_LAYER_VALUES to be the same as x_value_batch")
 
 
-class GradCam(CallModelSaliency):
-  """A CallModelSaliency class that computes saliency masks with Grad-CAM.
+class GradCam(CoreSaliency):
+  """A CoreSaliency class that computes saliency masks with Grad-CAM.
 
   https://arxiv.org/abs/1610.02391
 
@@ -70,7 +70,7 @@ class GradCam(CallModelSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (GradCAM), the expected keys are
-            CONVOLUTION_GRADIENTS - Gradients of the last convolution layer
+            CONVOLUTION_LAYER_GRADIENTS - Gradients of the last convolution layer
               with respect to the input, including the batch dimension.
             CONVOLUTION_OUTPUT - Output of the last convolution layer
               for the given input, including the batch dimension.
@@ -86,21 +86,21 @@ class GradCam(CallModelSaliency):
     data = call_model_function(
         x_value_batched,
         call_model_args=call_model_args,
-        expected_keys=[CONVOLUTION_LAYER, CONVOLUTION_GRADIENTS])
-    data[CONVOLUTION_GRADIENTS] = np.array(data[CONVOLUTION_GRADIENTS])
-    data[CONVOLUTION_LAYER] = np.array(data[CONVOLUTION_LAYER])
-    if data[CONVOLUTION_GRADIENTS].shape != x_value_batched.shape:
+        expected_keys=[CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS])
+    data[CONVOLUTION_LAYER_GRADIENTS] = np.array(data[CONVOLUTION_LAYER_GRADIENTS])
+    data[CONVOLUTION_LAYER_VALUES] = np.array(data[CONVOLUTION_LAYER_VALUES])
+    if data[CONVOLUTION_LAYER_GRADIENTS].shape != x_value_batched.shape:
       raise ValueError(GRADIENTS_SHAPE_ERROR_MESSAGE)
-    if data[CONVOLUTION_LAYER].shape[0] != x_value_batched.shape[0]:
+    if data[CONVOLUTION_LAYER_VALUES].shape[0] != x_value_batched.shape[0]:
       raise ValueError(VALUES_SHAPE_ERROR_MESSAGE)
 
-    weights = np.mean(data[CONVOLUTION_GRADIENTS][0], axis=(0, 1))
-    grad_cam = np.zeros(data[CONVOLUTION_LAYER][0].shape[0:2],
+    weights = np.mean(data[CONVOLUTION_LAYER_GRADIENTS][0], axis=(0, 1))
+    grad_cam = np.zeros(data[CONVOLUTION_LAYER_VALUES][0].shape[0:2],
                         dtype=np.float32)
 
     # weighted average
     for i, w in enumerate(weights):
-      grad_cam += w * data[CONVOLUTION_LAYER][0][:, :, i]
+      grad_cam += w * data[CONVOLUTION_LAYER_VALUES][0][:, :, i]
 
     # pass through relu
     grad_cam = np.maximum(grad_cam, 0)

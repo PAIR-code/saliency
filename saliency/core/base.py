@@ -14,98 +14,14 @@
 
 """Utilities to compute SaliencyMasks."""
 import numpy as np
-import tensorflow.compat.v1 as tf
 
 
-class SaliencyMask(object):
-  """Base class for TF saliency masks. Alone, this class doesn't do anything."""
-
-  def __init__(self, graph, session, y, x):
-    """Constructs a SaliencyMask by computing dy/dx.
-
-    Args:
-      graph: The TensorFlow graph to evaluate masks on.
-      session: The current TensorFlow session.
-      y: The output tensor to compute the SaliencyMask against. This tensor
-          should be of size 1.
-      x: The input tensor to compute the SaliencyMask against. The outer
-          dimension should be the batch size.
-    """
-
-    # y must be of size one, otherwise the gradient we get from tf.gradients
-    # will be summed over all ys.
-    size = 1
-    for shape in y.shape:
-      size *= shape
-    assert size == 1
-
-    self.graph = graph
-    self.session = session
-    self.y = y
-    self.x = x
-
-  def GetMask(self, x_value, feed_dict={}):
-    """Returns an unsmoothed mask.
-
-    Args:
-      x_value: Input value, not batched.
-      feed_dict: (Optional) feed dictionary to pass to the session.run call.
-    """
-    raise NotImplementedError('A derived class should implemented GetMask()')
-
-  def GetSmoothedMask(
-      self, x_value, feed_dict={}, stdev_spread=.15, nsamples=25,
-      magnitude=True, **kwargs):
-    """Returns a mask that is smoothed with the SmoothGrad method.
-
-    Args:
-      x_value: Input value, not batched.
-      feed_dict: (Optional) feed dictionary to pass to the session.run call.
-      stdev_spread: Amount of noise to add to the input, as fraction of the
-                    total spread (x_max - x_min). Defaults to 15%.
-      nsamples: Number of samples to average across to get the smooth gradient.
-      magnitude: If true, computes the sum of squares of gradients instead of
-                 just the sum. Defaults to true.
-    """
-    stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
-
-    total_gradients = np.zeros_like(x_value)
-    for _ in range(nsamples):
-      noise = np.random.normal(0, stdev, x_value.shape)
-      x_plus_noise = x_value + noise
-      grad = self.GetMask(x_plus_noise, feed_dict, **kwargs)
-      if magnitude:
-        total_gradients += (grad * grad)
-      else:
-        total_gradients += grad
-
-    return total_gradients / nsamples
+OUTPUT_LAYER_GRADIENTS = 'OUTPUT_LAYER_GRADIENTS'
+CONVOLUTION_LAYER_VALUES = 'CONVOLUTION_LAYER_VALUES'
+CONVOLUTION_LAYER_GRADIENTS = 'CONVOLUTION_LAYER_GRADIENTS'
 
 
-class GradientSaliency(SaliencyMask):
-  r"""A SaliencyMask class that computes saliency masks with a gradient."""
-
-  def __init__(self, graph, session, y, x):
-    super(GradientSaliency, self).__init__(graph, session, y, x)
-    self.gradients_node = tf.gradients(y, x)[0]
-
-  def GetMask(self, x_value, feed_dict={}):
-    """Returns a vanilla gradient mask.
-
-    Args:
-      x_value: Input value, not batched.
-      feed_dict: (Optional) feed dictionary to pass to the session.run call.
-    """
-    feed_dict[self.x] = [x_value]
-    return self.session.run(self.gradients_node, feed_dict=feed_dict)[0]
-
-
-OUTPUT_GRADIENTS = 'OUTPUT_GRADIENTS'
-CONVOLUTION_LAYER = 'CONVOLUTION_LAYER'
-CONVOLUTION_GRADIENTS = 'CONVOLUTION_GRADIENTS'
-
-
-class CallModelSaliency(object):
+class CoreSaliency(object):
   r"""Base class for saliency masks. Alone, this class doesn't do anything."""
 
   def __init__(self):

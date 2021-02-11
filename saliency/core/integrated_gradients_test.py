@@ -17,7 +17,7 @@ import unittest
 from . import integrated_gradients
 import numpy as np
 
-OUTPUT_GRADIENTS = integrated_gradients.OUTPUT_GRADIENTS
+OUTPUT_LAYER_GRADIENTS = integrated_gradients.OUTPUT_LAYER_GRADIENTS
 
 
 class IntegratedGradientsTest(unittest.TestCase):
@@ -53,7 +53,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(gradient_fn, 1, x_value_batch)
-      return {OUTPUT_GRADIENTS: data}
+      return {OUTPUT_LAYER_GRADIENTS: data}
     call_model.num_calls = 0
 
     return call_model
@@ -66,7 +66,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(gradient_fn, 1, x_value_batch)
-      return {OUTPUT_GRADIENTS: data[0]}
+      return {OUTPUT_LAYER_GRADIENTS: data[0]}
     call_model.num_calls = 0
 
     return call_model
@@ -123,10 +123,10 @@ class IntegratedGradientsTest(unittest.TestCase):
 
   def testBlurIGCallModelArgs(self):
     x_steps = 50
-    expected_keys = [OUTPUT_GRADIENTS]
+    expected_keys = [OUTPUT_LAYER_GRADIENTS]
     call_model_args = {'foo': 'bar'}
     mock_call_model = unittest.mock.MagicMock(
-        return_value={OUTPUT_GRADIENTS: [self.x_input_val]})
+        return_value={OUTPUT_LAYER_GRADIENTS: [self.x_input_val]})
 
     self.ig_instance.GetMask(
         x_value=self.x_input_val,

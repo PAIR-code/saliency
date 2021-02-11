@@ -54,8 +54,8 @@ class GradCamTest(unittest.TestCase):
         output[2, :] = 0
         grad = grad.reshape(x_value_batch.shape)
         output = output.reshape(x_value_batch.shape)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad,
-                grad_cam.CONVOLUTION_LAYER: output}
+        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad,
+                grad_cam.CONVOLUTION_LAYER_VALUES: output}
 
       return call_model
 
@@ -86,11 +86,11 @@ class GradCamTest(unittest.TestCase):
   def testGradCamCallModelArgs(self):
     img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
-    expected_keys = [grad_cam.CONVOLUTION_LAYER, grad_cam.CONVOLUTION_GRADIENTS]
+    expected_keys = [grad_cam.CONVOLUTION_LAYER_VALUES, grad_cam.CONVOLUTION_LAYER_GRADIENTS]
     call_model_args = {'foo': 'bar'}
     mock_call_model = unittest.mock.MagicMock(
-        return_value={grad_cam.CONVOLUTION_GRADIENTS: [img],
-          grad_cam.CONVOLUTION_LAYER: [img]})
+        return_value={grad_cam.CONVOLUTION_LAYER_GRADIENTS: [img],
+          grad_cam.CONVOLUTION_LAYER_VALUES: [img]})
 
     self.grad_cam_instance.GetMask(
         img,
@@ -128,8 +128,8 @@ class GradCamTest(unittest.TestCase):
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
         grad = np.zeros(x_value_batch.shape)
         output = np.zeros(x_value_batch.shape)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad[0],
-                grad_cam.CONVOLUTION_LAYER: output}
+        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad[0],
+                grad_cam.CONVOLUTION_LAYER_VALUES: output}
 
       return call_model
 
@@ -167,8 +167,8 @@ class GradCamTest(unittest.TestCase):
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
         grad = np.zeros(x_value_batch.shape)
         output = np.zeros(x_value_batch.shape)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad,
-                grad_cam.CONVOLUTION_LAYER: output[0]}
+        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad,
+                grad_cam.CONVOLUTION_LAYER_VALUES: output[0]}
 
       return call_model
 
