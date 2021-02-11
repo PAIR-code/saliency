@@ -14,7 +14,7 @@
 # ==============================================================================
 import unittest
 
-from . import grad_cam
+from ..core import grad_cam
 import numpy as np
 import tensorflow.compat.v1 as tf
 

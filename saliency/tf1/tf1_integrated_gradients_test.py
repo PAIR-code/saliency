@@ -14,7 +14,7 @@
 # ==============================================================================
 import unittest
 
-from . import integrated_gradients
+from ..core import integrated_gradients
 import numpy as np
 import tensorflow.compat.v1 as tf
 
