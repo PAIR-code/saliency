@@ -28,7 +28,9 @@ class IntegratedGradientsTest(unittest.TestCase):
     def y_fn(arr):
       return np.array([5 * arr[0], arr[1]*arr[1], np.sin(arr[2])])
 
-    # Calculate the value of `y` at the baseline.
+    # Calculate the value of `y` at the baseline. `y` is given as multiple 
+    # numbers, with the assumption that in a real network these values would be 
+    # summed to a single output number.
     self.x_baseline_val = np.array([0.5, 1.0, 1.0], dtype=np.float)
     y_baseline_val = y_fn(self.x_baseline_val)
 
@@ -153,7 +155,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     call_model_function = self.create_bad_call_model_function()
 
     with self.assertRaisesRegex(
-        ValueError, integrated_gradients.SHAPE_ERROR_MESSAGE):
+        ValueError, integrated_gradients.SHAPE_ERROR_MESSAGE[:-30]):
 
       self.ig_instance.GetMask(x_value=self.x_input_val,
                                call_model_function=call_model_function,

@@ -14,11 +14,9 @@
 # ==============================================================================
 import unittest
 
-from ..core import integrated_gradients
+from . import integrated_gradients
 import numpy as np
 import tensorflow.compat.v1 as tf
-
-OUTPUT_LAYER_GRADIENTS = integrated_gradients.OUTPUT_LAYER_GRADIENTS
 
 
 class IntegratedGradientsTest(unittest.TestCase):
@@ -27,117 +25,88 @@ class IntegratedGradientsTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
     with tf.Graph().as_default() as graph:
-      self.x = tf.placeholder(shape=[None, 3], dtype=tf.float32)
-      y = 5 * self.x[:, 0] + self.x[:, 1] * self.x[:, 1] + tf.sin(self.x[:, 2])
-      self.gradients_node = tf.gradients(y, self.x)[0]
-      self.sess = tf.Session(graph=graph)
+      x = tf.placeholder(shape=[None, 3], dtype=tf.float32)
+      contrib = [5 * x[:, 0], x[:, 1] * x[:, 1], tf.sin(x[:, 2])]
+      y = contrib[0] + contrib[1] + contrib[2]
+      sess = tf.Session(graph=graph)
+      self.sess_spy = unittest.mock.MagicMock(wraps=sess)
 
       # Calculate the value of `y` at the baseline.
       self.x_baseline_val = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-      y_baseline_val = self.sess.run(y, feed_dict={self.x: self.x_baseline_val})
 
       # Calculate the value of `y` at the input.
       self.x_input_val = np.array([[1.0, 2.0, 3.0]], dtype=np.float)
-      y_input_val = self.sess.run(y, feed_dict={self.x: self.x_input_val})
+
 
       # Due to mathematical properties of the integrated gradients,
       # the expected IG value is equal to the difference between
       # the `y` value at the input and the `y` value at the baseline.
-      self.expected_val = y_input_val[0] - y_baseline_val[0]
+      contrib_baseline_val = sess.run(contrib, feed_dict={x: self.x_baseline_val})
+      contrib_input_val = sess.run(contrib, feed_dict={x: self.x_input_val})
+
+      self.expected_val = np.array(contrib_input_val) - np.array(contrib_baseline_val)
+      self.expected_val = self.expected_val.flatten()
 
       # Calculate the integrated gradients attribution of the input.
-      self.ig_instance = integrated_gradients.IntegratedGradients()
-
-  def create_call_model_function(self, session, grad_node, x):
-
-    def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-      call_model.num_calls += 1
-      call_model_args[x] = x_value_batch
-      data = session.run(grad_node, feed_dict=call_model_args)
-      return {OUTPUT_LAYER_GRADIENTS: data}
-    call_model.num_calls = 0
-
-    return call_model
-
-  def create_bad_call_model_function(self, session, grad_node, x):
-
-    def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-      call_model.num_calls += 1
-      call_model_args[x] = x_value_batch
-      data = session.run(grad_node, feed_dict=call_model_args)
-      return {OUTPUT_LAYER_GRADIENTS: data[0]}
-    call_model.num_calls = 0
-
-    return call_model
+      self.ig_instance = integrated_gradients.IntegratedGradients(graph,
+                                                                  self.sess_spy,
+                                                                  y,
+                                                                  x)
 
   def testIntegratedGradientsGetMask(self):
     x_steps = 1000
-    call_model_function = self.create_call_model_function(
-        self.sess, self.gradients_node, self.x)
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                                    call_model_function=call_model_function,
-                                    call_model_args={},
+                                    feed_dict={},
                                     x_baseline=self.x_baseline_val[0],
                                     x_steps=x_steps)
 
     # Verify the result.
-    self.assertAlmostEqual(self.expected_val, mask.sum(), places=3)
-    self.assertEqual(x_steps, call_model_function.num_calls)
+    np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
+    self.assertEqual(self.sess_spy.run.call_count, x_steps)
 
   def testIntegratedGradientsGetMaskBatched(self):
     x_steps = 1001
     batch_size = 500
     expected_calls = 3  # batch size is 500, ceil(1001/500)=3
 
-    call_model_function = self.create_call_model_function(
-        self.sess, self.gradients_node, self.x)
-
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                                    call_model_function=call_model_function,
-                                    call_model_args={},
+                                    feed_dict={},
                                     x_baseline=self.x_baseline_val[0],
                                     x_steps=x_steps,
                                     batch_size=batch_size)
 
     # Verify the result.
-    self.assertAlmostEqual(self.expected_val, mask.sum(), places=3)
-    self.assertEqual(expected_calls, call_model_function.num_calls)
+    np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
+    self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
   def testIntegratedGradientsGetMaskSingleBatch(self):
     x_steps = 999
     batch_size = 1000
     expected_calls = 1  # batch size is 1000, ceil(999/1000)=1
 
-    call_model_function = self.create_call_model_function(
-        self.sess, self.gradients_node, self.x)
-
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                                    call_model_function=call_model_function,
-                                    call_model_args={},
+                                    feed_dict={},
                                     x_baseline=self.x_baseline_val[0],
                                     x_steps=x_steps,
                                     batch_size=batch_size)
 
     # Verify the result.
-    self.assertAlmostEqual(self.expected_val, mask.sum(), places=3)
-    self.assertEqual(expected_calls, call_model_function.num_calls)
+    np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
+    self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
-  def testIntegratedGradientsGetMaskError(self):
-    x_steps = 2001
-    # Create a call_model_function using sess and tensors.
-    call_model_function = self.create_bad_call_model_function(
-        self.sess, self.gradients_node, self.x)
+  def testIntegratedGradientsGetMaskArgs(self):
+    x_steps = 5
+    feed_dict = {'foo':'bar'}
+    self.sess_spy.run.return_value = [self.x_input_val]
 
-    with self.assertRaisesRegex(
-        ValueError, integrated_gradients.SHAPE_ERROR_MESSAGE):
+    self.ig_instance.GetMask(x_value=self.x_input_val[0],
+        feed_dict=feed_dict,
+        x_baseline=self.x_baseline_val[0],
+        x_steps=x_steps)
+    actual_feed_dict = self.sess_spy.run.call_args[1]['feed_dict']
 
-      self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                               call_model_function=call_model_function,
-                               call_model_args={},
-                               x_baseline=self.x_baseline_val[0],
-                               x_steps=x_steps,
-                               batch_size=500)
+    self.assertEqual(actual_feed_dict['foo'], feed_dict['foo'])
 
 
 if __name__ == '__main__':

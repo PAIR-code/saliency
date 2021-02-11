@@ -14,11 +14,11 @@
 
 """Utilities to compute an Occlusion SaliencyMask."""
 
-from .base import SaliencyMask
+from .base import TF1Saliency
 import numpy as np
 
 
-class Occlusion(SaliencyMask):
+class Occlusion(TF1Saliency):
   """A SaliencyMask class that computes saliency masks by occluding the image.
 
   This method slides a window over the image and computes how that occlusion
