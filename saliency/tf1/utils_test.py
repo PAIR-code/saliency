@@ -41,8 +41,8 @@ class UtilsTF1Test(unittest.TestCase):
     call_model_function = utils_tf1.create_tf1_call_model_function(
         self.graph, self.sess, y, x)
     data = call_model_function(
-        x_value, call_model_args={}, expected_keys=[utils_tf1.OUTPUT_GRADIENTS])
-    actual = data[utils_tf1.OUTPUT_GRADIENTS]
+        x_value, call_model_args={}, expected_keys=[utils_tf1.OUTPUT_LAYER_GRADIENTS])
+    actual = data[utils_tf1.OUTPUT_LAYER_GRADIENTS]
 
     self.assertIsNone(np.testing.assert_almost_equal(expected, actual))
 
@@ -63,10 +63,10 @@ class UtilsTF1Test(unittest.TestCase):
         x_value,
         call_model_args={},
         expected_keys=[
-            utils_tf1.CONVOLUTION_GRADIENTS, utils_tf1.OUTPUT_GRADIENTS
+            utils_tf1.CONVOLUTION_LAYER_GRADIENTS, utils_tf1.OUTPUT_LAYER_GRADIENTS
         ])
-    actual_conv_gradient = data[utils_tf1.CONVOLUTION_GRADIENTS]
-    actual_output_gradient = data[utils_tf1.OUTPUT_GRADIENTS]
+    actual_conv_gradient = data[utils_tf1.CONVOLUTION_LAYER_GRADIENTS]
+    actual_output_gradient = data[utils_tf1.OUTPUT_LAYER_GRADIENTS]
 
     self.assertIsNone(np.testing.assert_almost_equal(
         expected_conv_gradient, actual_conv_gradient))
@@ -89,12 +89,12 @@ class UtilsTF1Test(unittest.TestCase):
         self.graph, self.sess, y=y, x=x, conv_layer=conv_layer)
     data = call_model_function(x_value,
                                call_model_args={},
-                               expected_keys=[utils_tf1.CONVOLUTION_LAYER,
-                                              utils_tf1.OUTPUT_GRADIENTS,
-                                              utils_tf1.CONVOLUTION_GRADIENTS])
-    actual_conv_gradient = data[utils_tf1.CONVOLUTION_GRADIENTS]
-    actual_output_gradient = data[utils_tf1.OUTPUT_GRADIENTS]
-    actual_conv_layer = data[utils_tf1.CONVOLUTION_LAYER]
+                               expected_keys=[utils_tf1.CONVOLUTION_LAYER_VALUES,
+                                              utils_tf1.OUTPUT_LAYER_GRADIENTS,
+                                              utils_tf1.CONVOLUTION_LAYER_GRADIENTS])
+    actual_conv_gradient = data[utils_tf1.CONVOLUTION_LAYER_GRADIENTS]
+    actual_output_gradient = data[utils_tf1.OUTPUT_LAYER_GRADIENTS]
+    actual_conv_layer = data[utils_tf1.CONVOLUTION_LAYER_VALUES]
 
     self.assertIsNone(
         np.testing.assert_almost_equal(expected_conv_gradient,
@@ -109,7 +109,7 @@ class UtilsTF1Test(unittest.TestCase):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = 'Cannot return key OUTPUT_GRADIENTS because no y was specified'
+    expected = 'Cannot return key OUTPUT_LAYER_GRADIENTS because no y was specified'
 
     with self.assertRaisesRegex(RuntimeError, expected):
       call_model_function = utils_tf1.create_tf1_call_model_function(
@@ -117,7 +117,7 @@ class UtilsTF1Test(unittest.TestCase):
       call_model_function(
           x_value,
           call_model_args={},
-          expected_keys=[utils_tf1.OUTPUT_GRADIENTS])
+          expected_keys=[utils_tf1.OUTPUT_LAYER_GRADIENTS])
 
   def testMissingX(self):
     with self.graph.as_default():
@@ -132,7 +132,7 @@ class UtilsTF1Test(unittest.TestCase):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = ('Cannot return key CONVOLUTION_GRADIENTS because no conv_layer '
+    expected = ('Cannot return key CONVOLUTION_LAYER_GRADIENTS because no conv_layer '
                 'was specified')
 
     with self.assertRaisesRegex(RuntimeError, expected):
@@ -141,13 +141,13 @@ class UtilsTF1Test(unittest.TestCase):
       call_model_function(
           x_value,
           call_model_args={},
-          expected_keys=[utils_tf1.CONVOLUTION_GRADIENTS])
+          expected_keys=[utils_tf1.CONVOLUTION_LAYER_GRADIENTS])
 
   def testConvolutionLayerMissingConvLayer(self):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = ('Cannot return key CONVOLUTION_LAYER because no conv_layer was '
+    expected = ('Cannot return key CONVOLUTION_LAYER_VALUES because no conv_layer was '
                 'specified')
 
     with self.assertRaisesRegex(RuntimeError, expected):
@@ -156,7 +156,7 @@ class UtilsTF1Test(unittest.TestCase):
       call_model_function(
           x_value,
           call_model_args={},
-          expected_keys=[utils_tf1.CONVOLUTION_LAYER])
+          expected_keys=[utils_tf1.CONVOLUTION_LAYER_VALUES])
 
 
 if __name__ == '__main__':

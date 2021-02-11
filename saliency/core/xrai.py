@@ -10,7 +10,7 @@ from __future__ import print_function
 import logging
 
 from .base import CallModelSaliency
-from .base import OUTPUT_GRADIENTS
+from .base import OUTPUT_LAYER_GRADIENTS
 from .integrated_gradients import IntegratedGradients
 import numpy as np
 from skimage import segmentation
@@ -294,7 +294,7 @@ class XRAI(CallModelSaliency):
             call_model_args - Other arguments used to call and run the model.
             expected_keys - List of keys that are expected in the output. For 
             this method (XRAI), the expected keys are
-            OUTPUT_GRADIENTS - Gradients of the output layer (logit/softmax)
+            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer (logit/softmax)
               with respect to the input. Shape should be the same shape as
               x_value_batch.
         call_model_args: The arguments that will be passed to the call model

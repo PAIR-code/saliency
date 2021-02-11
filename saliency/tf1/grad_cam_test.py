@@ -77,8 +77,8 @@ class GradCamTest(unittest.TestCase):
         call_model_args[x] = x_value_batch
         (output, grad) = session.run([conv_layer, gradients_node],
                                      feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad,
-                grad_cam.CONVOLUTION_LAYER: output}
+        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad,
+                grad_cam.CONVOLUTION_LAYER_VALUES: output}
 
       return call_model
 
@@ -127,8 +127,8 @@ class GradCamTest(unittest.TestCase):
         call_model_args[x] = x_value_batch
         (output, grad) = session.run([conv_layer, gradients_node],
                                      feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad[0],
-                grad_cam.CONVOLUTION_LAYER: output}
+        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad[0],
+                grad_cam.CONVOLUTION_LAYER_VALUES: output}
 
       return call_model
 
@@ -172,8 +172,8 @@ class GradCamTest(unittest.TestCase):
         call_model_args[x] = x_value_batch
         (output, grad) = session.run([conv_layer, gradients_node],
                                      feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_GRADIENTS: grad,
-                grad_cam.CONVOLUTION_LAYER: output[0]}
+        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad,
+                grad_cam.CONVOLUTION_LAYER_VALUES: output[0]}
 
       return call_model
 

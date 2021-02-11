@@ -14,15 +14,15 @@
 
 """Utilities to compute an IntegratedGradients SaliencyMask."""
 
-from .base import CallModelSaliency
-from .base import OUTPUT_GRADIENTS
+from .base import CoreSaliency
+from .base import OUTPUT_LAYER_GRADIENTS
 import numpy as np
 
-SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_GRADIENTS to be the same shape"
+SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape"
                       " as input x_value_batch")
 
-class IntegratedGradients(CallModelSaliency):
-  """A CallModelSaliency class that implements the integrated gradients method.
+class IntegratedGradients(CoreSaliency):
+  """A CoreSaliency class that implements the integrated gradients method.
 
   https://arxiv.org/abs/1703.01365
   """
@@ -45,7 +45,7 @@ class IntegratedGradients(CallModelSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (Integrated Gradients), the expected keys are
-            OUTPUT_GRADIENTS - Gradients of the output layer (logit/softmax)
+            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer (logit/softmax)
               with respect to the input. Shape should be the same shape as
               x_value_batch.
       call_model_args: The arguments that will be passed to the call model
@@ -71,12 +71,12 @@ class IntegratedGradients(CallModelSaliency):
         call_model_data = call_model_function(
             x_step_batched,
             call_model_args=call_model_args,
-            expected_keys=[OUTPUT_GRADIENTS])
-        call_model_data[OUTPUT_GRADIENTS] = np.array(
-            call_model_data[OUTPUT_GRADIENTS])
-        if (call_model_data[OUTPUT_GRADIENTS].shape != x_step_batched.shape):
+            expected_keys=[OUTPUT_LAYER_GRADIENTS])
+        call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
+            call_model_data[OUTPUT_LAYER_GRADIENTS])
+        if (call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_step_batched.shape):
           raise ValueError(SHAPE_ERROR_MESSAGE)
-        total_gradients += call_model_data[OUTPUT_GRADIENTS].sum(axis=0)
+        total_gradients += call_model_data[OUTPUT_LAYER_GRADIENTS].sum(axis=0)
         x_step_batched = []
 
     return total_gradients * x_diff / x_steps
