@@ -16,6 +16,7 @@ import unittest
 
 from . import grad_cam
 import numpy as np
+import tensorflow.compat.v1 as tf
 
 INPUT_HEIGHT_WIDTH = 5  # width and height of input images in pixels
 
@@ -25,7 +26,36 @@ class GradCamTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.grad_cam_instance = grad_cam.GradCam()
+    self.graph = tf.Graph()
+    with self.graph.as_default():
+      # Input placeholder
+      self.images = tf.placeholder(
+          tf.float32, shape=(1, INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1))
+
+      # Horizontal line detector filter
+      horiz_detector = np.array([[-1, -1, -1],
+                                 [2, 2, 2],
+                                 [-1, -1, -1]])
+      conv1 = tf.layers.conv2d(
+          inputs=self.images,
+          filters=1,
+          kernel_size=3,
+          kernel_initializer=tf.constant_initializer(horiz_detector),
+          padding="same",
+          name="Conv")
+
+      # Compute logits and do prediction with pre-defined weights
+      flat = tf.reshape(conv1, [-1, INPUT_HEIGHT_WIDTH*INPUT_HEIGHT_WIDTH])
+      sum_weights = tf.constant_initializer(np.ones(flat.shape))
+      tf.layers.dense(
+          inputs=flat, units=2, kernel_initializer=sum_weights, name="Logits")
+      self.sess = tf.Session()
+      init = tf.global_variables_initializer()
+      self.sess.run(init)
+
+      # Set up GradCam object
+      self.conv_layer = self.graph.get_tensor_by_name("Conv/BiasAdd:0")
+      self.grad_cam_instance = grad_cam.GradCam()
 
   def testGradCamGetMask(self):
     """Tests the GradCAM method using a simple network.
@@ -39,27 +69,22 @@ class GradCamTest(unittest.TestCase):
     in ref_mask).
     """
 
-    def create_call_model_function():
+    def create_call_model_function(graph, session, conv_layer, x):
+      with graph.as_default():
+        gradients_node = tf.gradients(conv_layer, x)[0]
 
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        # simulates conv layer output and grads where the kernel for the conv 
-        # layer is a horizontal line detector of kernel size 3 and the input is 
-        # a 3x3 square of ones in the center of the image.
-        grad = np.zeros([5,5])
-        grad[(0, -1), (0, -1)] = 2
-        grad[(1,-1), 1:-1] = 3
-        output = np.zeros([5,5])
-        output[:] = [1,2,3,2,1]
-        output[(0,-1),:] *= -1
-        output[2, :] = 0
-        grad = grad.reshape(x_value_batch.shape)
-        output = output.reshape(x_value_batch.shape)
+        call_model_args[x] = x_value_batch
+        (output, grad) = session.run([conv_layer, gradients_node],
+                                     feed_dict=call_model_args)
         return {grad_cam.CONVOLUTION_GRADIENTS: grad,
                 grad_cam.CONVOLUTION_LAYER: output}
 
       return call_model
 
-    call_model_function = create_call_model_function()
+    call_model_function = create_call_model_function(self.graph, self.sess,
+                                                     self.conv_layer,
+                                                     self.images)
 
     # Generate test input (centered matrix of 1s surrounded by 0s)
     # and generate corresponding GradCAM mask
@@ -83,35 +108,6 @@ class GradCamTest(unittest.TestCase):
         np.allclose(mask, ref_mask, atol=0.01),
         "Generated mask did not match reference mask.")
 
-  def testGradCamCallModelArgs(self):
-    img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
-    img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
-    expected_keys = [grad_cam.CONVOLUTION_LAYER, grad_cam.CONVOLUTION_GRADIENTS]
-    call_model_args = {'foo': 'bar'}
-    mock_call_model = unittest.mock.MagicMock(
-        return_value={grad_cam.CONVOLUTION_GRADIENTS: [img],
-          grad_cam.CONVOLUTION_LAYER: [img]})
-
-    self.grad_cam_instance.GetMask(
-        img,
-        call_model_function=mock_call_model,
-        call_model_args=call_model_args,
-        should_resize=True,
-        three_dims=False)
-    calls = mock_call_model.mock_calls
-
-    self.assertEqual(len(calls), 1)
-    for call in calls:
-      kwargs = call[2]
-      self.assertEqual(
-          kwargs['call_model_args'],
-          call_model_args,
-          msg='function was called with incorrect call_model_args.')
-      self.assertEqual(
-          kwargs['expected_keys'],
-          expected_keys,
-          msg='function was called with incorrect expected_keys.')
-
   def testGradCamErrorGradientsMismatch(self):
     """Tests the GradCAM method using a simple network.
 
@@ -123,17 +119,23 @@ class GradCamTest(unittest.TestCase):
     dimension, so the expectation is that a ValueError will be raised.
     """
 
-    def create_call_model_function():
+    def create_call_model_function(graph, session, conv_layer, x):
+      with graph.as_default():
+        gradients_node = tf.gradients(conv_layer, x)[0]
 
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        grad = np.zeros(x_value_batch.shape)
-        output = np.zeros(x_value_batch.shape)
+        call_model_args[x] = x_value_batch
+        (output, grad) = session.run([conv_layer, gradients_node],
+                                     feed_dict=call_model_args)
         return {grad_cam.CONVOLUTION_GRADIENTS: grad[0],
                 grad_cam.CONVOLUTION_LAYER: output}
 
       return call_model
 
-    call_model_function = create_call_model_function()
+    call_model_function = create_call_model_function(self.graph,
+                                                     self.sess,
+                                                     self.conv_layer,
+                                                     self.images)
 
     # Generate test input (centered matrix of 1s surrounded by 0s)
     # and generate corresponding GradCAM mask
@@ -162,17 +164,23 @@ class GradCamTest(unittest.TestCase):
     dimension, so the expectation is that a ValueError will be raised.
     """
 
-    def create_call_model_function():
+    def create_call_model_function(graph, session, conv_layer, x):
+      with graph.as_default():
+        gradients_node = tf.gradients(conv_layer, x)[0]
 
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        grad = np.zeros(x_value_batch.shape)
-        output = np.zeros(x_value_batch.shape)
+        call_model_args[x] = x_value_batch
+        (output, grad) = session.run([conv_layer, gradients_node],
+                                     feed_dict=call_model_args)
         return {grad_cam.CONVOLUTION_GRADIENTS: grad,
                 grad_cam.CONVOLUTION_LAYER: output[0]}
 
       return call_model
 
-    call_model_function = create_call_model_function()
+    call_model_function = create_call_model_function(self.graph,
+                                                     self.sess,
+                                                     self.conv_layer,
+                                                     self.images)
 
     # Generate test input (centered matrix of 1s surrounded by 0s)
     # and generate corresponding GradCAM mask
