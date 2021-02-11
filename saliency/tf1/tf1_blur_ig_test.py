@@ -16,7 +16,7 @@
 """
 import unittest
 
-from . import blur_ig
+from ..core import blur_ig
 import numpy as np
 import tensorflow.compat.v1 as tf
 
