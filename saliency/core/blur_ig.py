@@ -43,9 +43,10 @@ def gaussian_blur(image, sigma):
 class BlurIG(CoreSaliency):
   """A CoreSaliency class that implements integrated gradients along blur path.
 
+  https://arxiv.org/abs/2004.03383
+
   Generates a saliency mask by computing integrated gradients for a given input
   and prediction label using a path that successively blurs the image.
-  TODO(vsubhashini): Add link to paper after it goes up on arxiv.
   """
 
   def GetMask(self,

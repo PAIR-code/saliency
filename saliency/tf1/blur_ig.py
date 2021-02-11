@@ -2,7 +2,13 @@ from ..core import blur_ig
 from .base import TF1CoreSaliency
 
 class BlurIG(TF1CoreSaliency):
-  r"""A SaliencyMask class that computes saliency masks with a gradient."""
+  """A F1CoreSaliency class that implements IG along blur path.
+
+  https://arxiv.org/abs/2004.03383
+
+  Generates a saliency mask by computing integrated gradients for a given input
+  and prediction label using a path that successively blurs the image.
+  """
 
   def __init__(self, graph, session, y, x):
     super(BlurIG, self).__init__(graph, session, y, x)

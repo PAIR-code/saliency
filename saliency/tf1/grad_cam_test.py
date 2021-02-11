@@ -14,7 +14,7 @@
 # ==============================================================================
 import unittest
 
-from ..core import grad_cam
+from . import grad_cam
 import numpy as np
 import tensorflow.compat.v1 as tf
 
@@ -55,7 +55,10 @@ class GradCamTest(unittest.TestCase):
 
       # Set up GradCam object
       self.conv_layer = self.graph.get_tensor_by_name("Conv/BiasAdd:0")
-      self.grad_cam_instance = grad_cam.GradCam()
+      self.grad_cam_instance = grad_cam.GradCam(self.graph,
+                                                self.sess, 
+                                                x=self.images,
+                                                conv_layer=self.conv_layer)
 
   def testGradCamGetMask(self):
     """Tests the GradCAM method using a simple network.
@@ -69,23 +72,6 @@ class GradCamTest(unittest.TestCase):
     in ref_mask).
     """
 
-    def create_call_model_function(graph, session, conv_layer, x):
-      with graph.as_default():
-        gradients_node = tf.gradients(conv_layer, x)[0]
-
-      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        call_model_args[x] = x_value_batch
-        (output, grad) = session.run([conv_layer, gradients_node],
-                                     feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad,
-                grad_cam.CONVOLUTION_LAYER_VALUES: output}
-
-      return call_model
-
-    call_model_function = create_call_model_function(self.graph, self.sess,
-                                                     self.conv_layer,
-                                                     self.images)
-
     # Generate test input (centered matrix of 1s surrounded by 0s)
     # and generate corresponding GradCAM mask
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
@@ -93,8 +79,7 @@ class GradCamTest(unittest.TestCase):
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
     mask = self.grad_cam_instance.GetMask(
         img,
-        call_model_function=call_model_function,
-        call_model_args={},
+        feed_dict={},
         should_resize=True,
         three_dims=False)
 
@@ -108,94 +93,6 @@ class GradCamTest(unittest.TestCase):
         np.allclose(mask, ref_mask, atol=0.01),
         "Generated mask did not match reference mask.")
 
-  def testGradCamErrorGradientsMismatch(self):
-    """Tests the GradCAM method using a simple network.
-
-    Simple test case where the network contains one convolutional layer that
-    acts as a horizontal line detector and the input image is a 5x5 matrix with
-    a centered 3x3 grid of 1s and 0s elsewhere.
-
-    The call_model_function returns the gradients without the outermost batch
-    dimension, so the expectation is that a ValueError will be raised.
-    """
-
-    def create_call_model_function(graph, session, conv_layer, x):
-      with graph.as_default():
-        gradients_node = tf.gradients(conv_layer, x)[0]
-
-      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        call_model_args[x] = x_value_batch
-        (output, grad) = session.run([conv_layer, gradients_node],
-                                     feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad[0],
-                grad_cam.CONVOLUTION_LAYER_VALUES: output}
-
-      return call_model
-
-    call_model_function = create_call_model_function(self.graph,
-                                                     self.sess,
-                                                     self.conv_layer,
-                                                     self.images)
-
-    # Generate test input (centered matrix of 1s surrounded by 0s)
-    # and generate corresponding GradCAM mask
-    img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
-    img[1:-1, 1:-1] = 1
-    img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
-
-    with self.assertRaisesRegex(ValueError,
-                                grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE[:-30]):
-
-      self.grad_cam_instance.GetMask(
-          img,
-          call_model_function=call_model_function,
-          call_model_args={},
-          should_resize=True,
-          three_dims=False)
-
-  def testGradCamErrorValuesMismatch(self):
-    """Tests the GradCAM method using a simple network.
-
-    Simple test case where the network contains one convolutional layer that
-    acts as a horizontal line detector and the input image is a 5x5 matrix with
-    a centered 3x3 grid of 1s and 0s elsewhere.
-
-    The call_model_function returns the gradients without the outermost batch
-    dimension, so the expectation is that a ValueError will be raised.
-    """
-
-    def create_call_model_function(graph, session, conv_layer, x):
-      with graph.as_default():
-        gradients_node = tf.gradients(conv_layer, x)[0]
-
-      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        call_model_args[x] = x_value_batch
-        (output, grad) = session.run([conv_layer, gradients_node],
-                                     feed_dict=call_model_args)
-        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad,
-                grad_cam.CONVOLUTION_LAYER_VALUES: output[0]}
-
-      return call_model
-
-    call_model_function = create_call_model_function(self.graph,
-                                                     self.sess,
-                                                     self.conv_layer,
-                                                     self.images)
-
-    # Generate test input (centered matrix of 1s surrounded by 0s)
-    # and generate corresponding GradCAM mask
-    img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
-    img[1:-1, 1:-1] = 1
-    img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
-
-    with self.assertRaisesRegex(ValueError,
-                                grad_cam.VALUES_SHAPE_ERROR_MESSAGE[:-30]):
-      self.grad_cam_instance.GetMask(
-          img,
-          call_model_function=call_model_function,
-          call_model_args={},
-          should_resize=True,
-          three_dims=False)
 
 if __name__ == "__main__":
   unittest.main()
