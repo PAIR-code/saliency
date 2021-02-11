@@ -13,9 +13,9 @@
 # limitations under the License.
 
 """Utilities to run CallModelSaliency methods using TF1 models."""
-from .base import CONVOLUTION_LAYER_GRADIENTS
-from .base import CONVOLUTION_LAYER_VALUES
-from .base import OUTPUT_LAYER_GRADIENTS
+from ..core.base import CONVOLUTION_LAYER_GRADIENTS
+from ..core.base import CONVOLUTION_LAYER_VALUES
+from ..core.base import OUTPUT_LAYER_GRADIENTS
 import tensorflow.compat.v1 as tf
 
 MISSING_Y_ERROR_MESSAGE = 'Cannot return key {} because no y was specified'
@@ -47,13 +47,7 @@ def create_tf1_call_model_function(graph,
     if x is None:
       raise ValueError('Expected input tensor for x but is equal to None.')
     if y is not None:
-      # y must be of size one, otherwise the gradient we get from tf.gradients
-      # will be summed over all ys.
-      size = 1
-      for shape in y.shape:
-        size *= shape
-      assert size == 1
-      OUTPUT_LAYER_GRADIENTS = tf.gradients(y, x)[0]
+      output_gradients = tf.gradients(y, x)[0]
     if conv_layer is not None:
       conv_gradients = tf.gradients(conv_layer, x)[0]
 
@@ -63,7 +57,7 @@ def create_tf1_call_model_function(graph,
       if expected_key == OUTPUT_LAYER_GRADIENTS:
         if y is None:
           raise RuntimeError(MISSING_Y_ERROR_MESSAGE.format(OUTPUT_LAYER_GRADIENTS))
-        fetches.append(OUTPUT_LAYER_GRADIENTS)
+        fetches.append(output_gradients)
       elif expected_key in [CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS]:
         if conv_layer is None:
           raise RuntimeError(MISSING_CONV_LAYER_ERROR_MESSAGE.format(

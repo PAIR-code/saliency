@@ -24,7 +24,7 @@ import numpy as np
 from scipy import ndimage
 
 SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape"
-                      " as input x_value_batch")
+                       " as input x_value_batch - expected {}, actual {}")
 
 def gaussian_blur(image, sigma):
   """Returns Gaussian blur filtered 3d (WxHxC) image.
@@ -114,7 +114,9 @@ class BlurIG(CoreSaliency):
         call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
             call_model_data[OUTPUT_LAYER_GRADIENTS])
         if call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_step_batched.shape:
-          raise ValueError(SHAPE_ERROR_MESSAGE)
+          raise ValueError(SHAPE_ERROR_MESSAGE.format(
+                    x_step_batched.shape, 
+                    call_model_data[OUTPUT_LAYER_GRADIENTS].shape))
         tmp = (
             step_vector_diff[i] * np.multiply(
                 gaussian_gradient_batched, call_model_data[OUTPUT_LAYER_GRADIENTS]))

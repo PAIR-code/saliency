@@ -144,7 +144,7 @@ class GradCamTest(unittest.TestCase):
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
 
     with self.assertRaisesRegex(ValueError,
-                                grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE):
+                                grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE[:-30]):
 
       self.grad_cam_instance.GetMask(
           img,
@@ -189,7 +189,7 @@ class GradCamTest(unittest.TestCase):
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
 
     with self.assertRaisesRegex(ValueError,
-                                grad_cam.VALUES_SHAPE_ERROR_MESSAGE):
+                                grad_cam.VALUES_SHAPE_ERROR_MESSAGE[:-30]):
       self.grad_cam_instance.GetMask(
           img,
           call_model_function=call_model_function,

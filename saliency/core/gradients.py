@@ -1,4 +1,4 @@
-# Copyright 2017 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,17 +19,16 @@ from .base import OUTPUT_LAYER_GRADIENTS
 import numpy as np
 
 SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape"
-                       " as input x_value_batch - expected {}, actual {}")
+                      " as input x_value_batch")
 
-class IntegratedGradients(CoreSaliency):
+class GradientSaliency(CoreSaliency):
   """A CoreSaliency class that implements the integrated gradients method.
 
   https://arxiv.org/abs/1703.01365
   """
 
-  def GetMask(self, x_value, call_model_function, call_model_args=None,
-              x_baseline=None, x_steps=25, batch_size=1):
-    """Returns a integrated gradients mask.
+  def GetMask(self, x_value, call_model_function, call_model_args=None):
+    """Returns a vanilla gradients mask.
 
     Args:
       x_value: Input ndarray.
@@ -50,35 +49,14 @@ class IntegratedGradients(CoreSaliency):
               x_value_batch.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
-      x_baseline: Baseline value used in integration. Defaults to 0.
-      x_steps: Number of integrated steps between baseline and x.
     """
-    if x_baseline is None:
-      x_baseline = np.zeros_like(x_value)
-
-    assert x_baseline.shape == x_value.shape
-
-    x_diff = x_value - x_baseline
-
-    total_gradients = np.zeros_like(x_value)
-
-    x_step_batched = []
-    for alpha in np.linspace(0, 1, x_steps):
-      x_step = x_baseline + alpha * x_diff
-      x_step_batched.append(x_step)
-      if len(x_step_batched) == batch_size or alpha == 1:
-        x_step_batched = np.array(x_step_batched)
-        call_model_data = call_model_function(
-            x_step_batched,
+    x_value_batched = np.array([x_value])
+    call_model_data = call_model_function(
+            x_value_batched,
             call_model_args=call_model_args,
             expected_keys=[OUTPUT_LAYER_GRADIENTS])
-        call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
-            call_model_data[OUTPUT_LAYER_GRADIENTS])
-        if (call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_step_batched.shape):
-          raise ValueError(SHAPE_ERROR_MESSAGE.format(
-                    x_step_batched.shape, 
-                    call_model_data[OUTPUT_LAYER_GRADIENTS].shape))
-        total_gradients += call_model_data[OUTPUT_LAYER_GRADIENTS].sum(axis=0)
-        x_step_batched = []
-
-    return total_gradients * x_diff / x_steps
+    call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
+        call_model_data[OUTPUT_LAYER_GRADIENTS])
+    if (call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_value_batched.shape):
+      raise ValueError(SHAPE_ERROR_MESSAGE)
+    return call_model_data[OUTPUT_LAYER_GRADIENTS][0]

@@ -14,11 +14,11 @@
 
 """Utilites to computed GuidedBackprop SaliencyMasks."""
 
-from .base import SaliencyMask
+from .base import TF1Saliency
 import tensorflow.compat.v1 as tf
 
 
-class GuidedBackprop(SaliencyMask):
+class GuidedBackprop(TF1Saliency):
   """A SaliencyMask class that computes saliency masks with GuidedBackProp.
 
   This implementation copies the TensorFlow graph to a new graph with the ReLU

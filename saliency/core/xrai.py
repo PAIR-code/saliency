@@ -9,7 +9,7 @@ from __future__ import print_function
 
 import logging
 
-from .base import CallModelSaliency
+from .base import CoreSaliency
 from .base import OUTPUT_LAYER_GRADIENTS
 from .integrated_gradients import IntegratedGradients
 import numpy as np
@@ -227,7 +227,7 @@ class XRAIOutput(object):
     self.segments = None
 
 
-class XRAI(CallModelSaliency):
+class XRAI(CoreSaliency):
 
   def __init__(self):
     super(XRAI, self).__init__()
