@@ -85,7 +85,7 @@ class GradCam(CallModelSaliency):
     x_value_batched = np.array([x_value])
     data = call_model_function(
         x_value_batched,
-        call_model_args,
+        call_model_args=call_model_args,
         expected_keys=[CONVOLUTION_LAYER, CONVOLUTION_GRADIENTS])
     data[CONVOLUTION_GRADIENTS] = np.array(data[CONVOLUTION_GRADIENTS])
     data[CONVOLUTION_LAYER] = np.array(data[CONVOLUTION_LAYER])

@@ -1,8 +1,7 @@
-import mock
+import unittest
+
 import numpy as np
 import skimage.draw as sk_draw
-from tensorflow import test
-import tensorflow.compat.v1 as tf
 from . import xrai
 from .xrai import XRAI
 from .xrai import XRAIParameters
@@ -10,18 +9,19 @@ from .xrai import XRAIParameters
 IMAGE_SIZE = 299
 
 
-class XraiTest(test.TestCase):
+class XraiTest(unittest.TestCase):
   """To run: "python -m saliency.xrai_test" from the top-level directory."""
 
   def setUp(self):
     def call_model_function():
       return
     # Mock IntegratedGradients.
-    self.mock_ig = mock.patch(__name__ + '.xrai.IntegratedGradients').start()
+    self.mock_ig = unittest.mock.patch(
+      __name__ + '.xrai.IntegratedGradients').start()
     self.input_image = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) * 0.3 + 0.5
     self.ig_bl_1_attr = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) - 0.4
     self.ig_bl_2_attr = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) - 0.4
-    self.mock_ig_instance = mock.Mock()
+    self.mock_ig_instance = unittest.mock.Mock()
     self.mock_ig_instance.GetMask.side_effect = [self.ig_bl_1_attr,
                                                  self.ig_bl_2_attr,
                                                  self.ig_bl_1_attr,
@@ -244,7 +244,7 @@ class XraiTest(test.TestCase):
     base_attribution = np.random.rand(IMAGE_SIZE, IMAGE_SIZE + 1, 3)
 
     # Verify that the exception was raised.
-    with self.assertRaisesRegexp(ValueError, 'The base attribution shape '
+    with self.assertRaisesRegex(ValueError, 'The base attribution shape '
                                              'should'):
       # Calling GetMask(...) should result in exception.
       self.xrai.GetMask(x_value=self.input_image,
@@ -317,4 +317,4 @@ class XraiTest(test.TestCase):
 
 
 if __name__ == '__main__':
-  test.main()
+  unittest.main()
