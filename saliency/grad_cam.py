@@ -76,7 +76,7 @@ class GradCam(SaliencyMask):
             with self.graph.as_default():
                 grad_cam = np.squeeze(tf.image.resize_bilinear(
                     np.expand_dims(np.expand_dims(grad_cam, 0), 3),
-                    x_value.shape[:2]).eval(session=self.session))
+                    x_value.shape[:2], half_pixel_centers=True).eval(session=self.session))
 
         # convert grayscale to 3-D
         if three_dims:
