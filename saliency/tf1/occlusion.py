@@ -1,50 +1,22 @@
-# Copyright 2017 Google Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+from ..core import occlusion as core_occlusion
+from .base import TF1CoreSaliency
 
-"""Utilities to compute an Occlusion SaliencyMask."""
+class Occlusion(TF1CoreSaliency):
+  r"""A SaliencyMask class that computes saliency masks with a gradient."""
 
-from .base import TF1Saliency
-import numpy as np
-
-
-class Occlusion(TF1Saliency):
-  """A SaliencyMask class that computes saliency masks by occluding the image.
-
-  This method slides a window over the image and computes how that occlusion
-  affects the class score. When the class score decreases, this is positive
-  evidence for the class, otherwise it is negative evidence.
-  """
+  def __init__(self, graph, session, y, x):
+    super(Occlusion, self).__init__(graph, session, y, x)
+    self.core_instance = core_occlusion.Occlusion()
 
   def GetMask(self, x_value, feed_dict={}, size=15, value=0):
-    """Returns an occlusion mask."""
-    occlusion_window = np.array([size, size, x_value.shape[2]])
-    occlusion_window.fill(value)
+    """Returns a integrated gradients mask.
 
-    occlusion_scores = np.zeros_like(x_value)
-
-    feed_dict[self.x] = [x_value]
-    original_y_value = self.session.run(self.y, feed_dict=feed_dict)
-
-    for row in range(x_value.shape[0] - size):
-      for col in range(x_value.shape[1] - size):
-        x_occluded = np.array(x_value)
-
-        x_occluded[row:row+size, col:col+size, :] = occlusion_window
-
-        feed_dict[self.x] = [x_occluded]
-        y_value = self.session.run(self.y, feed_dict=feed_dict)
-
-        score_diff = original_y_value - y_value
-        occlusion_scores[row:row+size, col:col+size, :] += score_diff
-    return occlusion_scores
+    Args:
+      x_value: Input value, not batched.
+      feed_dict: (Optional) feed dictionary to pass to the session.run call.
+    """
+    return self.core_instance.GetMask(x_value, 
+        self.call_model_function,
+        call_model_args=feed_dict,
+        size=size,
+        value=value)

@@ -52,11 +52,12 @@ class GradCamTest(unittest.TestCase):
       self.sess = tf.Session()
       init = tf.global_variables_initializer()
       self.sess.run(init)
+      self.sess_spy = unittest.mock.MagicMock(wraps=self.sess)
 
       # Set up GradCam object
       self.conv_layer = self.graph.get_tensor_by_name("Conv/BiasAdd:0")
       self.grad_cam_instance = grad_cam.GradCam(self.graph,
-                                                self.sess, 
+                                                self.sess_spy, 
                                                 x=self.images,
                                                 conv_layer=self.conv_layer)
 
@@ -92,6 +93,21 @@ class GradCamTest(unittest.TestCase):
     self.assertTrue(
         np.allclose(mask, ref_mask, atol=0.01),
         "Generated mask did not match reference mask.")
+
+  def testGradCamGetMaskArgs(self):
+    img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
+    img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
+    feed_dict = {'foo':'bar'}
+    self.sess_spy.run.return_value = [[img], [img]]
+
+    self.grad_cam_instance.GetMask(
+        img,
+        feed_dict=feed_dict,
+        should_resize=True,
+        three_dims=False)
+    actual_feed_dict = self.sess_spy.run.call_args[1]['feed_dict']
+
+    self.assertEqual(actual_feed_dict['foo'], feed_dict['foo'])
 
 
 if __name__ == "__main__":

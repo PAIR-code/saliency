@@ -16,6 +16,7 @@
 from ..core.base import CONVOLUTION_LAYER_GRADIENTS
 from ..core.base import CONVOLUTION_LAYER_VALUES
 from ..core.base import OUTPUT_LAYER_GRADIENTS
+from ..core.base import OUTPUT_LAYER_VALUES
 import tensorflow.compat.v1 as tf
 
 MISSING_Y_ERROR_MESSAGE = 'Cannot return key {} because no y was specified'
@@ -54,10 +55,13 @@ def create_tf1_call_model_function(graph,
   def convert_keys_to_fetches(expected_keys):
     fetches = []
     for expected_key in expected_keys:
-      if expected_key == OUTPUT_LAYER_GRADIENTS:
+      if expected_key in [OUTPUT_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS]:
         if y is None:
-          raise RuntimeError(MISSING_Y_ERROR_MESSAGE.format(OUTPUT_LAYER_GRADIENTS))
-        fetches.append(output_gradients)
+          raise RuntimeError(MISSING_Y_ERROR_MESSAGE.format(expected_key))
+        if expected_key == OUTPUT_LAYER_VALUES:
+          fetches.append(y)
+        else:
+          fetches.append(output_gradients)
       elif expected_key in [CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS]:
         if conv_layer is None:
           raise RuntimeError(MISSING_CONV_LAYER_ERROR_MESSAGE.format(

@@ -14,7 +14,6 @@
 
 """Utilities to compute SaliencyMasks."""
 import numpy as np
-import tensorflow.compat.v1 as tf
 from . import utils
 
 
