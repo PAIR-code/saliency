@@ -169,8 +169,10 @@ class BlurIgTest(unittest.TestCase):
     x_steps = 2001
     # Create a call_model_function using sess and tensors.
     call_model_function = self.create_bad_call_model_function()
+    expected_error = blur_ig.SHAPE_ERROR_MESSAGE.format(
+        '\\(100, 5, 5, 1\\)','\\(5, 5, 1\\)')
 
-    with self.assertRaisesRegex(ValueError, blur_ig.SHAPE_ERROR_MESSAGE[:-30]):
+    with self.assertRaisesRegex(ValueError, expected_error):
       # Calculate the Blur IG attribution of the input.
       self.blur_ig_instance.GetMask(
           x_value=self.x_input_val,

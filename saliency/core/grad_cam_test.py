@@ -140,9 +140,10 @@ class GradCamTest(unittest.TestCase):
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img[1:-1, 1:-1] = 1
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
+    expected_error = grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE.format(
+        '\\(1, 5, 5, 1\\)','\\(5, 5, 1\\)')
 
-    with self.assertRaisesRegex(ValueError,
-                                grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE[:-30]):
+    with self.assertRaisesRegex(ValueError, expected_error):
 
       self.grad_cam_instance.GetMask(
           img,
@@ -179,9 +180,9 @@ class GradCamTest(unittest.TestCase):
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img[1:-1, 1:-1] = 1
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
+    expected_error = grad_cam.VALUES_SHAPE_ERROR_MESSAGE.format('1', '5')
 
-    with self.assertRaisesRegex(ValueError,
-                                grad_cam.VALUES_SHAPE_ERROR_MESSAGE[:-30]):
+    with self.assertRaisesRegex(ValueError, expected_error):
       self.grad_cam_instance.GetMask(
           img,
           call_model_function=call_model_function,

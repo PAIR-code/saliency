@@ -153,9 +153,10 @@ class IntegratedGradientsTest(unittest.TestCase):
     x_steps = 2001
     # Create a call_model_function using sess and tensors.
     call_model_function = self.create_bad_call_model_function()
+    expected_error = integrated_gradients.SHAPE_ERROR_MESSAGE.format(
+        '\\(500, 3\\)','\\(3,\\)')
 
-    with self.assertRaisesRegex(
-        ValueError, integrated_gradients.SHAPE_ERROR_MESSAGE[:-30]):
+    with self.assertRaisesRegex(ValueError, expected_error):
 
       self.ig_instance.GetMask(x_value=self.x_input_val,
                                call_model_function=call_model_function,
