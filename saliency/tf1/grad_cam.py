@@ -1,4 +1,4 @@
-from ..core import grad_cam
+from ..core import grad_cam as core_grad_cam
 from .base import TF1CoreSaliency
 
 class GradCam(TF1CoreSaliency):
@@ -22,7 +22,7 @@ class GradCam(TF1CoreSaliency):
 
   def __init__(self, graph, session, y=None, x=None, conv_layer=None):
     super(GradCam, self).__init__(graph, session, y, x, conv_layer)
-    self.core_instance = grad_cam.GradCam()
+    self.core_instance = core_grad_cam.GradCam()
 
   def GetMask(self, x_value, feed_dict={},
               should_resize=True,

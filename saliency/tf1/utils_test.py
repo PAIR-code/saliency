@@ -119,6 +119,20 @@ class UtilsTF1Test(unittest.TestCase):
           call_model_args={},
           expected_keys=[utils.OUTPUT_LAYER_GRADIENTS])
 
+  def testOutputValuesMissingY(self):
+    with self.graph.as_default():
+      x = tf.placeholder(shape=[None, 3], dtype=np.float32)
+    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
+    expected = 'Cannot return key OUTPUT_LAYER_VALUES because no y was specified'
+
+    with self.assertRaisesRegex(RuntimeError, expected):
+      call_model_function = utils.create_tf1_call_model_function(
+          self.graph, self.sess, x=x)
+      call_model_function(
+          x_value,
+          call_model_args={},
+          expected_keys=[utils.OUTPUT_LAYER_VALUES])
+
   def testMissingX(self):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)

@@ -1,4 +1,4 @@
-from ..core import blur_ig
+from ..core import blur_ig as core_blur_ig
 from .base import TF1CoreSaliency
 
 class BlurIG(TF1CoreSaliency):
@@ -12,7 +12,7 @@ class BlurIG(TF1CoreSaliency):
 
   def __init__(self, graph, session, y, x):
     super(BlurIG, self).__init__(graph, session, y, x)
-    self.core_instance = blur_ig.BlurIG()
+    self.core_instance = core_blur_ig.BlurIG()
 
   def GetMask(self, x_value, feed_dict={},
               max_sigma=50,

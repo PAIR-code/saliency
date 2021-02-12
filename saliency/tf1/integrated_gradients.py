@@ -1,4 +1,4 @@
-from ..core import integrated_gradients
+from ..core import integrated_gradients as core_integrated_gradients
 from .base import TF1CoreSaliency
 
 class IntegratedGradients(TF1CoreSaliency):
@@ -6,7 +6,7 @@ class IntegratedGradients(TF1CoreSaliency):
 
   def __init__(self, graph, session, y, x):
     super(IntegratedGradients, self).__init__(graph, session, y, x)
-    self.core_instance = integrated_gradients.IntegratedGradients()
+    self.core_instance = core_integrated_gradients.IntegratedGradients()
 
   def GetMask(self, x_value, feed_dict={},
               x_baseline=None, x_steps=25, batch_size=1):
