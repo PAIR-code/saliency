@@ -1,4 +1,4 @@
-# Copyright 2020 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilities to compute saliency using the Blur IG method.
-
-Implementation of Integrated Gradients along the blur path.
-"""
+"""Utilities to compute saliency using the Blur IG method."""
 import math
 
 from .base import CoreSaliency
@@ -52,13 +49,13 @@ class BlurIG(CoreSaliency):
   def GetMask(self,
               x_value,
               call_model_function,
-              call_model_args=None,
+              call_model_args={},
               max_sigma=50,
               steps=100,
               grad_step=0.01,
               sqrt=False,
               batch_size=1):
-    """Returns an integrated gradients mask.
+    """Returns an integrated gradients mask on a blur path.
 
     TODO(vsubhashini): Decide if we want to restrict and find explanation
       between points of maximum information.
@@ -83,11 +80,11 @@ class BlurIG(CoreSaliency):
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
       max_sigma: Maximum size of the gaussian blur kernel.
-      steps: Number of successive blur applications between x and until fully
-       blurred image (with kernel max_sigma).
+      steps: Number of successive blur applications between x and fully blurred
+        image (with kernel max_sigma).
       grad_step: Gaussian gradient step size.
       sqrt: Chooses square root when deciding spacing between sigma. (Full
-            mathematical implication remains to be understood).
+        mathematical implication remains to be understood).
     """
 
     if sqrt:
@@ -112,15 +109,14 @@ class BlurIG(CoreSaliency):
             x_step_batched,
             call_model_args=call_model_args,
             expected_keys=[OUTPUT_LAYER_GRADIENTS])
+            
         call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
             call_model_data[OUTPUT_LAYER_GRADIENTS])
         if call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_step_batched.shape:
           raise ValueError(SHAPE_ERROR_MESSAGE.format(
                     x_step_batched.shape, 
                     call_model_data[OUTPUT_LAYER_GRADIENTS].shape))
-        tmp = (
-            step_vector_diff[i] * np.multiply(
-                gaussian_gradient_batched, call_model_data[OUTPUT_LAYER_GRADIENTS]))
+        tmp = (step_vector_diff[i] * np.multiply(gaussian_gradient_batched, call_model_data[OUTPUT_LAYER_GRADIENTS]))
         total_gradients += tmp.sum(axis=0)
         x_step_batched = []
         gaussian_gradient_batched = []
