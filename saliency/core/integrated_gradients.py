@@ -60,7 +60,7 @@ class IntegratedGradients(CoreSaliency):
 
     x_diff = x_value - x_baseline
 
-    total_gradients = np.zeros_like(x_value)
+    total_gradients = np.zeros_like(x_value, dtype=np.float32)
 
     x_step_batched = []
     for alpha in np.linspace(0, 1, x_steps):

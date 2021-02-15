@@ -426,7 +426,8 @@ class XRAI(CoreSaliency):
       attr = base_attribution
 
     # Merge attribution channels for XRAI input
-    attr = _attr_aggregation_max(attr)
+    if(len(attr.shape) > 2):
+      attr = _attr_aggregation_max(attr)
 
     _logger.info('Done with IG. Computing XRAI...')
     if segments is not None:

@@ -28,13 +28,14 @@ class XRAITest(unittest.TestCase):
       super().setUp()
       with tf.Graph().as_default() as graph:
         x = tf.placeholder(shape=[None, 3], dtype=tf.float32)
-        contrib = [5 * x[:, 0], x[:, 1] * x[:, 1], tf.sin(x[:, 2])]
+        contrib = [5 * x[:, 0], x[:, 1] * x[:, 1], 2 * x[:, 2]]
         y = contrib[0] + contrib[1] + contrib[2]
         sess = tf.Session(graph=graph)
+        self.sess_spy = unittest.mock.MagicMock(wraps=sess)
 
         # Calculate the integrated gradients attribution of the input.
         self.xrai_instance = xrai.XRAI(graph,
-                                      sess,
+                                      self.sess_spy,
                                       y,
                                       x)
 
@@ -95,6 +96,47 @@ class XRAITest(unittest.TestCase):
                     base_attribution=base_attribution, 
                     batch_size=batch_size, 
                     extra_parameters=extra_parameters)])
+
+  def testXraiFunctional(self):
+    feed_dict = {}
+    baselines = np.array([[0,0,3],[0,0,0]])
+    segments = [[True, True, False], [False, False, True]]
+    batch_size = 9
+    extra_parameters = xrai.XRAIParameters(steps=100,
+                                           return_ig_attributions=True,
+                                           return_xrai_segments=True)
+    # Reducing min_pixel_diff lets us use this very small 1x3 "image"
+    extra_parameters.experimental_params['min_pixel_diff'] = 0
+    expected_segments = np.array([1,1,2])
+    # equation is 5x + y^2 + 2z, but first baseline has z_baseline=z_input
+    x_value = np.array([3,2,3])
+    expected_ig = np.array([[x_value[0]*5,
+                            x_value[1]*x_value[1],
+                            0],
+                            [x_value[0]*5,
+                            x_value[1]*x_value[1],
+                            x_value[2]*2]])
+    # segment masks have the first two inputs together
+    expected_mask = np.mean(expected_ig, axis=0)
+    expected_mask[0:2] = np.mean(expected_mask[0:2]) # [9.5, 9.5, 3]
+    expected_calls = 24  # batch size is 9, 2*ceil(100/9)=24
+
+    mask_details = self.xrai_instance.GetMaskWithDetails(x_value=x_value,
+                                feed_dict=feed_dict, 
+                                baselines=baselines, 
+                                segments=segments, 
+                                batch_size=batch_size, 
+                                extra_parameters=extra_parameters)
+
+    np.testing.assert_almost_equal(mask_details.attribution_mask,
+                                   expected_mask, decimal=4)
+    np.testing.assert_almost_equal(mask_details.ig_attribution,
+                                   expected_ig, decimal=4)
+    np.testing.assert_almost_equal(mask_details.segments,
+                                   expected_segments, decimal=4)
+    np.testing.assert_almost_equal(mask_details.baselines,
+                                   baselines, decimal=4)
+    self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
 if __name__ == '__main__':
   unittest.main()
