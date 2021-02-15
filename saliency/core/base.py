@@ -25,9 +25,6 @@ CONVOLUTION_LAYER_VALUES = 'CONVOLUTION_LAYER_VALUES'
 class CoreSaliency(object):
   r"""Base class for saliency masks. Alone, this class doesn't do anything."""
 
-  def __init__(self):
-    pass
-
   def GetMask(self, x_value, call_model_function, call_model_args=None):
     """Returns an unsmoothed mask.
 
