@@ -1,10 +1,24 @@
+# Copyright 2021 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from ..core import xrai as core_xrai
 from .base import TF1CoreSaliency
 
 XRAIParameters = core_xrai.XRAIParameters
 
 class XRAI(TF1CoreSaliency):
-  r"""A SaliencyMask class that computes saliency masks with a gradient."""
+  r"""A TF1CoreSaliency class that computes XRAI."""
 
   def __init__(self, graph, session, y, x):
     super(XRAI, self).__init__(graph, session, y, x)
@@ -23,24 +37,9 @@ class XRAI(TF1CoreSaliency):
 
 
     Args:
-        x_value: Input ndarray.
-        call_model_function: A function that interfaces with a model to return
-          specific data in a dictionary when given an input and other arguments.
-          Expected function signature:
-          - call_model_function(x_value_batch,
-                                call_model_args=None,
-                                expected_keys=None):
-            x_value_batch - Input for the model, given as a batch (i.e. dimension
-              0 is the batch dimension, dimensions 1 through n represent a single
-              input).
-            call_model_args - Other arguments used to call and run the model.
-            expected_keys - List of keys that are expected in the output. For 
-            this method (XRAI), the expected keys are
-            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer (logit/softmax)
-              with respect to the input. Shape should be the same shape as
-              x_value_batch.
-        call_model_args: The arguments that will be passed to the call model
-          function, for every call of the model.
+        x_value: Input ndarray, not batched.
+        feed_dict: feed dictionary to pass to the TF session.run() call.
+                   Defaults to {}.
         baselines: a list of baselines to use for calculating
                    Integrated Gradients attribution. Every baseline in
                    the list should have the same dimensions as the
@@ -59,6 +58,8 @@ class XRAI(TF1CoreSaliency):
                           the shape of `x_value`. If the value is None, the
                           method calculates Integrated Gradients attribution and
                           uses it.
+        batch_size: Maximum number of x inputs that are passed to session.run 
+                    call as a batch.
         extra_parameters: an XRAIParameters object that specifies
                           additional parameters for the XRAI saliency
                           method. If it is None, an XRAIParameters object
@@ -91,6 +92,44 @@ class XRAI(TF1CoreSaliency):
                          base_attribution=None,
                          batch_size=1,
                          extra_parameters=None):
+    """Applies XRAI method on an input image and returns the result saliency
+    heatmap along with other detailed information.
+    Args:
+        x_value: input value, not batched.
+        feed_dict: feed dictionary to pass to the TF session.run() call.
+                   Defaults to {}.
+        baselines: a list of baselines to use for calculating
+                   Integrated Gradients attribution. Every baseline in
+                   the list should have the same dimensions as the
+                   input. If the value is not set then the algorithm
+                   will make the best effort to select default
+                   baselines. Defaults to None.
+        segments: the list of precalculated image segments that should
+                  be passed to XRAI. Each element of the list is an
+                  [N,M] boolean array, where NxM are the image
+                  dimensions. Each elemeent on the list contains exactly the
+                  mask that corresponds to one segment. If the value is None,
+                  Felzenszwalb's segmentation algorithm will be applied.
+                  Defaults to None.
+        base_attribution: an optional pre-calculated base attribution that XRAI
+                          should use. The shape of the parameter should match
+                          the shape of `x_value`. If the value is None, the
+                          method calculates Integrated Gradients attribution and
+                          uses it.
+        batch_size: Maximum number of x inputs that are passed to session.run 
+                    call as a batch.
+        extra_parameters: an XRAIParameters object that specifies
+                          additional parameters for the XRAI saliency
+                          method. If it is None, an XRAIParameters object
+                          will be created with default parameters. See
+                          XRAIParameters for more details.
+    Raises:
+        ValueError: If algorithm type is unknown (not full or fast).
+                    If the shape of `base_attribution` dosn't match the shape of `x_value`.
+    Returns:
+        XRAIOutput: an object that contains the output of the XRAI algorithm.
+    TODO(tolgab) Add output_selector functionality from XRAI API doc
+    """
     return self.core_instance.GetMaskWithDetails(
         x_value, 
         call_model_function=self.call_model_function,

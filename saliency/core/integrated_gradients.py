@@ -1,4 +1,4 @@
-# Copyright 2017 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilities to compute an IntegratedGradients SaliencyMask."""
+"""Utilities to compute saliency using the Integrated Gradients method."""
 
 from .base import CoreSaliency
 from .base import OUTPUT_LAYER_GRADIENTS
 import numpy as np
 
-SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape"
-                       " as input x_value_batch - expected {}, actual {}")
+SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape as input x_value_batch - expected {}, actual {}")
 
 class IntegratedGradients(CoreSaliency):
   """A CoreSaliency class that implements the integrated gradients method.
@@ -29,7 +28,7 @@ class IntegratedGradients(CoreSaliency):
 
   def GetMask(self, x_value, call_model_function, call_model_args=None,
               x_baseline=None, x_steps=25, batch_size=1):
-    """Returns a integrated gradients mask.
+    """Returns an integrated gradients mask.
 
     Args:
       x_value: Input ndarray.
@@ -45,13 +44,15 @@ class IntegratedGradients(CoreSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (Integrated Gradients), the expected keys are
-            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer (logit/softmax)
-              with respect to the input. Shape should be the same shape as
-              x_value_batch.
+            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer 
+              (logit/softmax) with respect to the input. Shape should be the 
+              same shape as x_value_batch.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
       x_baseline: Baseline value used in integration. Defaults to 0.
       x_steps: Number of integrated steps between baseline and x.
+      batch_size: Maximum nmber of x_inputs that are passed to 
+        call_model_function as a batch.
     """
     if x_baseline is None:
       x_baseline = np.zeros_like(x_value)
@@ -72,12 +73,14 @@ class IntegratedGradients(CoreSaliency):
             x_step_batched,
             call_model_args=call_model_args,
             expected_keys=[OUTPUT_LAYER_GRADIENTS])
+
         call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
             call_model_data[OUTPUT_LAYER_GRADIENTS])
         if (call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_step_batched.shape):
           raise ValueError(SHAPE_ERROR_MESSAGE.format(
                     x_step_batched.shape, 
                     call_model_data[OUTPUT_LAYER_GRADIENTS].shape))
+
         total_gradients += call_model_data[OUTPUT_LAYER_GRADIENTS].sum(axis=0)
         x_step_batched = []
 

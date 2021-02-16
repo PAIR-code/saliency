@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilities to compute an IntegratedGradients SaliencyMask."""
+"""Utilities to compute saliency using the occlusion method."""
 
 from .base import CoreSaliency
 from .base import OUTPUT_LAYER_VALUES
 import numpy as np
 
-SHAPE_ERROR_MESSAGE = (
-    "Expected outermost dimension of "
-    " OUTPUT_LAYER_VALUES to be the same as x_value_batch"
-    " - expected {}, actual {}")
+SHAPE_ERROR_MESSAGE = ("Expected outermost dimension of OUTPUT_LAYER_VALUES to be the same as x_value_batch - expected {}, actual {}")
 
 class Occlusion(CoreSaliency):
   """A CoreSaliency class that computes saliency masks by occluding the image.
@@ -69,6 +66,9 @@ class Occlusion(CoreSaliency):
               size as x_value_batch.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
+      size: Height and width of the occlusion window. Default is 15.
+      value: Value to repalce values inside the occlusion window with. Default 
+        is 0.
     """
     if len(x_value.shape) > 2:
       occlusion_window = np.zeros([size, size, x_value.shape[2]])

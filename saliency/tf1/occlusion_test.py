@@ -1,10 +1,10 @@
-# Copyright 2020 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,7 @@ import tensorflow.compat.v1 as tf
 
 
 class OcclusionTest(unittest.TestCase):
-  """To run: "python -m saliency.blur_ig_test" top-level saliency directory."""
+  """To run: "python -m saliency.tf1.occlusion_test" top-level saliency directory."""
 
   def setUp(self):
     super().setUp()
@@ -34,7 +34,7 @@ class OcclusionTest(unittest.TestCase):
       y = self.x[:,1,1] * 3 + self.x[:,3,3] * 3
       self.sess = tf.Session(graph=graph)
       self.sess_spy = unittest.mock.MagicMock(wraps=self.sess)
-      # All black except 1 white pixel at the center.
+      # All black except white at [1,1] and [3,3].
       self.x_input_val = np.array([
           [0.0, 0.0, 0.0, 0.0, 0.0],
           [0.0, 1.0, 0.0, 0.0, 0.0],
@@ -44,9 +44,9 @@ class OcclusionTest(unittest.TestCase):
       ],
                                   dtype=np.float)
 
-      # Test if completeness axiom is satisfied.
-      # The expected BlurIG value is equal to the difference between
-      # the `y` value at the input and the `y` value at the baseline.
+      # The computed Occlusion mask should bias the center, but the quadrants 
+      # with nonzero values should be greater than the other two (exact expected
+      # values stored in ref_mask).
       self.expected_val = np.array([[3.,  6.,  6.,  3.,  0.],
                          [6., 15., 18., 12.,  3.],
                          [6., 18., 24., 18.,  6.],
@@ -58,6 +58,7 @@ class OcclusionTest(unittest.TestCase):
                                         self.x)
 
   def testOcclsuionGetMask(self):
+    """Tests the Occlusion method using a simple TF1 model."""
     expected_calls = 10 # 5x5 image with size 3 window, 1 extra call for input y
     # Calculate the Blur IG attribution of the input.
     mask = self.occlusion_instance.GetMask(self.x_input_val, 
@@ -72,6 +73,7 @@ class OcclusionTest(unittest.TestCase):
     self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
   def testBlurIGGetMaskArgs(self):
+    """Tests the sess.run receives the correct inputs."""
     feed_dict = {'foo':'bar'}
     self.sess_spy.run.return_value = [[3]]
 

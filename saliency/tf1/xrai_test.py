@@ -1,4 +1,4 @@
-# Copyright 2018 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,18 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
+
 import unittest
 
 from . import xrai
 import numpy as np
 import tensorflow.compat.v1 as tf
 
-INPUT_HEIGHT_WIDTH = 5  # width and height of input images in pixels
-
 
 class XRAITest(unittest.TestCase):
-  """To run: "python -m saliency.grad_cam_test" from top-level saliency directory."""
+  """To run: "python -m saliency.tf1.xrai_test" from top-level saliency directory."""
 
   def setUp(self):
       super().setUp()
@@ -40,6 +38,7 @@ class XRAITest(unittest.TestCase):
                                       x)
 
   def testXraiGetMaskArgs(self):
+    """Test that the CoreSaliency GetMask method is called correctly."""
     x_value = [3,2,1]
     feed_dict = {'foo':'bar'}
     baselines = 'baz'
@@ -69,6 +68,7 @@ class XRAITest(unittest.TestCase):
                     extra_parameters=extra_parameters)])
 
   def testXraiGetMaskWithDetailsArgs(self):
+    """Test that the CoreSaliency GetMaskWithDetails method is called correctly."""
     x_value = [3,2,1]
     feed_dict = {'foo':'bar'}
     baselines = 'baz'
@@ -98,6 +98,7 @@ class XRAITest(unittest.TestCase):
                     extra_parameters=extra_parameters)])
 
   def testXraiFunctional(self):
+    """Test that the model is called and used to calculate the XRAI mask."""
     feed_dict = {}
     baselines = np.array([[0,0,3],[0,0,0]])
     segments = [[True, True, False], [False, False, True]]
@@ -105,19 +106,19 @@ class XRAITest(unittest.TestCase):
     extra_parameters = xrai.XRAIParameters(steps=100,
                                            return_ig_attributions=True,
                                            return_xrai_segments=True)
-    # Reducing min_pixel_diff lets us use this very small 1x3 "image"
+    # Reducing min_pixel_diff lets us split up this very small 1x3 "image"
     extra_parameters.experimental_params['min_pixel_diff'] = 0
     expected_segments = np.array([1,1,2])
-    # equation is 5x + y^2 + 2z, but first baseline has z_baseline=z_input
     x_value = np.array([3,2,3])
+    # equation is 5x + y^2 + 2z, but first baseline has z_baseline=z_input
     expected_ig = np.array([[x_value[0]*5,
                             x_value[1]*x_value[1],
                             0],
                             [x_value[0]*5,
                             x_value[1]*x_value[1],
                             x_value[2]*2]])
-    # segment masks have the first two inputs together
     expected_mask = np.mean(expected_ig, axis=0)
+    # segment masks have the first two inputs together
     expected_mask[0:2] = np.mean(expected_mask[0:2]) # [9.5, 9.5, 3]
     expected_calls = 24  # batch size is 9, 2*ceil(100/9)=24
 

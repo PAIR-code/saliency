@@ -1,4 +1,4 @@
-# Copyright 2020 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests completeness axiom, batching, and error handling for blur_ig.
-"""
+"""Tests completeness axiom, batching, and error handling for blur_ig."""
 import unittest
 
 from . import blur_ig
@@ -23,19 +22,18 @@ from scipy.ndimage import gaussian_filter
 
 
 class BlurIgTest(unittest.TestCase):
-  """To run: "python -m saliency.blur_ig_test" top-level saliency directory."""
+  """To run: "python -m saliency.tf1.blur_ig_test" top-level saliency directory."""
 
   def setUp(self):
     super().setUp()
     self.max_sigma = 10
     with tf.Graph().as_default() as graph:
       self.x = tf.placeholder(shape=[None, 5, 5, 1], dtype=tf.float32)
-      # Define function to just look at center pixel.
       y = tf.sin(self.x)
       self.gradients_node = tf.gradients(y, self.x)[0]
       self.sess = tf.Session(graph=graph)
       self.sess_spy = unittest.mock.MagicMock(wraps=self.sess)
-      # All black except 1 white pixel at the center.
+    # All black except 2 pixels near the center.
       self.x_input_val = np.array([
           [0.0, 0.0, 0.0, 0.0, 0.0],
           [0.0, 0.5, 0.0, 0.0, 0.0],
@@ -54,9 +52,16 @@ class BlurIgTest(unittest.TestCase):
                           mode='constant')
       y_baseline_val = self.sess.run(y, feed_dict={self.x: [x_baseline_val]})
 
-      # Test if completeness axiom is satisfied.
       # The expected BlurIG value is equal to the difference between
-      # the `y` value at the input and the `y` value at the baseline.
+      # the `y` value at the input and the `y` value at the baseline. Because 
+      # each value is independent, we can calculate the expected blur_ig value 
+      # of each.
+      #
+      # Expected: [[-0, -0, -0, -0, -0],
+      #            [-0, 0.641, -0, -0, -0],
+      #            [-0, -0, 0.838, -0, -0],
+      #            [-0, -0, -0, -0, -0],
+      #            [-0, -0, -0, -0, -0]
       self.expected_val = y_input_val[0] - y_baseline_val[0]
       self.blur_ig_instance = blur_ig.BlurIG(graph,
                                         self.sess_spy,
@@ -64,6 +69,7 @@ class BlurIgTest(unittest.TestCase):
                                         self.x)
 
   def testBlurIGGetMask(self):
+    """Tests that BlurIG steps are created and aggregated correctly."""
     x_steps = 2000
 
     # Calculate the Blur IG attribution of the input.
@@ -72,13 +78,15 @@ class BlurIgTest(unittest.TestCase):
                                          max_sigma=self.max_sigma, 
                                          steps=x_steps)
 
-    # Verify the result for completeness..
-    # Expected (for max_sigma=10): 1.4746742
-    # mask.sum (for max_sigma=10): 1.4742470...
+    # Because the baseline is blurred, all zero values should still have some 
+    # attribution (introduced noise).
+    self.assertEqual(np.count_nonzero(mask), mask.size)
+    # Verify the result (for accuracy and therefore completeness).
     np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
     self.assertEqual(self.sess_spy.run.call_count, x_steps)
 
   def testBlurIGGetMaskBatched(self):
+    """Tests that multiple BlurIG batches are created and aggregated correctly."""
     x_steps = 1001
     batch_size = 500
     expected_calls = 3  # batch size is 500, ceil(1001/500)=3
@@ -89,11 +97,15 @@ class BlurIgTest(unittest.TestCase):
                                          steps=x_steps,
                                          batch_size=batch_size)
 
-    # Verify the result.
+    # Because the baseline is blurred, all zero values should still have some 
+    # attribution (introduced noise).
+    self.assertEqual(np.count_nonzero(mask), mask.size)
+    # Verify the result (for accuracy and therefore completeness).
     np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
     self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
   def testBlurIGGetMaskSingleBatch(self):
+    """Tests that a single BlurIG batch is created and aggregated correctly."""
     x_steps = 999
     batch_size = 1000
     expected_calls = 1  # batch size is 1000, ceil(999/1000)=1
@@ -104,11 +116,15 @@ class BlurIgTest(unittest.TestCase):
                                          steps=x_steps,
                                          batch_size=batch_size)
 
-    # Verify the result.
+    # Because the baseline is blurred, all zero values should still have some 
+    # attribution (introduced noise).
+    self.assertEqual(np.count_nonzero(mask), mask.size)
+    # Verify the result (for accuracy and therefore completeness).
     np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
     self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
   def testBlurIGGetMaskArgs(self):
+    """Tests that call_model_function receives correct inputs."""
     x_steps = 5
     feed_dict = {'foo':'bar'}
     self.sess_spy.run.return_value = [self.x_input_val.reshape((1,5,5,1))]

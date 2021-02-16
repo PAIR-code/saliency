@@ -21,7 +21,7 @@ INPUT_HEIGHT_WIDTH = 5  # width and height of input images in pixels
 
 
 class GradCamTest(unittest.TestCase):
-  """To run: "python -m saliency.grad_cam_test" from top-level saliency directory."""
+  """To run: "python -m saliency.core.grad_cam_test" from top-level saliency directory."""
 
   def setUp(self):
     super().setUp()
@@ -42,15 +42,15 @@ class GradCamTest(unittest.TestCase):
     def create_call_model_function():
 
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        # simulates conv layer output and grads where the kernel for the conv 
-        # layer is a horizontal line detector of kernel size 3 and the input is 
+        # simulates conv layer output and grads where the kernel for the conv
+        # layer is a horizontal line detector of kernel size 3 and the input is
         # a 3x3 square of ones in the center of the image.
-        grad = np.zeros([5,5])
+        grad = np.zeros([5, 5])
         grad[(0, -1), (0, -1)] = 2
-        grad[(1,-1), 1:-1] = 3
-        output = np.zeros([5,5])
-        output[:] = [1,2,3,2,1]
-        output[(0,-1),:] *= -1
+        grad[(1, -1), 1:-1] = 3
+        output = np.zeros([5, 5])
+        output[:] = [1, 2, 3, 2, 1]
+        output[(0, -1), :] *= -1
         output[2, :] = 0
         grad = grad.reshape(x_value_batch.shape)
         output = output.reshape(x_value_batch.shape)
@@ -81,16 +81,20 @@ class GradCamTest(unittest.TestCase):
                          [0., 0., 0., 0., 0.]])
     self.assertTrue(
         np.allclose(mask, ref_mask, atol=0.01),
-        "Generated mask did not match reference mask.")
+        'Generated mask did not match reference mask.')
 
   def testGradCamCallModelArgs(self):
     img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
-    expected_keys = [grad_cam.CONVOLUTION_LAYER_VALUES, grad_cam.CONVOLUTION_LAYER_GRADIENTS]
+    expected_keys = [
+        grad_cam.CONVOLUTION_LAYER_VALUES, grad_cam.CONVOLUTION_LAYER_GRADIENTS
+    ]
     call_model_args = {'foo': 'bar'}
     mock_call_model = unittest.mock.MagicMock(
-        return_value={grad_cam.CONVOLUTION_LAYER_GRADIENTS: [img],
-          grad_cam.CONVOLUTION_LAYER_VALUES: [img]})
+        return_value={
+            grad_cam.CONVOLUTION_LAYER_GRADIENTS: [img],
+            grad_cam.CONVOLUTION_LAYER_VALUES: [img]
+        })
 
     self.grad_cam_instance.GetMask(
         img,
@@ -141,7 +145,7 @@ class GradCamTest(unittest.TestCase):
     img[1:-1, 1:-1] = 1
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
     expected_error = grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE.format(
-        '\\(1, 5, 5, 1\\)','\\(5, 5, 1\\)')
+        '\\(1, 5, 5, 1\\)', '\\(5, 5, 1\\)')
 
     with self.assertRaisesRegex(ValueError, expected_error):
 
@@ -190,5 +194,5 @@ class GradCamTest(unittest.TestCase):
           should_resize=True,
           three_dims=False)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   unittest.main()
