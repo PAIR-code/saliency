@@ -1,10 +1,10 @@
-# Copyright 2017 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,7 @@ def create_tf1_call_model_function(graph,
                                    y=None,
                                    x=None,
                                    conv_layer=None):
-  """Constructs a SaliencyMask by computing dy/dx.
+  """Creates a call_model_function which calls the TF1 model specified.
 
   Args:
     graph: The TensorFlow graph to evaluate masks on.
@@ -41,8 +41,15 @@ def create_tf1_call_model_function(graph,
         dimension should be the batch size.
 
   Returns:
-    call_model_function: A function that accepts the arguments used in the
-        CallModelSaliency methods.
+    call_model_function: A function with the following signature:
+        call_model_function(x_value_batch,
+                              call_model_args=None,
+                              expected_keys=None):
+          x_value_batch - Input for the model, given as a batch (i.e. dimension
+            0 is the batch dimension, dimensions 1 through n represent a single
+            input).
+          call_model_args - Other arguments used to call and run the model.
+          expected_keys - List of keys that are expected in the output.
   """
   with graph.as_default():
     if x is None:
@@ -53,6 +60,14 @@ def create_tf1_call_model_function(graph,
       conv_gradients = tf.gradients(conv_layer, x)[0]
 
   def convert_keys_to_fetches(expected_keys):
+    """Converts expected keys into an array of fetchable tensors.
+    
+    Args:
+      expected_keys: Array of strings, representing the expected keys.
+
+    Returns:
+      Array of fetches that can be used in a session.run call.
+    """
     fetches = []
     for expected_key in expected_keys:
       if expected_key in [OUTPUT_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS]:
@@ -77,9 +92,21 @@ def create_tf1_call_model_function(graph,
   def call_model_function(x_value_batch,
                           call_model_args={},
                           expected_keys=None):
-    # (output, grad) = session.run([conv_layer, gradients_node],
-    #                              feed_dict=call_model_args)
-    # return {CONVOLUTION_LAYER_GRADIENTS: grad, CONVOLUTION_LAYER_VALUES: output}
+    """Calls a TF1 model and returns the expected keys.
+    
+    Args:
+      x_value_batch: Input for the model, given as a batch (i.e. dimension
+        0 is the batch dimension, dimensions 1 through n represent a single
+        input).
+      call_model_args: Other arguments used to call and run the model. Default is
+        an empty dictionary.
+      expected_keys: List of keys that are expected in the output. For this
+        method (Integrated Gradients), the expected keys are
+
+    Returns:
+      A dictionary of values corresponding to the output when running the model
+        with x_value batch.
+    """
     with graph.as_default():
       fetches = convert_keys_to_fetches(expected_keys)
       call_model_args[x] = x_value_batch

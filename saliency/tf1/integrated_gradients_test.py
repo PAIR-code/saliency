@@ -1,4 +1,4 @@
-# Copyright 2019 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
+
 import unittest
 
 from . import integrated_gradients
@@ -20,7 +20,7 @@ import tensorflow.compat.v1 as tf
 
 
 class IntegratedGradientsTest(unittest.TestCase):
-  """To run: "python -m saliency.integrated_gradients_test" from the top-level directory."""
+  """To run: "python -m saliency.tf1.integrated_gradients_test" from the top-level directory."""
 
   def setUp(self):
     super().setUp()
@@ -31,29 +31,25 @@ class IntegratedGradientsTest(unittest.TestCase):
       sess = tf.Session(graph=graph)
       self.sess_spy = unittest.mock.MagicMock(wraps=sess)
 
-      # Calculate the value of `y` at the baseline.
       self.x_baseline_val = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-
-      # Calculate the value of `y` at the input.
       self.x_input_val = np.array([[1.0, 2.0, 3.0]], dtype=np.float)
 
-
-      # Due to mathematical properties of the integrated gradients,
-      # the expected IG value is equal to the difference between
-      # the `y` value at the input and the `y` value at the baseline.
+      # Calculate the value of `contrib` at the baseline and input. `y` is 
+      # the sum of contrib and each variable is independent, so the expected
+      # contribution is equal to the difference between the baseline and input
+      # contribution for each.
       contrib_baseline_val = sess.run(contrib, feed_dict={x: self.x_baseline_val})
       contrib_input_val = sess.run(contrib, feed_dict={x: self.x_input_val})
-
       self.expected_val = np.array(contrib_input_val) - np.array(contrib_baseline_val)
       self.expected_val = self.expected_val.flatten()
 
-      # Calculate the integrated gradients attribution of the input.
       self.ig_instance = integrated_gradients.IntegratedGradients(graph,
                                                                   self.sess_spy,
                                                                   y,
                                                                   x)
 
   def testIntegratedGradientsGetMask(self):
+    """Tests that IG steps are created and aggregated correctly."""
     x_steps = 1000
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
@@ -66,6 +62,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     self.assertEqual(self.sess_spy.run.call_count, x_steps)
 
   def testIntegratedGradientsGetMaskBatched(self):
+    """Tests that mutiple IG batches are created and aggregated correctly."""
     x_steps = 1001
     batch_size = 500
     expected_calls = 3  # batch size is 500, ceil(1001/500)=3
@@ -81,6 +78,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
   def testIntegratedGradientsGetMaskSingleBatch(self):
+    """Tests that a single IG batch is created and aggregated correctly."""
     x_steps = 999
     batch_size = 1000
     expected_calls = 1  # batch size is 1000, ceil(999/1000)=1
@@ -96,6 +94,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
   def testIntegratedGradientsGetMaskArgs(self):
+    """Tests that sess.run receives all inputs."""
     x_steps = 5
     feed_dict = {'foo':'bar'}
     self.sess_spy.run.return_value = [self.x_input_val]

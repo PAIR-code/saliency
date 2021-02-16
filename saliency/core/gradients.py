@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilities to compute an IntegratedGradients SaliencyMask."""
+"""Utilities to compute saliency by returning the output gradients."""
 
 from .base import CoreSaliency
 from .base import OUTPUT_LAYER_GRADIENTS
@@ -22,10 +22,7 @@ SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape
                       " as input x_value_batch")
 
 class GradientSaliency(CoreSaliency):
-  """A CoreSaliency class that implements the integrated gradients method.
-
-  https://arxiv.org/abs/1703.01365
-  """
+  """"A CoreSaliency class that computes saliency masks with gradients."""
 
   def GetMask(self, x_value, call_model_function, call_model_args=None):
     """Returns a vanilla gradients mask.
@@ -44,9 +41,9 @@ class GradientSaliency(CoreSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (Integrated Gradients), the expected keys are
-            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer (logit/softmax)
-              with respect to the input. Shape should be the same shape as
-              x_value_batch.
+            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer 
+              (logit/softmax) with respect to the input. Shape should be the
+              same shape as x_value_batch.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
     """
@@ -55,8 +52,10 @@ class GradientSaliency(CoreSaliency):
             x_value_batched,
             call_model_args=call_model_args,
             expected_keys=[OUTPUT_LAYER_GRADIENTS])
+
     call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
         call_model_data[OUTPUT_LAYER_GRADIENTS])
     if (call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_value_batched.shape):
       raise ValueError(SHAPE_ERROR_MESSAGE)
+
     return call_model_data[OUTPUT_LAYER_GRADIENTS][0]

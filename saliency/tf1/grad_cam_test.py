@@ -1,4 +1,4 @@
-# Copyright 2018 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
+
 import unittest
 
 from . import grad_cam
@@ -22,7 +22,7 @@ INPUT_HEIGHT_WIDTH = 5  # width and height of input images in pixels
 
 
 class GradCamTest(unittest.TestCase):
-  """To run: "python -m saliency.grad_cam_test" from top-level saliency directory."""
+  """To run: "python -m saliency.tf1.grad_cam_test" from top-level saliency directory."""
 
   def setUp(self):
     super().setUp()
@@ -95,6 +95,7 @@ class GradCamTest(unittest.TestCase):
         "Generated mask did not match reference mask.")
 
   def testGradCamGetMaskArgs(self):
+    """Tests that sess.run receives the correct inputs."""
     img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
     feed_dict = {'foo':'bar'}

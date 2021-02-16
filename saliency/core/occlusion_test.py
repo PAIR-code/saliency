@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
+
 import unittest
 
 from . import occlusion
@@ -21,61 +21,57 @@ INPUT_HEIGHT_WIDTH = 5  # width and height of input images in pixels
 
 
 class OcclusionTest(unittest.TestCase):
-  """To run: "python -m saliency.grad_cam_test" from top-level saliency directory."""
+  """To run: "python -m saliency.core.occlusion_test" from top-level saliency directory."""
 
   def setUp(self):
     super().setUp()
     self.occlusion_instance = occlusion.Occlusion()
 
   def testOcclusionGetMask(self):
-    """Tests the GradCAM method using a simple network.
+    """Tests the Occlusion method using a simple network.
 
-    Simple test case where the network contains one convolutional layer that
-    acts as a horizontal line detector and the input image is a 5x5 matrix with
-    a centered 3x3 grid of 1s and 0s elsewhere.
+    Simple test case where the network multiplies all values by 3, and the input
+    image has all zero values except at positions [1,1] and [3,3].
 
-    The computed GradCAM mask should detect the pixels of highest importance to
-    be along the two horizontal lines in the image (exact expected values stored
-    in ref_mask).
+    The computed Occlusion mask should bias the center, but the quadrants with
+    nonzero values should be greater than the other two (exact expected values
+    stored in ref_mask).
     """
 
     def create_call_model_function():
 
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        # simulates conv layer output and grads where the kernel for the conv 
-        # layer is a horizontal line detector of kernel size 3 and the input is 
-        # a 3x3 square of ones in the center of the image.
+        # simulates output where all values are multiplied by 3.
         output = [np.sum(x_value_batch) * 3]
         return {occlusion.OUTPUT_LAYER_VALUES: output}
 
       return call_model
-
     call_model_function = create_call_model_function()
-
-    # Generate test input (centered matrix of 1s surrounded by 0s)
-    # and generate corresponding GradCAM mask
+    # Generate test input and generate corresponding Occlusion mask
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img[1,1] = 1
     img[3,3] = 1
     img = img.reshape((INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH))
+    ref_mask = np.array([[3.,  6.,  6.,  3.,  0.],
+                         [6., 15., 18., 12.,  3.],
+                         [6., 18., 24., 18.,  6.],
+                         [3., 12., 18., 15.,  6.],
+                         [0.,  3.,  6.,  6.,  3.]])
+
     mask = self.occlusion_instance.GetMask(
         img,
         call_model_function=call_model_function,
         call_model_args={},
         size=3,
         value=0)
-
+    
     # Compare generated mask to expected result
-    ref_mask = np.array([[3.,  6.,  6.,  3.,  0.],
-                         [6., 15., 18., 12.,  3.],
-                         [6., 18., 24., 18.,  6.],
-                         [3., 12., 18., 15.,  6.],
-                         [0.,  3.,  6.,  6.,  3.]])
     self.assertTrue(
         np.allclose(mask, ref_mask, atol=0.01),
         "Generated mask did not match reference mask.")
 
   def testOcclusionCallModelArgs(self):
+    """Tests the call_model_function receives the correct inputs."""
     img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     expected_keys = [occlusion.OUTPUT_LAYER_VALUES]
     call_model_args = {'foo': 'bar'}
@@ -103,31 +99,16 @@ class OcclusionTest(unittest.TestCase):
           msg='function was called with incorrect expected_keys.')
   
   def testOcclusionValuesMismatch(self):
-    """Tests the GradCAM method using a simple network.
-
-    Simple test case where the network contains one convolutional layer that
-    acts as a horizontal line detector and the input image is a 5x5 matrix with
-    a centered 3x3 grid of 1s and 0s elsewhere.
-
-    The call_model_function returns the gradients without the outermost batch
-    dimension, so the expectation is that a ValueError will be raised.
-    """
+    """Tests the Occlusion method errors with incorrect model outputs."""
 
     def create_call_model_function():
-
+      # Bad call model function since the expected output is a single value
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
-        # simulates conv layer output and grads where the kernel for the conv 
-        # layer is a horizontal line detector of kernel size 3 and the input is 
-        # a 3x3 square of ones in the center of the image.
         output = np.ones(INPUT_HEIGHT_WIDTH)
         return {occlusion.OUTPUT_LAYER_VALUES: output}
 
       return call_model
-
     call_model_function = create_call_model_function()
-
-    # Generate test input (centered matrix of 1s surrounded by 0s)
-    # and generate corresponding GradCAM mask
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     expected_error = occlusion.SHAPE_ERROR_MESSAGE.format('1', '5')
 

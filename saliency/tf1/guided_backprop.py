@@ -1,10 +1,10 @@
-# Copyright 2017 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilites to computed GuidedBackprop SaliencyMasks."""
+"""Utilites to computed GuidedBackprop for TF1 models."""
 
 from .base import TF1Saliency
 import tensorflow.compat.v1 as tf
 
 
 class GuidedBackprop(TF1Saliency):
-  """A SaliencyMask class that computes saliency masks with GuidedBackProp.
+  """A TF1Saliency class that computes saliency masks with GuidedBackProp.
 
   This implementation copies the TensorFlow graph to a new graph with the ReLU
   gradient overwritten as in the paper:
@@ -37,7 +37,7 @@ class GuidedBackprop(TF1Saliency):
                y,
                x,
                tmp_ckpt_path='/tmp/guided_backprop_ckpt'):
-    """Constructs a GuidedBackprop SaliencyMask."""
+    """Constructs a GuidedBackprop method using TF1 Saliency."""
     super(GuidedBackprop, self).__init__(graph, session, y, x)
 
     self.x = x
@@ -71,7 +71,11 @@ class GuidedBackprop(TF1Saliency):
         self.guided_grads_node = tf.gradients(imported_y, imported_x)[0]
 
   def GetMask(self, x_value, feed_dict={}):
-    """Returns a GuidedBackprop mask."""
+    """Returns a GuidedBackprop mask.
+
+    Args:
+      x_value: Input value, not batched.
+      feed_dict: (Optional) feed dictionary to pass to the session.run call."""
     with self.guided_graph.as_default():
       # Move all the feed dict tensor keys to refer to the same tensor on the
       # new graph.

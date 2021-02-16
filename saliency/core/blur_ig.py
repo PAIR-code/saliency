@@ -74,9 +74,9 @@ class BlurIG(CoreSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (Blur IG), the expected keys are
-            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer (logit/softmax)
-              with respect to the input. Shape should be the same shape as
-              x_value_batch.
+            OUTPUT_LAYER_GRADIENTS - Gradients of the output being
+              explained (the logit/softmax value) with respect to the input.
+              Shape should be the same shape as x_value_batch.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
       max_sigma: Maximum size of the gaussian blur kernel.
@@ -85,6 +85,8 @@ class BlurIG(CoreSaliency):
       grad_step: Gaussian gradient step size.
       sqrt: Chooses square root when deciding spacing between sigma. (Full
         mathematical implication remains to be understood).
+      batch_size: Maximum number of x inputs (steps along the integration path)
+        that are passed to call_model_function  as a batch.
     """
 
     if sqrt:
@@ -109,14 +111,19 @@ class BlurIG(CoreSaliency):
             x_step_batched,
             call_model_args=call_model_args,
             expected_keys=[OUTPUT_LAYER_GRADIENTS])
-            
+
         call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
             call_model_data[OUTPUT_LAYER_GRADIENTS])
         if call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_step_batched.shape:
-          raise ValueError(SHAPE_ERROR_MESSAGE.format(
-                    x_step_batched.shape, 
-                    call_model_data[OUTPUT_LAYER_GRADIENTS].shape))
-        tmp = (step_vector_diff[i] * np.multiply(gaussian_gradient_batched, call_model_data[OUTPUT_LAYER_GRADIENTS]))
+          raise ValueError(
+              SHAPE_ERROR_MESSAGE.format(
+                  x_step_batched.shape,
+                  call_model_data[OUTPUT_LAYER_GRADIENTS].shape))
+
+        tmp = (
+            step_vector_diff[i] *
+            np.multiply(gaussian_gradient_batched,
+                        call_model_data[OUTPUT_LAYER_GRADIENTS]))
         total_gradients += tmp.sum(axis=0)
         x_step_batched = []
         gaussian_gradient_batched = []

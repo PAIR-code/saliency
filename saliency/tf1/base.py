@@ -1,4 +1,4 @@
-# Copyright 2017 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ class TF1Saliency(object):
   """Base class for TF saliency masks. Alone, this class doesn't do anything."""
 
   def __init__(self, graph, session, y=None, x=None):
-    """Constructs a SaliencyMask by computing dy/dx.
+    """TF1-specific class to create saliency masks.
 
     Args:
       graph: The TensorFlow graph to evaluate masks on.
@@ -76,10 +76,10 @@ class TF1Saliency(object):
 
 
 class TF1CoreSaliency(TF1Saliency):
-  """Base class for TF saliency masks. Alone, this class doesn't do anything."""
+  """TF1Saliency masks using CoreSaliency. Alone, this class doesn't do anything."""
 
   def __init__(self, graph, session, y=None, x=None, conv_layer=None):
-    """Constructs a SaliencyMask by computing dy/dx.
+    """TF1-specific class to create saliency masks using CoreSaliency.
 
     Args:
       graph: The TensorFlow graph to evaluate masks on.

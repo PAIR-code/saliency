@@ -1,10 +1,10 @@
-# Copyright 2017 Google Inc. All Rights Reserved.
+# Copyright 2021 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,7 @@ CONVOLUTION_LAYER_VALUES = 'CONVOLUTION_LAYER_VALUES'
 
 
 class CoreSaliency(object):
-  r"""Base class for saliency masks. Alone, this class doesn't do anything."""
+  r"""Base class for saliency methods. Alone, this class doesn't do anything."""
 
   def GetMask(self, x_value, call_model_function, call_model_args=None):
     """Returns an unsmoothed mask.
@@ -34,7 +34,7 @@ class CoreSaliency(object):
         specific data in a dictionary when given an input and other arguments.
         Expected function signature:
         - call_model_function(x_value_batch,
-                              call_model_args=None,
+                              call_model_args={},
                               expected_keys=None):
           x_value_batch - Input for the model, given as a batch (i.e. dimension
             0 is the batch dimension, dimensions 1 through n represent a single
@@ -63,7 +63,7 @@ class CoreSaliency(object):
         specific data in a dictionary when given an input and other arguments.
         Expected function signature:
         - call_model_function(x_value_batch,
-                              call_model_args=None,
+                              call_model_args={},
                               expected_keys=None):
           x_value_batch - Input for the model, given as a batch (i.e. dimension
             0 is the batch dimension, dimensions 1 through n represent a single

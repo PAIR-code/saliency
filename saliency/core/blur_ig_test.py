@@ -41,8 +41,8 @@ class BlurIgTest(unittest.TestCase):
     y_input_val = np.sin(self.x_input_val)
 
     # Baseline is the fully blurred version of the input.
-    self.x_baseline_val = blur_ig.gaussian_blur(self.x_input_val,
-                                            sigma=self.max_sigma)
+    self.x_baseline_val = blur_ig.gaussian_blur(
+        self.x_input_val, sigma=self.max_sigma)
     y_baseline_val = np.sin(self.x_baseline_val)
 
     # The expected BlurIG value is equal to the difference between
@@ -85,7 +85,7 @@ class BlurIgTest(unittest.TestCase):
         x_value=self.x_input_val, call_model_function=call_model_function,
         call_model_args={}, max_sigma=self.max_sigma, steps=x_steps)
 
-    # Because the baseline is blurred, all zero values should still have some 
+    # Because the baseline is blurred, all zero values should still have some
     # attribution (introduced noise).
     self.assertEqual(np.count_nonzero(mask), mask.size)
     # Verify the result (for accuracy and therefore completeness).
@@ -109,7 +109,7 @@ class BlurIgTest(unittest.TestCase):
         steps=x_steps,
         batch_size=batch_size)
 
-    # Because the baseline is blurred, all zero values should still have some 
+    # Because the baseline is blurred, all zero values should still have some
     # attribution (introduced noise).
     self.assertEqual(np.count_nonzero(mask), mask.size)
     # Verify the result (for accuracy and therefore completeness).
@@ -133,7 +133,7 @@ class BlurIgTest(unittest.TestCase):
         steps=x_steps,
         batch_size=batch_size)
 
-    # Because the baseline is blurred, all zero values should still have some 
+    # Because the baseline is blurred, all zero values should still have some
     # attribution (introduced noise).
     self.assertEqual(np.count_nonzero(mask), mask.size)
     # Verify the result (for accuracy and therefore completeness).
@@ -172,8 +172,8 @@ class BlurIgTest(unittest.TestCase):
     """Tests that BlurIG errors with incorrect model outputs."""
     x_steps = 2001
     call_model_function = self.create_bad_call_model_function()
-    expected_error = blur_ig.SHAPE_ERROR_MESSAGE.format(
-        '\\(100, 5, 5, 1\\)','\\(5, 5, 1\\)')
+    expected_error = blur_ig.SHAPE_ERROR_MESSAGE.format('\\(100, 5, 5, 1\\)',
+                                                        '\\(5, 5, 1\\)')
 
     # Expect error because shape of gradients returned don't match.
     with self.assertRaisesRegex(ValueError, expected_error):
