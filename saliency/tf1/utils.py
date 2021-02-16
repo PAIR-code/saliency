@@ -34,11 +34,15 @@ def create_tf1_call_model_function(graph,
   Args:
     graph: The TensorFlow graph to evaluate masks on.
     session: The current TensorFlow session.
-    y: The output tensor of the model. This tensor should be of size 1.
+    y: (Optional) The output tensor of the model. This tensor should be of size
+      1.
     x: The input tensor of the model. The outer dimension should be the batch
-        size.
-    conv_layer: The convolution layer tensor of the model. The outer
-        dimension should be the batch size.
+      size.
+    conv_layer: (Optional) The convolution layer tensor of the model. The outer
+      dimension should be the batch size.
+
+  Raises:
+    ValueError: If input tensor x is missing.
 
   Returns:
     call_model_function: A function with the following signature:
@@ -61,9 +65,12 @@ def create_tf1_call_model_function(graph,
 
   def convert_keys_to_fetches(expected_keys):
     """Converts expected keys into an array of fetchable tensors.
-    
+
     Args:
       expected_keys: Array of strings, representing the expected keys.
+
+    Raises:
+        RuntimeError: If tensor required for expected_key doesn't exist.
 
     Returns:
       Array of fetches that can be used in a session.run call.
@@ -77,7 +84,9 @@ def create_tf1_call_model_function(graph,
           fetches.append(y)
         else:
           fetches.append(output_gradients)
-      elif expected_key in [CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS]:
+      elif expected_key in [
+          CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS
+      ]:
         if conv_layer is None:
           raise RuntimeError(MISSING_CONV_LAYER_ERROR_MESSAGE.format(
               expected_key))
@@ -93,15 +102,17 @@ def create_tf1_call_model_function(graph,
                           call_model_args={},
                           expected_keys=None):
     """Calls a TF1 model and returns the expected keys.
-    
+
     Args:
       x_value_batch: Input for the model, given as a batch (i.e. dimension
         0 is the batch dimension, dimensions 1 through n represent a single
         input).
-      call_model_args: Other arguments used to call and run the model. Default is
-        an empty dictionary.
-      expected_keys: List of keys that are expected in the output. For this
-        method (Integrated Gradients), the expected keys are
+      call_model_args: Other arguments used to call and run the model. Default
+        is an empty dictionary.
+      expected_keys: List of keys that are expected in the output.
+
+    Raises:
+        RuntimeError: If tensor required for expected_key doesn't exist.
 
     Returns:
       A dictionary of values corresponding to the output when running the model

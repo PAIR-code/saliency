@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests accuracy and correct TF1 usage for integrated_gradients."""
 import unittest
 
 from . import integrated_gradients
@@ -34,13 +35,15 @@ class IntegratedGradientsTest(unittest.TestCase):
       self.x_baseline_val = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
       self.x_input_val = np.array([[1.0, 2.0, 3.0]], dtype=np.float)
 
-      # Calculate the value of `contrib` at the baseline and input. `y` is 
+      # Calculate the value of `contrib` at the baseline and input. `y` is
       # the sum of contrib and each variable is independent, so the expected
       # contribution is equal to the difference between the baseline and input
       # contribution for each.
-      contrib_baseline_val = sess.run(contrib, feed_dict={x: self.x_baseline_val})
+      contrib_baseline_val = sess.run(
+          contrib, feed_dict={x: self.x_baseline_val})
       contrib_input_val = sess.run(contrib, feed_dict={x: self.x_input_val})
-      self.expected_val = np.array(contrib_input_val) - np.array(contrib_baseline_val)
+      self.expected_val = np.array(contrib_input_val) - np.array(
+          contrib_baseline_val)
       self.expected_val = self.expected_val.flatten()
 
       self.ig_instance = integrated_gradients.IntegratedGradients(graph,
@@ -96,10 +99,11 @@ class IntegratedGradientsTest(unittest.TestCase):
   def testIntegratedGradientsGetMaskArgs(self):
     """Tests that sess.run receives all inputs."""
     x_steps = 5
-    feed_dict = {'foo':'bar'}
+    feed_dict = {'foo': 'bar'}
     self.sess_spy.run.return_value = [self.x_input_val]
 
-    self.ig_instance.GetMask(x_value=self.x_input_val[0],
+    self.ig_instance.GetMask(
+        x_value=self.x_input_val[0],
         feed_dict=feed_dict,
         x_baseline=self.x_baseline_val[0],
         x_steps=x_steps)
@@ -110,3 +114,4 @@ class IntegratedGradientsTest(unittest.TestCase):
 
 if __name__ == '__main__':
   unittest.main()
+  

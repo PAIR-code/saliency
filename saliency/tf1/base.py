@@ -13,8 +13,8 @@
 # limitations under the License.
 
 """Utilities to compute SaliencyMasks."""
-import numpy as np
 from . import utils
+import numpy as np
 
 
 class TF1Saliency(object):
@@ -46,19 +46,24 @@ class TF1Saliency(object):
     """
     raise NotImplementedError('A derived class should implemented GetMask()')
 
-  def GetSmoothedMask(
-      self, x_value, feed_dict={}, stdev_spread=.15, nsamples=25,
-      magnitude=True, **kwargs):
+  def GetSmoothedMask(self,
+                      x_value,
+                      feed_dict={},
+                      stdev_spread=.15,
+                      nsamples=25,
+                      magnitude=True,
+                      **kwargs):
     """Returns a mask that is smoothed with the SmoothGrad method.
 
     Args:
       x_value: Input value, not batched.
       feed_dict: (Optional) feed dictionary to pass to the session.run call.
       stdev_spread: Amount of noise to add to the input, as fraction of the
-                    total spread (x_max - x_min). Defaults to 15%.
+        total spread (x_max - x_min). Defaults to 15%.
       nsamples: Number of samples to average across to get the smooth gradient.
       magnitude: If true, computes the sum of squares of gradients instead of
-                 just the sum. Defaults to true.
+        just the sum. Defaults to true.
+      **kwargs: Additional keyword arguments to be passed to GetMask.
     """
     stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
 
@@ -76,7 +81,10 @@ class TF1Saliency(object):
 
 
 class TF1CoreSaliency(TF1Saliency):
-  """TF1Saliency masks using CoreSaliency. Alone, this class doesn't do anything."""
+  """Base class for TF1Saliency methods that use CoreSaliency methods.
+
+  Alone, this class doesn't do anything.
+  """
 
   def __init__(self, graph, session, y=None, x=None, conv_layer=None):
     """TF1-specific class to create saliency masks using CoreSaliency.
@@ -94,7 +102,7 @@ class TF1CoreSaliency(TF1Saliency):
 
     super(TF1CoreSaliency, self).__init__(graph, session, y, x)
     self.call_model_function = utils.create_tf1_call_model_function(
-      graph, session, y, x, conv_layer)
+        graph, session, y, x, conv_layer)
 
   def GetMask(self, x_value, feed_dict={}):
     """Returns an unsmoothed mask.
@@ -105,19 +113,24 @@ class TF1CoreSaliency(TF1Saliency):
     """
     raise NotImplementedError('A derived class should implemented GetMask()')
 
-  def GetSmoothedMask(
-      self, x_value, feed_dict={}, stdev_spread=.15, nsamples=25,
-      magnitude=True, **kwargs):
+  def GetSmoothedMask(self,
+                      x_value,
+                      feed_dict={},
+                      stdev_spread=.15,
+                      nsamples=25,
+                      magnitude=True,
+                      **kwargs):
     """Returns a mask that is smoothed with the SmoothGrad method.
 
     Args:
       x_value: Input value, not batched.
       feed_dict: (Optional) feed dictionary to pass to the session.run call.
       stdev_spread: Amount of noise to add to the input, as fraction of the
-                    total spread (x_max - x_min). Defaults to 15%.
+        total spread (x_max - x_min). Defaults to 15%.
       nsamples: Number of samples to average across to get the smooth gradient.
       magnitude: If true, computes the sum of squares of gradients instead of
-                 just the sum. Defaults to true.
+        just the sum. Defaults to true.
+      **kwargs: Additional keyword arguments to be passed to GetMask.
     """
     stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
 

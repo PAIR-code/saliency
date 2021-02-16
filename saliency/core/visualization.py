@@ -16,6 +16,7 @@
 
 import numpy as np
 
+
 def VisualizeImageGrayscale(image_3d, percentile=99):
   r"""Returns a 3D tensor as a grayscale 2D tensor.
 

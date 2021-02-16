@@ -18,7 +18,11 @@ from .base import CoreSaliency
 from .base import OUTPUT_LAYER_VALUES
 import numpy as np
 
-SHAPE_ERROR_MESSAGE = ("Expected outermost dimension of OUTPUT_LAYER_VALUES to be the same as x_value_batch - expected {}, actual {}")
+SHAPE_ERROR_MESSAGE = (
+    "Expected outermost dimension of OUTPUT_LAYER_VALUES to be the same as "
+    "x_value_batch - expected {}, actual {}"
+)
+
 
 class Occlusion(CoreSaliency):
   """A CoreSaliency class that computes saliency masks by occluding the image.
@@ -31,20 +35,22 @@ class Occlusion(CoreSaliency):
   def getY(self, x_value, call_model_function, call_model_args):
     x_value_batched = np.array([x_value])
     data = call_model_function(
-            x_value_batched,
-            call_model_args=call_model_args,
-            expected_keys=[OUTPUT_LAYER_VALUES])
+        x_value_batched,
+        call_model_args=call_model_args,
+        expected_keys=[OUTPUT_LAYER_VALUES])
     data[OUTPUT_LAYER_VALUES] = np.array(data[OUTPUT_LAYER_VALUES])
     if data[OUTPUT_LAYER_VALUES].shape[0] != x_value_batched.shape[0]:
-      raise ValueError(SHAPE_ERROR_MESSAGE.format(
-                       x_value_batched.shape[0], 
-                       data[OUTPUT_LAYER_VALUES].shape[0]))
+      raise ValueError(
+          SHAPE_ERROR_MESSAGE.format(x_value_batched.shape[0],
+                                     data[OUTPUT_LAYER_VALUES].shape[0]))
     return data[OUTPUT_LAYER_VALUES][0]
 
-
-
-  def GetMask(self, x_value, call_model_function, call_model_args=None, 
-              size=15, value=0):
+  def GetMask(self,
+              x_value,
+              call_model_function,
+              call_model_args=None,
+              size=15,
+              value=0):
     """Returns an occlusion mask.
 
     Args:
@@ -60,14 +66,14 @@ class Occlusion(CoreSaliency):
             input).
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
-            method (Integrated Gradients), the expected keys are
-            OUTPUT_LAYER_VALUES - Values of the output layer (logit/softmax)
-              with respect to the input. Outermost dimension should be the same 
-              size as x_value_batch.
+            method (Occlusion), the expected keys are
+            OUTPUT_LAYER_VALUES - Values of the output being
+              explained (the logit/softmax value) with respect to the input.
+              Outermost dimension should be the same size as x_value_batch.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
       size: Height and width of the occlusion window. Default is 15.
-      value: Value to repalce values inside the occlusion window with. Default 
+      value: Value to repalce values inside the occlusion window with. Default
         is 0.
     """
     if len(x_value.shape) > 2:

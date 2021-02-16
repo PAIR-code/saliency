@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests accuracy and correct TF1 usage for gradients."""
 import unittest
 
 from . import gradients

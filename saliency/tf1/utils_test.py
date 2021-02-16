@@ -41,8 +41,8 @@ class UtilsTF1Test(unittest.TestCase):
 
     call_model_function = utils.create_tf1_call_model_function(
         self.graph, self.sess, y, x)
-    data = call_model_function(
-        x_value, call_model_args={}, expected_keys=[utils.OUTPUT_LAYER_GRADIENTS])
+    data = call_model_function(x_value, call_model_args={},
+                               expected_keys=[utils.OUTPUT_LAYER_GRADIENTS])
     actual = data[utils.OUTPUT_LAYER_GRADIENTS]
 
     self.assertIsNone(np.testing.assert_almost_equal(expected, actual))
@@ -54,7 +54,7 @@ class UtilsTF1Test(unittest.TestCase):
       y = (5 * x[:, 0] - 3 * x[:, 1]**2)[0]
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float32)
     # because x[1] is squared, gradient should be -3*2x = -3*2*0.8
-    (expected) = self.sess.run(y, feed_dict={x:x_value})
+    (expected) = self.sess.run(y, feed_dict={x: x_value})
 
     call_model_function = utils.create_tf1_call_model_function(
         self.graph, self.sess, y, x)
@@ -107,11 +107,14 @@ class UtilsTF1Test(unittest.TestCase):
 
     call_model_function = utils.create_tf1_call_model_function(
         self.graph, self.sess, y=y, x=x, conv_layer=conv_layer)
-    data = call_model_function(x_value,
-                               call_model_args={},
-                               expected_keys=[utils.CONVOLUTION_LAYER_VALUES,
-                                              utils.OUTPUT_LAYER_GRADIENTS,
-                                              utils.CONVOLUTION_LAYER_GRADIENTS])
+    data = call_model_function(
+        x_value,
+        call_model_args={},
+        expected_keys=[
+            utils.CONVOLUTION_LAYER_VALUES,
+            utils.OUTPUT_LAYER_GRADIENTS,
+            utils.CONVOLUTION_LAYER_GRADIENTS
+        ])
     actual_conv_gradient = data[utils.CONVOLUTION_LAYER_GRADIENTS]
     actual_output_gradient = data[utils.OUTPUT_LAYER_GRADIENTS]
     actual_conv_layer = data[utils.CONVOLUTION_LAYER_VALUES]
@@ -130,7 +133,8 @@ class UtilsTF1Test(unittest.TestCase):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = 'Cannot return key OUTPUT_LAYER_GRADIENTS because no y was specified'
+    expected = ('Cannot return key OUTPUT_LAYER_GRADIENTS because no y was '
+                'specified')
 
     with self.assertRaisesRegex(RuntimeError, expected):
       call_model_function = utils.create_tf1_call_model_function(
@@ -145,7 +149,8 @@ class UtilsTF1Test(unittest.TestCase):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = 'Cannot return key OUTPUT_LAYER_VALUES because no y was specified'
+    expected = ('Cannot return key OUTPUT_LAYER_VALUES because no y was '
+                'specified')
 
     with self.assertRaisesRegex(RuntimeError, expected):
       call_model_function = utils.create_tf1_call_model_function(
@@ -170,8 +175,10 @@ class UtilsTF1Test(unittest.TestCase):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = ('Cannot return key CONVOLUTION_LAYER_GRADIENTS because no conv_layer '
-                'was specified')
+    expected = (
+        'Cannot return key CONVOLUTION_LAYER_GRADIENTS because no conv_layer '
+        'was specified'
+    )
 
     with self.assertRaisesRegex(RuntimeError, expected):
       call_model_function = utils.create_tf1_call_model_function(
@@ -186,8 +193,10 @@ class UtilsTF1Test(unittest.TestCase):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = ('Cannot return key CONVOLUTION_LAYER_VALUES because no conv_layer was '
-                'specified')
+    expected = (
+        'Cannot return key CONVOLUTION_LAYER_VALUES because no conv_layer was '
+        'specified'
+    )
 
     with self.assertRaisesRegex(RuntimeError, expected):
       call_model_function = utils.create_tf1_call_model_function(

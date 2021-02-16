@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests accuracy and error handling for occlusion."""
 import unittest
 
 from . import occlusion
@@ -49,14 +50,14 @@ class OcclusionTest(unittest.TestCase):
     call_model_function = create_call_model_function()
     # Generate test input and generate corresponding Occlusion mask
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
-    img[1,1] = 1
-    img[3,3] = 1
+    img[1, 1] = 1
+    img[3, 3] = 1
     img = img.reshape((INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH))
-    ref_mask = np.array([[3.,  6.,  6.,  3.,  0.],
-                         [6., 15., 18., 12.,  3.],
-                         [6., 18., 24., 18.,  6.],
-                         [3., 12., 18., 15.,  6.],
-                         [0.,  3.,  6.,  6.,  3.]])
+    ref_mask = np.array([[3., 6., 6., 3., 0.],
+                         [6., 15., 18., 12., 3.],
+                         [6., 18., 24., 18., 6.],
+                         [3., 12., 18., 15., 6.],
+                         [0., 3., 6., 6., 3.]])
 
     mask = self.occlusion_instance.GetMask(
         img,
@@ -64,11 +65,10 @@ class OcclusionTest(unittest.TestCase):
         call_model_args={},
         size=3,
         value=0)
-    
+
     # Compare generated mask to expected result
-    self.assertTrue(
-        np.allclose(mask, ref_mask, atol=0.01),
-        "Generated mask did not match reference mask.")
+    self.assertTrue(np.allclose(mask, ref_mask, atol=0.01),
+                    'Generated mask did not match reference mask.')
 
   def testOcclusionCallModelArgs(self):
     """Tests the call_model_function receives the correct inputs."""
@@ -97,7 +97,7 @@ class OcclusionTest(unittest.TestCase):
           kwargs['expected_keys'],
           expected_keys,
           msg='function was called with incorrect expected_keys.')
-  
+
   def testOcclusionValuesMismatch(self):
     """Tests the Occlusion method errors with incorrect model outputs."""
 
@@ -114,11 +114,12 @@ class OcclusionTest(unittest.TestCase):
 
     with self.assertRaisesRegex(ValueError, expected_error):
       self.occlusion_instance.GetMask(
-        img,
-        call_model_function=call_model_function,
-        call_model_args={},
-        size=3,
-        value=0)
+          img,
+          call_model_function=call_model_function,
+          call_model_args={},
+          size=3,
+          value=0)
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
   unittest.main()

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilites to computed GradientSaliency for TF1 models."""
-
-from ..core import gradients as core_gradients
+"""Utilities to compute GradientSaliency for a TF1 model."""
 from .base import TF1CoreSaliency
+from ..core import gradients as core_gradients
+
 
 class GradientSaliency(TF1CoreSaliency):
   r"""A TF1CoreSaliency class that computes saliency masks with a gradient."""
@@ -31,6 +31,6 @@ class GradientSaliency(TF1CoreSaliency):
       x_value: Input value, not batched.
       feed_dict: (Optional) feed dictionary to pass to the session.run call.
     """
-    return self.core_instance.GetMask(x_value, 
-        self.call_model_function,
-        call_model_args=feed_dict)
+    return self.core_instance.GetMask(x_value,
+                                      self.call_model_function,
+                                      call_model_args=feed_dict)

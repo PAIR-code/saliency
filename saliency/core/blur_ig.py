@@ -20,8 +20,11 @@ from .base import OUTPUT_LAYER_GRADIENTS
 import numpy as np
 from scipy import ndimage
 
-SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape"
-                       " as input x_value_batch - expected {}, actual {}")
+SHAPE_ERROR_MESSAGE = (
+    "Expected key OUTPUT_LAYER_GRADIENTS to be the same shape as input "
+    "x_value_batch - expected {}, actual {}"
+)
+
 
 def gaussian_blur(image, sigma):
   """Returns Gaussian blur filtered 3d (WxHxC) image.
@@ -32,9 +35,8 @@ def gaussian_blur(image, sigma):
   """
   if sigma == 0:
     return image
-  return ndimage.gaussian_filter(image,
-                                 sigma=[sigma, sigma, 0],
-                                 mode='constant')
+  return ndimage.gaussian_filter(
+      image, sigma=[sigma, sigma, 0], mode="constant")
 
 
 class BlurIG(CoreSaliency):
@@ -86,7 +88,7 @@ class BlurIG(CoreSaliency):
       sqrt: Chooses square root when deciding spacing between sigma. (Full
         mathematical implication remains to be understood).
       batch_size: Maximum number of x inputs (steps along the integration path)
-        that are passed to call_model_function  as a batch.
+        that are passed to call_model_function as a batch.
     """
 
     if sqrt:
