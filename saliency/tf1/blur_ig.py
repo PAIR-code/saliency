@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ..core import blur_ig as core_blur_ig
+"""Utilities to compute saliency for a TF1 model using the BlurIG method."""
 from .base import TF1CoreSaliency
+from ..core import blur_ig as core_blur_ig
+
 
 class BlurIG(TF1CoreSaliency):
   """A TF1CoreSaliency class that implements IG along blur path.
@@ -28,7 +30,9 @@ class BlurIG(TF1CoreSaliency):
     super(BlurIG, self).__init__(graph, session, y, x)
     self.core_instance = core_blur_ig.BlurIG()
 
-  def GetMask(self, x_value, feed_dict={},
+  def GetMask(self,
+              x_value,
+              feed_dict={},
               max_sigma=50,
               steps=100,
               grad_step=0.01,
@@ -45,12 +49,14 @@ class BlurIG(TF1CoreSaliency):
       grad_step: Gaussian gradient step size.
       sqrt: Chooses square root when deciding spacing between sigma. (Full
         mathematical implication remains to be understood).
+      batch_size: Maximum number of x inputs (steps along the integration path)
+        that are passed to sess.run as a batch.
     """
-    return self.core_instance.GetMask(x_value, 
-        self.call_model_function,
-        call_model_args=feed_dict,
-        max_sigma=max_sigma,
-        steps=steps,
-        grad_step=grad_step,
-        sqrt=sqrt,
-        batch_size=batch_size)
+    return self.core_instance.GetMask(x_value,
+                                      self.call_model_function,
+                                      call_model_args=feed_dict,
+                                      max_sigma=max_sigma,
+                                      steps=steps,
+                                      grad_step=grad_step,
+                                      sqrt=sqrt,
+                                      batch_size=batch_size)

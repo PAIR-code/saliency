@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utilities to compute saliency using the GradCam method."""
-from ..core import grad_cam as core_grad_cam
+"""Utilities to compute saliency for a TF1 model using the GradCam method."""
 from .base import TF1CoreSaliency
+from ..core import grad_cam as core_grad_cam
+
 
 class GradCam(TF1CoreSaliency):
   """A TF1CoreSaliency class that computes saliency masks with Grad-CAM.
@@ -37,9 +38,7 @@ class GradCam(TF1CoreSaliency):
     super(GradCam, self).__init__(graph, session, y, x, conv_layer)
     self.core_instance = core_grad_cam.GradCam()
 
-  def GetMask(self, x_value, feed_dict={},
-              should_resize=True,
-              three_dims=True):
+  def GetMask(self, x_value, feed_dict={}, should_resize=True, three_dims=True):
     """Returns a GradCAM mask.
 
     Args:
@@ -51,8 +50,8 @@ class GradCam(TF1CoreSaliency):
         converted into a 3D mask by copying the 2D mask value's into each color
         channel
     """
-    return self.core_instance.GetMask(x_value, 
-        self.call_model_function,
-        call_model_args=feed_dict,
-        should_resize=should_resize,
-        three_dims=three_dims)
+    return self.core_instance.GetMask(x_value,
+                                      self.call_model_function,
+                                      call_model_args=feed_dict,
+                                      should_resize=should_resize,
+                                      three_dims=three_dims)

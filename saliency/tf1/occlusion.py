@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ..core import occlusion as core_occlusion
+"""Utilities to compute saliency for a TF1 model using the occlusion method."""
 from .base import TF1CoreSaliency
+from ..core import occlusion as core_occlusion
+
 
 class Occlusion(TF1CoreSaliency):
   r"""A TF1CoreSaleincy class that computes saliency masks using occlusion."""
@@ -29,11 +31,11 @@ class Occlusion(TF1CoreSaliency):
       x_value: Input value, not batched.
       feed_dict: (Optional) feed dictionary to pass to the session.run call.
       size: Height and width of the occlusion window. Default is 15.
-      value: Value to repalce values inside the occlusion window with. Default 
+      value: Value to repalce values inside the occlusion window with. Default
         is 0.
     """
-    return self.core_instance.GetMask(x_value, 
-        self.call_model_function,
-        call_model_args=feed_dict,
-        size=size,
-        value=value)
+    return self.core_instance.GetMask(x_value,
+                                      self.call_model_function,
+                                      call_model_args=feed_dict,
+                                      size=size,
+                                      value=value)

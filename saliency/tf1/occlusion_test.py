@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests completeness axiom, batching, and error handling for blur_ig.
-"""
+"""Tests accuracy and correct TF1 usage for occlusion."""
 import unittest
 
 from . import occlusion
@@ -30,8 +29,8 @@ class OcclusionTest(unittest.TestCase):
     self.max_sigma = 10
     with tf.Graph().as_default() as graph:
       self.x = tf.placeholder(shape=[None, 5, 5], dtype=tf.float32)
-      # Define function to just look at center pixel.
-      y = self.x[:,1,1] * 3 + self.x[:,3,3] * 3
+      # Define function to just multiply all values by 3
+      y = self.x[:, 1, 1] * 3 + self.x[:, 3, 3] * 3
       self.sess = tf.Session(graph=graph)
       self.sess_spy = unittest.mock.MagicMock(wraps=self.sess)
       # All black except white at [1,1] and [3,3].
@@ -41,30 +40,27 @@ class OcclusionTest(unittest.TestCase):
           [0.0, 0.0, 0.0, 0.0, 0.0],
           [0.0, 0.0, 0.0, 1.0, 0.0],
           [0.0, 0.0, 0.0, 0.0, 0.0],
-      ],
-                                  dtype=np.float)
+      ], dtype=np.float)
 
-      # The computed Occlusion mask should bias the center, but the quadrants 
+      # The computed Occlusion mask should bias the center, but the quadrants
       # with nonzero values should be greater than the other two (exact expected
       # values stored in ref_mask).
-      self.expected_val = np.array([[3.,  6.,  6.,  3.,  0.],
-                         [6., 15., 18., 12.,  3.],
-                         [6., 18., 24., 18.,  6.],
-                         [3., 12., 18., 15.,  6.],
-                         [0.,  3.,  6.,  6.,  3.]])
-      self.occlusion_instance = occlusion.Occlusion(graph,
-                                        self.sess_spy,
-                                        y,
-                                        self.x)
+      self.expected_val = np.array([[3., 6., 6., 3., 0.],
+                                    [6., 15., 18., 12., 3.],
+                                    [6., 18., 24., 18., 6.],
+                                    [3., 12., 18., 15., 6.],
+                                    [0., 3., 6., 6., 3.]])
+      self.occlusion_instance = occlusion.Occlusion(graph, self.sess_spy, y,
+                                                    self.x)
 
   def testOcclsuionGetMask(self):
     """Tests the Occlusion method using a simple TF1 model."""
-    expected_calls = 10 # 5x5 image with size 3 window, 1 extra call for input y
-    # Calculate the Blur IG attribution of the input.
-    mask = self.occlusion_instance.GetMask(self.x_input_val, 
-                                         feed_dict={}, 
-                                         size=3,
-                                         value=0)
+    expected_calls = 10  # 5x5 image with size 3 window, 1 extra call for input
+    # Calculate the occlusion attribution of the input.
+    mask = self.occlusion_instance.GetMask(self.x_input_val,
+                                           feed_dict={},
+                                           size=3,
+                                           value=0)
 
     # Verify the result for completeness..
     # Expected (for max_sigma=10): 1.4746742
@@ -72,15 +68,13 @@ class OcclusionTest(unittest.TestCase):
     np.testing.assert_equal(mask, self.expected_val)
     self.assertEqual(self.sess_spy.run.call_count, expected_calls)
 
-  def testBlurIGGetMaskArgs(self):
+  def testOcclusionGetMaskArgs(self):
     """Tests the sess.run receives the correct inputs."""
-    feed_dict = {'foo':'bar'}
+    feed_dict = {'foo': 'bar'}
     self.sess_spy.run.return_value = [[3]]
 
-    self.occlusion_instance.GetMask(self.x_input_val, 
-                                  feed_dict=feed_dict, 
-                                  size=3,
-                                  value=0)
+    self.occlusion_instance.GetMask(
+        self.x_input_val, feed_dict=feed_dict, size=3, value=0)
     actual_feed_dict = self.sess_spy.run.call_args[1]['feed_dict']
 
     self.assertEqual(actual_feed_dict['foo'], feed_dict['foo'])

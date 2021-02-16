@@ -75,7 +75,8 @@ class GuidedBackprop(TF1Saliency):
 
     Args:
       x_value: Input value, not batched.
-      feed_dict: (Optional) feed dictionary to pass to the session.run call."""
+      feed_dict: (Optional) feed dictionary to pass to the session.run call.
+    """
     with self.guided_graph.as_default():
       # Move all the feed dict tensor keys to refer to the same tensor on the
       # new graph.

@@ -17,8 +17,8 @@ import unittest
 
 from . import blur_ig
 import numpy as np
-import tensorflow.compat.v1 as tf
 from scipy.ndimage import gaussian_filter
+import tensorflow.compat.v1 as tf
 
 
 class BlurIgTest(unittest.TestCase):
@@ -47,14 +47,15 @@ class BlurIgTest(unittest.TestCase):
       y_input_val = self.sess.run(y, feed_dict={self.x: [self.x_input_val]})
 
       # Baseline is the fully blurred version of the input.
-      x_baseline_val = gaussian_filter(self.x_input_val,
-                          sigma=[self.max_sigma, self.max_sigma, 0],
-                          mode='constant')
+      x_baseline_val = gaussian_filter(
+          self.x_input_val,
+          sigma=[self.max_sigma, self.max_sigma, 0],
+          mode='constant')
       y_baseline_val = self.sess.run(y, feed_dict={self.x: [x_baseline_val]})
 
       # The expected BlurIG value is equal to the difference between
-      # the `y` value at the input and the `y` value at the baseline. Because 
-      # each value is independent, we can calculate the expected blur_ig value 
+      # the `y` value at the input and the `y` value at the baseline. Because
+      # each value is independent, we can calculate the expected blur_ig value
       # of each.
       #
       # Expected: [[-0, -0, -0, -0, -0],
@@ -64,21 +65,21 @@ class BlurIgTest(unittest.TestCase):
       #            [-0, -0, -0, -0, -0]
       self.expected_val = y_input_val[0] - y_baseline_val[0]
       self.blur_ig_instance = blur_ig.BlurIG(graph,
-                                        self.sess_spy,
-                                        y,
-                                        self.x)
+                                             self.sess_spy,
+                                             y,
+                                             self.x)
 
   def testBlurIGGetMask(self):
     """Tests that BlurIG steps are created and aggregated correctly."""
     x_steps = 2000
 
     # Calculate the Blur IG attribution of the input.
-    mask = self.blur_ig_instance.GetMask(self.x_input_val, 
-                                         feed_dict={}, 
-                                         max_sigma=self.max_sigma, 
+    mask = self.blur_ig_instance.GetMask(self.x_input_val,
+                                         feed_dict={},
+                                         max_sigma=self.max_sigma,
                                          steps=x_steps)
 
-    # Because the baseline is blurred, all zero values should still have some 
+    # Because the baseline is blurred, all zero values should still have some
     # attribution (introduced noise).
     self.assertEqual(np.count_nonzero(mask), mask.size)
     # Verify the result (for accuracy and therefore completeness).
@@ -91,13 +92,13 @@ class BlurIgTest(unittest.TestCase):
     batch_size = 500
     expected_calls = 3  # batch size is 500, ceil(1001/500)=3
 
-    mask = self.blur_ig_instance.GetMask(self.x_input_val, 
-                                         feed_dict={}, 
-                                         max_sigma=self.max_sigma, 
+    mask = self.blur_ig_instance.GetMask(self.x_input_val,
+                                         feed_dict={},
+                                         max_sigma=self.max_sigma,
                                          steps=x_steps,
                                          batch_size=batch_size)
 
-    # Because the baseline is blurred, all zero values should still have some 
+    # Because the baseline is blurred, all zero values should still have some
     # attribution (introduced noise).
     self.assertEqual(np.count_nonzero(mask), mask.size)
     # Verify the result (for accuracy and therefore completeness).
@@ -110,13 +111,13 @@ class BlurIgTest(unittest.TestCase):
     batch_size = 1000
     expected_calls = 1  # batch size is 1000, ceil(999/1000)=1
 
-    mask = self.blur_ig_instance.GetMask(self.x_input_val, 
-                                         feed_dict={}, 
-                                         max_sigma=self.max_sigma, 
+    mask = self.blur_ig_instance.GetMask(self.x_input_val,
+                                         feed_dict={},
+                                         max_sigma=self.max_sigma,
                                          steps=x_steps,
                                          batch_size=batch_size)
 
-    # Because the baseline is blurred, all zero values should still have some 
+    # Because the baseline is blurred, all zero values should still have some
     # attribution (introduced noise).
     self.assertEqual(np.count_nonzero(mask), mask.size)
     # Verify the result (for accuracy and therefore completeness).
@@ -126,12 +127,12 @@ class BlurIgTest(unittest.TestCase):
   def testBlurIGGetMaskArgs(self):
     """Tests that call_model_function receives correct inputs."""
     x_steps = 5
-    feed_dict = {'foo':'bar'}
-    self.sess_spy.run.return_value = [self.x_input_val.reshape((1,5,5,1))]
+    feed_dict = {'foo': 'bar'}
+    self.sess_spy.run.return_value = [self.x_input_val.reshape((1, 5, 5, 1))]
 
-    self.blur_ig_instance.GetMask(self.x_input_val, 
-                                  feed_dict=feed_dict, 
-                                  max_sigma=self.max_sigma, 
+    self.blur_ig_instance.GetMask(self.x_input_val,
+                                  feed_dict=feed_dict,
+                                  max_sigma=self.max_sigma,
                                   steps=x_steps)
     actual_feed_dict = self.sess_spy.run.call_args[1]['feed_dict']
 

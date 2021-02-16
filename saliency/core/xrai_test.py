@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests completeness/accuracy, batching, and error handling for xrai."""
 import unittest
 
 import numpy as np
@@ -258,8 +259,8 @@ class XraiTest(unittest.TestCase):
     base_attribution = np.random.rand(IMAGE_SIZE, IMAGE_SIZE + 1, 3)
 
     # Verify that the exception was raised.
-    with self.assertRaisesRegex(ValueError, 'The base attribution shape '
-                                             'should'):
+    with self.assertRaisesRegex(ValueError,
+                                'The base attribution shape should'):
       # Calling GetMask(...) should result in exception.
       self.xrai.GetMask(x_value=self.input_image,
                         call_model_function=self.call_model_function,

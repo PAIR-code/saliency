@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests completeness axiom, batching, and error handling for integrated_gradients."""
 import unittest
 
 from . import integrated_gradients
@@ -28,8 +29,8 @@ class IntegratedGradientsTest(unittest.TestCase):
     def y_fn(arr):
       return np.array([5 * arr[0], arr[1]*arr[1], np.sin(arr[2])])
 
-    # Calculate the value of `y` at the baseline. `y` is returned as multiple 
-    # numbers, with the assumption that in a real network these values would be 
+    # Calculate the value of `y` at the baseline. `y` is returned as multiple
+    # numbers, with the assumption that in a real network these values would be
     # summed to a single output number.
     self.x_baseline_val = np.array([0.5, 1.0, 1.0], dtype=np.float)
     y_baseline_val = y_fn(self.x_baseline_val)
@@ -156,7 +157,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     x_steps = 2001
     call_model_function = self.create_bad_call_model_function()
     expected_error = integrated_gradients.SHAPE_ERROR_MESSAGE.format(
-        '\\(500, 3\\)','\\(3,\\)')
+        '\\(500, 3\\)', '\\(3,\\)')
 
     with self.assertRaisesRegex(ValueError, expected_error):
 

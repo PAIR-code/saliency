@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests accuracy and error handling for gradients."""
 import unittest
 
 from . import gradients
@@ -20,11 +21,9 @@ import numpy as np
 OUTPUT_LAYER_GRADIENTS = gradients.OUTPUT_LAYER_GRADIENTS
 
 
-class IntegratedGradientsTest(unittest.TestCase):
-  """To run: "python -m saliency.core.integrated_gradients_test" from the top-level directory."""
-  def y_fn(self, arr):
-      return np.array([5 * arr[0], arr[1]*arr[1], np.sin(arr[2])])
-  
+class GradientSaliencyTest(unittest.TestCase):
+  """To run: "python -m saliency.core.gradients_test" from the top-level directory."""
+
   def gradient_fn(self, arr):
     # f(x,y,z) = 5x + y^2, sin(z)
     # d(f(x,y,z)) = [5, 2y, cos(z)]
@@ -40,7 +39,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     return call_model
 
   def create_bad_call_model_function(self):
-    # Bad call model function since gradient shape doesn't match input
+    # Bad call model function since gradient shape doesn't match input.
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(self.gradient_fn, 1, x_value_batch)
@@ -53,7 +52,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     """Tests that GradientSaliency returns the output gradients."""
     call_model_function = self.create_call_model_function()
     grad_instance = gradients.GradientSaliency()
-    x_input = [3,2,1]
+    x_input = [3, 2, 1]
     self.expected_val = self.gradient_fn(x_input)
 
     mask = grad_instance.GetMask(x_value=x_input,
@@ -64,11 +63,11 @@ class IntegratedGradientsTest(unittest.TestCase):
     np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
     self.assertEqual(call_model_function.num_calls, 1)
 
-  def testBlurIGCallModelArgs(self):
+  def testGradientCallModelArgs(self):
     """Tests that call_model_function receives all inputs."""
     expected_keys = [OUTPUT_LAYER_GRADIENTS]
     call_model_args = {'foo': 'bar'}
-    x_input = [3,2,1]
+    x_input = [3, 2, 1]
     mock_call_model = unittest.mock.MagicMock(
         return_value={OUTPUT_LAYER_GRADIENTS: [x_input]})
     grad_instance = gradients.GradientSaliency()
@@ -90,13 +89,13 @@ class IntegratedGradientsTest(unittest.TestCase):
           expected_keys,
           msg='function was called with incorrect expected_keys.')
 
-  def testIntegratedGradientsGetMaskError(self):
+  def testGradientsGetMaskError(self):
     """Tests that GradientSaliency errors when receiving incorrect model output."""
     call_model_function = self.create_bad_call_model_function()
     expected_error = gradients.SHAPE_ERROR_MESSAGE.format(
-        '\\(500, 3\\)','\\(3,\\)')
+        '\\(1, 3\\)', '\\(3,\\)')
     grad_instance = gradients.GradientSaliency()
-    x_input = [3,2,1]
+    x_input = [3, 2, 1]
 
     with self.assertRaisesRegex(ValueError, expected_error):
 
