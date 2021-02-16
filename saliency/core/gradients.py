@@ -18,8 +18,11 @@ from .base import CoreSaliency
 from .base import OUTPUT_LAYER_GRADIENTS
 import numpy as np
 
-SHAPE_ERROR_MESSAGE = ("Expected key OUTPUT_LAYER_GRADIENTS to be the same shape"
-                      " as input x_value_batch")
+SHAPE_ERROR_MESSAGE = (
+    "Expected key OUTPUT_LAYER_GRADIENTS to be the same shape as input "
+    "x_value_batch - expected {}, actual {}"
+)
+
 
 class GradientSaliency(CoreSaliency):
   """"A CoreSaliency class that computes saliency masks with gradients."""
@@ -40,8 +43,8 @@ class GradientSaliency(CoreSaliency):
             input).
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
-            method (Integrated Gradients), the expected keys are
-            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer 
+            method (Gradients), the expected keys are
+            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer
               (logit/softmax) with respect to the input. Shape should be the
               same shape as x_value_batch.
       call_model_args: The arguments that will be passed to the call model
@@ -49,13 +52,16 @@ class GradientSaliency(CoreSaliency):
     """
     x_value_batched = np.array([x_value])
     call_model_data = call_model_function(
-            x_value_batched,
-            call_model_args=call_model_args,
-            expected_keys=[OUTPUT_LAYER_GRADIENTS])
+        x_value_batched,
+        call_model_args=call_model_args,
+        expected_keys=[OUTPUT_LAYER_GRADIENTS])
 
     call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
         call_model_data[OUTPUT_LAYER_GRADIENTS])
-    if (call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_value_batched.shape):
-      raise ValueError(SHAPE_ERROR_MESSAGE)
+    if call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_value_batched.shape:
+      raise ValueError(
+          SHAPE_ERROR_MESSAGE.format(
+              x_value_batched.shape,
+              call_model_data[OUTPUT_LAYER_GRADIENTS].shape))
 
     return call_model_data[OUTPUT_LAYER_GRADIENTS][0]

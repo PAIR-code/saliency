@@ -12,20 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ..core import integrated_gradients as core_integrated_gradients
+"""Utilities to compute saliency for a TF1 model using Integrated Gradients."""
 from .base import TF1CoreSaliency
+from ..core import integrated_gradients as core_integrated_gradients
 
 class IntegratedGradients(TF1CoreSaliency):
   r"""A TF1CoreSaliency class that computes saliency using Integrated Gradients.
 
-  https://arxiv.org/abs/1703.01365"""
+  https://arxiv.org/abs/1703.01365
+  """
 
   def __init__(self, graph, session, y, x):
     super(IntegratedGradients, self).__init__(graph, session, y, x)
     self.core_instance = core_integrated_gradients.IntegratedGradients()
 
-  def GetMask(self, x_value, feed_dict={},
-              x_baseline=None, x_steps=25, batch_size=1):
+  def GetMask(self,
+              x_value,
+              feed_dict={},
+              x_baseline=None,
+              x_steps=25,
+              batch_size=1):
     """Returns an integrated gradients mask.
 
     Args:
@@ -33,8 +39,8 @@ class IntegratedGradients(TF1CoreSaliency):
       feed_dict: (Optional) feed dictionary to pass to the session.run call.
       x_baseline: Baseline value used in integration. Defaults to 0.
       x_steps: Number of integrated steps between baseline and x.
-      batch_size: Maximum number of x inputs that are passed to session.run call
-        as a batch.
+      batch_size: Maximum number of x inputs (steps along the integration path)
+        that are passed to sess.run as a batch.
     """
     return self.core_instance.GetMask(x_value, 
         self.call_model_function,
