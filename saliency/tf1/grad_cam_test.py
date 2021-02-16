@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests accuracy and correct TF1 usage for grad_cam."""
 import unittest
 
 from . import grad_cam
@@ -41,23 +42,23 @@ class GradCamTest(unittest.TestCase):
           filters=1,
           kernel_size=3,
           kernel_initializer=tf.constant_initializer(horiz_detector),
-          padding="same",
-          name="Conv")
+          padding='same',
+          name='Conv')
 
       # Compute logits and do prediction with pre-defined weights
       flat = tf.reshape(conv1, [-1, INPUT_HEIGHT_WIDTH*INPUT_HEIGHT_WIDTH])
       sum_weights = tf.constant_initializer(np.ones(flat.shape))
       tf.layers.dense(
-          inputs=flat, units=2, kernel_initializer=sum_weights, name="Logits")
+          inputs=flat, units=2, kernel_initializer=sum_weights, name='Logits')
       self.sess = tf.Session()
       init = tf.global_variables_initializer()
       self.sess.run(init)
       self.sess_spy = unittest.mock.MagicMock(wraps=self.sess)
 
       # Set up GradCam object
-      self.conv_layer = self.graph.get_tensor_by_name("Conv/BiasAdd:0")
+      self.conv_layer = self.graph.get_tensor_by_name('Conv/BiasAdd:0')
       self.grad_cam_instance = grad_cam.GradCam(self.graph,
-                                                self.sess_spy, 
+                                                self.sess_spy,
                                                 x=self.images,
                                                 conv_layer=self.conv_layer)
 
@@ -90,26 +91,22 @@ class GradCamTest(unittest.TestCase):
                          [0., 0., 0., 0., 0.],
                          [0.33, 0.67, 1., 0.67, 0.33],
                          [0., 0., 0., 0., 0.]])
-    self.assertTrue(
-        np.allclose(mask, ref_mask, atol=0.01),
-        "Generated mask did not match reference mask.")
+    self.assertTrue(np.allclose(mask, ref_mask, atol=0.01),
+                    'Generated mask did not match reference mask.')
 
   def testGradCamGetMaskArgs(self):
     """Tests that sess.run receives the correct inputs."""
     img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
-    feed_dict = {'foo':'bar'}
+    feed_dict = {'foo': 'bar'}
     self.sess_spy.run.return_value = [[img], [img]]
 
     self.grad_cam_instance.GetMask(
-        img,
-        feed_dict=feed_dict,
-        should_resize=True,
-        three_dims=False)
+        img, feed_dict=feed_dict, should_resize=True, three_dims=False)
     actual_feed_dict = self.sess_spy.run.call_args[1]['feed_dict']
 
     self.assertEqual(actual_feed_dict['foo'], feed_dict['foo'])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   unittest.main()
