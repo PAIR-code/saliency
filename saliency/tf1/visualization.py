@@ -13,3 +13,17 @@
 # limitations under the License.
 
 from ..core import visualization
+
+
+VisualizeImageGrayscale = visualization.VisualizeImageGrayscale
+# def VisualizeImageGrayscale(image_3d, percentile=99):
+#   r"""Returns a 3D tensor as a grayscale 2D tensor.
+
+#   This method sums a 3D tensor across the absolute value of axis=2, and then
+#   clips values at a given percentile.
+#   """
+
+VisualizeImageDiverging = visualization.VisualizeImageDiverging
+# def VisualizeImageDiverging(image_3d, percentile=99):
+#   r"""Returns a 3D tensor as a 2D tensor with positive and negative values.
+#   """
