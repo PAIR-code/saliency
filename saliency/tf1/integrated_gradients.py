@@ -42,6 +42,8 @@ class IntegratedGradients(TF1CoreSaliency):
       batch_size: Maximum number of x inputs (steps along the integration path)
         that are passed to sess.run as a batch.
     """
+    self.validate_xy_tensor_shape(x_steps, batch_size)
+
     return self.core_instance.GetMask(x_value, 
         self.call_model_function,
         call_model_args=feed_dict,

@@ -69,16 +69,20 @@ class IntegratedGradientsTest(unittest.TestCase):
     x_steps = 1001
     batch_size = 500
     expected_calls = 3  # batch size is 500, ceil(1001/500)=3
+    self.ig_instance.validate_xy_tensor_shape = unittest.mock.MagicMock()
+    expected_validate_args = (x_steps, batch_size)
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
                                     feed_dict={},
                                     x_baseline=self.x_baseline_val[0],
                                     x_steps=x_steps,
                                     batch_size=batch_size)
+    validate_args = self.ig_instance.validate_xy_tensor_shape.call_args[0]
 
     # Verify the result.
     np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
     self.assertEqual(self.sess_spy.run.call_count, expected_calls)
+    self.assertEqual(validate_args, expected_validate_args)
 
   def testIntegratedGradientsGetMaskSingleBatch(self):
     """Tests that a single IG batch is created and aggregated correctly."""

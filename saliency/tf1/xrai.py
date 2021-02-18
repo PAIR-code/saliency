@@ -79,6 +79,12 @@ class XRAI(TF1CoreSaliency):
 
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
+    if extra_parameters is None:
+      x_steps = XRAIParameters().steps
+    else:
+      x_steps = extra_parameters.steps
+    self.validate_xy_tensor_shape(x_steps, batch_size)
+
     return self.core_instance.GetMask(
         x_value,
         call_model_function=self.call_model_function,
@@ -138,6 +144,12 @@ class XRAI(TF1CoreSaliency):
         XRAIOutput: an object that contains the output of the XRAI algorithm.
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
+    if extra_parameters is None:
+      x_steps = XRAIParameters().steps
+    else:
+      x_steps = extra_parameters.steps
+    self.validate_xy_tensor_shape(x_steps, batch_size)
+
     return self.core_instance.GetMaskWithDetails(
         x_value,
         call_model_function=self.call_model_function,
