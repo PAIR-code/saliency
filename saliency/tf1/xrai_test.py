@@ -25,25 +25,30 @@ class XRAITest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    with tf.Graph().as_default() as graph:
+    self.graph = tf.Graph()
+    with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=tf.float32)
       contrib = [5 * x[:, 0], x[:, 1] * x[:, 1], 2 * x[:, 2]]
       y = contrib[0] + contrib[1] + contrib[2]
-      sess = tf.Session(graph=graph)
+      sess = tf.Session(graph=self.graph)
       self.sess_spy = unittest.mock.MagicMock(wraps=sess)
 
       # Calculate the integrated gradients attribution of the input.
-      self.xrai_instance = xrai.XRAI(graph, self.sess_spy, y, x)
+      self.x = x
+      self.y = y
+      self.x_indexed = x[0]
+      self.y_indexed = x[0]
 
   def testXraiGetMaskArgs(self):
     """Test that the CoreSaliency GetMask method is called correctly."""
+    self.xrai_instance = xrai.XRAI(self.graph, self.sess_spy, self.y, self.x)
     x_value = [3, 2, 1]
     feed_dict = {'foo': 'bar'}
     baselines = 'baz'
     segments = 'baq'
     base_attribution = [1, 2, 3]
     batch_size = 9
-    extra_parameters = {'xr': 'ai'}
+    extra_parameters = xrai.XRAIParameters(steps=900)
     self.xrai_instance.core_instance.GetMask = unittest.mock.MagicMock()
     mock = self.xrai_instance.core_instance.GetMask
 
@@ -70,13 +75,14 @@ class XRAITest(unittest.TestCase):
 
   def testXraiGetMaskWithDetailsArgs(self):
     """Test that the CoreSaliency GetMaskWithDetails method is called correctly."""
+    self.xrai_instance = xrai.XRAI(self.graph, self.sess_spy, self.y, self.x)
     x_value = [3, 2, 1]
     feed_dict = {'foo': 'bar'}
     baselines = 'baz'
     segments = 'baq'
     base_attribution = [1, 2, 3]
     batch_size = 9
-    extra_parameters = {'xr': 'ai'}
+    extra_parameters = xrai.XRAIParameters(steps=900)
     core_instance = self.xrai_instance.core_instance
     core_instance.GetMaskWithDetails = unittest.mock.MagicMock()
     mock = self.xrai_instance.core_instance.GetMaskWithDetails
@@ -104,11 +110,14 @@ class XRAITest(unittest.TestCase):
 
   def testXraiFunctional(self):
     """Test that the model is called and used to calculate the XRAI mask."""
+    self.xrai_instance = xrai.XRAI(self.graph, self.sess_spy, self.y, self.x)
+    self.xrai_instance.validate_xy_tensor_shape = unittest.mock.MagicMock()
     feed_dict = {}
     baselines = np.array([[0, 0, 3], [0, 0, 0]])
     segments = [[True, True, False], [False, False, True]]
     batch_size = 9
-    extra_parameters = xrai.XRAIParameters(steps=100,
+    steps = 100
+    extra_parameters = xrai.XRAIParameters(steps=steps,
                                            return_ig_attributions=True,
                                            return_xrai_segments=True)
     # Reducing min_pixel_diff lets us split up this very small 1x3 "image"
@@ -123,6 +132,8 @@ class XRAITest(unittest.TestCase):
     # segment masks have the first two inputs together
     expected_mask[0:2] = np.mean(expected_mask[0:2])  # [9.5, 9.5, 3]
     expected_calls = 24  # batch size is 9, 2*ceil(100/9)=24
+    expected_validate_args = (steps, batch_size)
+
 
     mask_details = self.xrai_instance.GetMaskWithDetails(
         x_value=x_value,
@@ -131,7 +142,10 @@ class XRAITest(unittest.TestCase):
         segments=segments,
         batch_size=batch_size,
         extra_parameters=extra_parameters)
+    validate_args = self.xrai_instance.validate_xy_tensor_shape.call_args[0]
 
+    # Verify the result.
+    self.assertEqual(validate_args, expected_validate_args)
     np.testing.assert_almost_equal(mask_details.attribution_mask,
                                    expected_mask, decimal=4)
     np.testing.assert_almost_equal(mask_details.ig_attribution,
@@ -144,4 +158,3 @@ class XRAITest(unittest.TestCase):
 
 if __name__ == '__main__':
   unittest.main()
-  
