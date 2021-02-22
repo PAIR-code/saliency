@@ -38,19 +38,20 @@ class GradCamTest(unittest.TestCase):
       horiz_detector = np.array([[-1, -1, -1],
                                  [2, 2, 2],
                                  [-1, -1, -1]])
-      conv1 = tf.layers.conv2d(
-          inputs=self.images,
+      conv1 = tf.keras.layers.Conv2D(
           filters=1,
           kernel_size=3,
           kernel_initializer=tf.constant_initializer(horiz_detector),
           padding='same',
-          name='Conv')
+          name='Conv',
+          input_shape=self.images.shape)(self.images)
 
       # Compute logits and do prediction with pre-defined weights
       flat = tf.reshape(conv1, [-1, INPUT_HEIGHT_WIDTH*INPUT_HEIGHT_WIDTH])
       sum_weights = tf.constant_initializer(np.ones(flat.shape))
-      tf.layers.dense(
-          inputs=flat, units=2, kernel_initializer=sum_weights, name='Logits')
+      tf.keras.layers.Dense(
+          units=2, kernel_initializer=sum_weights, name='Logits')(flat)
+      
       self.sess = tf.Session()
       init = tf.global_variables_initializer()
       self.sess.run(init)
