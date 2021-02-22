@@ -14,6 +14,7 @@
 
 """Tests completeness axiom, batching, and error handling for integrated_gradients."""
 import unittest
+import unittest.mock as mock
 
 from . import integrated_gradients
 import numpy as np
@@ -130,7 +131,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     x_steps = 50
     expected_keys = [OUTPUT_LAYER_GRADIENTS]
     call_model_args = {'foo': 'bar'}
-    mock_call_model = unittest.mock.MagicMock(
+    mock_call_model = mock.MagicMock(
         return_value={OUTPUT_LAYER_GRADIENTS: [self.x_input_val]})
 
     self.ig_instance.GetMask(

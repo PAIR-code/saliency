@@ -76,5 +76,15 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy', 'tensorflow>=1.15'],
+    install_requires=['numpy', 'scikit-image'],
+
+    # List additional groups of dependencies here (e.g. development
+    # dependencies). You can install these using the following syntax,
+    # for example:
+    # $ pip install -e .[full,tf1]
+    # $ pip install -e ".[full,tf1]"  (if using zsh)
+    extras_require={
+        "full": ['tensorflow>=1.15'],
+        "tf1": ['tensorflow>=1.15'],
+    }
 )

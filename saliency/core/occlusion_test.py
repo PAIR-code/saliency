@@ -14,6 +14,7 @@
 
 """Tests accuracy and error handling for occlusion."""
 import unittest
+import unittest.mock as mock
 
 from . import occlusion
 import numpy as np
@@ -75,7 +76,7 @@ class OcclusionTest(unittest.TestCase):
     img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     expected_keys = [occlusion.OUTPUT_LAYER_VALUES]
     call_model_args = {'foo': 'bar'}
-    mock_call_model = unittest.mock.MagicMock(
+    mock_call_model = mock.MagicMock(
         return_value={occlusion.OUTPUT_LAYER_VALUES: [3]})
 
     self.occlusion_instance.GetMask(

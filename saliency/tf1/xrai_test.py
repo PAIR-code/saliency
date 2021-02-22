@@ -14,6 +14,7 @@
 
 """Tests accuracy and correct TF1 usage for xrai."""
 import unittest
+import unittest.mock as mock
 
 from . import xrai
 import numpy as np
@@ -31,7 +32,7 @@ class XRAITest(unittest.TestCase):
       contrib = [5 * x[:, 0], x[:, 1] * x[:, 1], 2 * x[:, 2]]
       y = contrib[0] + contrib[1] + contrib[2]
       sess = tf.Session(graph=self.graph)
-      self.sess_spy = unittest.mock.MagicMock(wraps=sess)
+      self.sess_spy = mock.MagicMock(wraps=sess)
 
       # Calculate the integrated gradients attribution of the input.
       self.x = x
@@ -49,8 +50,8 @@ class XRAITest(unittest.TestCase):
     base_attribution = [1, 2, 3]
     batch_size = 9
     extra_parameters = xrai.XRAIParameters(steps=900)
-    self.xrai_instance.core_instance.GetMask = unittest.mock.MagicMock()
-    mock = self.xrai_instance.core_instance.GetMask
+    self.xrai_instance.core_instance.GetMask = mock.MagicMock()
+    mock_function = self.xrai_instance.core_instance.GetMask
 
     self.xrai_instance.GetMask(
         x_value=x_value,
@@ -61,8 +62,8 @@ class XRAITest(unittest.TestCase):
         batch_size=batch_size,
         extra_parameters=extra_parameters)
 
-    self.assertEqual(mock.call_args_list, [
-        unittest.mock.call(
+    self.assertEqual(mock_function.call_args_list, [
+        mock.call(
             x_value,
             call_model_function=self.xrai_instance.call_model_function,
             call_model_args=feed_dict,
@@ -84,8 +85,8 @@ class XRAITest(unittest.TestCase):
     batch_size = 9
     extra_parameters = xrai.XRAIParameters(steps=900)
     core_instance = self.xrai_instance.core_instance
-    core_instance.GetMaskWithDetails = unittest.mock.MagicMock()
-    mock = self.xrai_instance.core_instance.GetMaskWithDetails
+    core_instance.GetMaskWithDetails = mock.MagicMock()
+    mock_function = self.xrai_instance.core_instance.GetMaskWithDetails
 
     self.xrai_instance.GetMaskWithDetails(
         x_value=x_value,
@@ -96,8 +97,8 @@ class XRAITest(unittest.TestCase):
         batch_size=batch_size,
         extra_parameters=extra_parameters)
 
-    self.assertEqual(mock.call_args_list, [
-        unittest.mock.call(
+    self.assertEqual(mock_function.call_args_list, [
+        mock.call(
             x_value,
             call_model_function=self.xrai_instance.call_model_function,
             call_model_args=feed_dict,
@@ -111,7 +112,7 @@ class XRAITest(unittest.TestCase):
   def testXraiFunctional(self):
     """Test that the model is called and used to calculate the XRAI mask."""
     self.xrai_instance = xrai.XRAI(self.graph, self.sess_spy, self.y, self.x)
-    self.xrai_instance.validate_xy_tensor_shape = unittest.mock.MagicMock()
+    self.xrai_instance.validate_xy_tensor_shape = mock.MagicMock()
     feed_dict = {}
     baselines = np.array([[0, 0, 3], [0, 0, 0]])
     segments = [[True, True, False], [False, False, True]]

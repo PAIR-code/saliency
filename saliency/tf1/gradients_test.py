@@ -14,6 +14,7 @@
 
 """Tests accuracy and correct TF1 usage for gradients."""
 import unittest
+import unittest.mock as mock
 
 from . import gradients
 import numpy as np
@@ -30,7 +31,7 @@ class GradientsTest(unittest.TestCase):
       contrib = [5 * x[:, 0], x[:, 1] * x[:, 1], tf.sin(x[:, 2])]
       y = contrib[0] + contrib[1] + contrib[2]
       sess = tf.Session(graph=graph)
-      self.sess_spy = unittest.mock.MagicMock(wraps=sess)
+      self.sess_spy = mock.MagicMock(wraps=sess)
 
       self.x_input_val = np.array([1.0, 2.0, 3.0])
 

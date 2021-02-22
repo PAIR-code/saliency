@@ -14,6 +14,7 @@
 
 """Tests completeness axiom, batching, and error handling for blur_ig."""
 import unittest
+import unittest.mock as mock
 
 from . import blur_ig
 import numpy as np
@@ -33,7 +34,7 @@ class BlurIgTest(unittest.TestCase):
       y_sum = tf.reduce_sum(y, [1,2,3])
       self.gradients_node = tf.gradients(y, self.x)[0]
       self.sess = tf.Session(graph=graph)
-      self.sess_spy = unittest.mock.MagicMock(wraps=self.sess)
+      self.sess_spy = mock.MagicMock(wraps=self.sess)
     # All black except 2 pixels near the center.
       self.x_input_val = np.array([
           [0.0, 0.0, 0.0, 0.0, 0.0],
@@ -92,7 +93,7 @@ class BlurIgTest(unittest.TestCase):
     x_steps = 1001
     batch_size = 500
     expected_calls = 3  # batch size is 500, ceil(1001/500)=3
-    self.blur_ig_instance.validate_xy_tensor_shape = unittest.mock.MagicMock()
+    self.blur_ig_instance.validate_xy_tensor_shape = mock.MagicMock()
     expected_validate_args = (x_steps, batch_size)
 
     mask = self.blur_ig_instance.GetMask(self.x_input_val,

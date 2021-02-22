@@ -14,6 +14,7 @@
 
 """Tests accuracy and error handling for grad_cam."""
 import unittest
+import unittest.mock as mock
 
 from . import grad_cam
 import numpy as np
@@ -91,7 +92,7 @@ class GradCamTest(unittest.TestCase):
         grad_cam.CONVOLUTION_LAYER_VALUES, grad_cam.CONVOLUTION_LAYER_GRADIENTS
     ]
     call_model_args = {'foo': 'bar'}
-    mock_call_model = unittest.mock.MagicMock(
+    mock_call_model = mock.MagicMock(
         return_value={
             grad_cam.CONVOLUTION_LAYER_GRADIENTS: [img],
             grad_cam.CONVOLUTION_LAYER_VALUES: [img]

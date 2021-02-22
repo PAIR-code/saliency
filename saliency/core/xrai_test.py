@@ -14,6 +14,7 @@
 
 """Tests completeness/accuracy, batching, and error handling for xrai."""
 import unittest
+import unittest.mock as mock
 
 import numpy as np
 import skimage.draw as sk_draw
@@ -31,12 +32,12 @@ class XraiTest(unittest.TestCase):
     def call_model_function():
       return
     # Mock IntegratedGradients.
-    self.mock_ig = unittest.mock.patch(
+    self.mock_ig = mock.patch(
       __name__ + '.xrai.IntegratedGradients').start()
     self.input_image = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) * 0.3 + 0.5
     self.ig_bl_1_attr = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) - 0.4
     self.ig_bl_2_attr = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) - 0.4
-    self.mock_ig_instance = unittest.mock.Mock()
+    self.mock_ig_instance = mock.Mock()
     self.mock_ig_instance.GetMask.side_effect = [self.ig_bl_1_attr,
                                                  self.ig_bl_2_attr,
                                                  self.ig_bl_1_attr,

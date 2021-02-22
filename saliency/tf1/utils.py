@@ -17,7 +17,14 @@ from ..core.base import CONVOLUTION_LAYER_GRADIENTS
 from ..core.base import CONVOLUTION_LAYER_VALUES
 from ..core.base import OUTPUT_LAYER_GRADIENTS
 from ..core.base import OUTPUT_LAYER_VALUES
-import tensorflow.compat.v1 as tf
+tf = None
+
+def _import_tf():
+    """ Tries to import tensorflow.
+    """
+    global tf
+    if tf is None:
+        import tensorflow as tf
 
 MISSING_Y_ERROR_MESSAGE = 'Cannot return key {} because no y was specified'
 MISSING_CONV_LAYER_ERROR_MESSAGE = ('Cannot return key {} because no conv_layer'
@@ -55,13 +62,15 @@ def create_tf1_call_model_function(graph,
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output.
   """
+  _import_tf()
+
   with graph.as_default():
     if x is None:
       raise ValueError('Expected input tensor for x but is equal to None.')
     if y is not None:
-      output_gradients = tf.gradients(y, x)[0]
+      output_gradients = tf.compat.v1.gradients(y, x)[0]
     if conv_layer is not None:
-      conv_gradients = tf.gradients(conv_layer, x)[0]
+      conv_gradients = tf.compat.v1.gradients(conv_layer, x)[0]
 
   def convert_keys_to_fetches(expected_keys):
     """Converts expected keys into an array of fetchable tensors.
