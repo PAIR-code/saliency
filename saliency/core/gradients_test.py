@@ -14,6 +14,7 @@
 
 """Tests accuracy and error handling for gradients."""
 import unittest
+import unittest.mock as mock
 
 from . import gradients
 import numpy as np
@@ -68,7 +69,7 @@ class GradientSaliencyTest(unittest.TestCase):
     expected_keys = [OUTPUT_LAYER_GRADIENTS]
     call_model_args = {'foo': 'bar'}
     x_input = [3, 2, 1]
-    mock_call_model = unittest.mock.MagicMock(
+    mock_call_model = mock.MagicMock(
         return_value={OUTPUT_LAYER_GRADIENTS: [x_input]})
     grad_instance = gradients.GradientSaliency()
 

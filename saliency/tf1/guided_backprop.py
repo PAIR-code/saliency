@@ -15,7 +15,9 @@
 """Utilites to computed GuidedBackprop for TF1 models."""
 
 from .base import TF1Saliency
-import tensorflow.compat.v1 as tf
+from .base import TF1Saliency
+from .utils import _import_tf
+tf = None
 
 
 class GuidedBackprop(TF1Saliency):
@@ -39,6 +41,7 @@ class GuidedBackprop(TF1Saliency):
                tmp_ckpt_path='/tmp/guided_backprop_ckpt'):
     """Constructs a GuidedBackprop method using TF1 Saliency."""
     super(GuidedBackprop, self).__init__(graph, session, y, x)
+    _import_tf()
 
     self.x = x
 

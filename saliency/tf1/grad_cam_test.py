@@ -14,6 +14,7 @@
 
 """Tests accuracy and correct TF1 usage for grad_cam."""
 import unittest
+import unittest.mock as mock
 
 from . import grad_cam
 import numpy as np
@@ -53,7 +54,7 @@ class GradCamTest(unittest.TestCase):
       self.sess = tf.Session()
       init = tf.global_variables_initializer()
       self.sess.run(init)
-      self.sess_spy = unittest.mock.MagicMock(wraps=self.sess)
+      self.sess_spy = mock.MagicMock(wraps=self.sess)
 
       # Set up GradCam object
       self.conv_layer = self.graph.get_tensor_by_name('Conv/BiasAdd:0')

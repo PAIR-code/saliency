@@ -14,6 +14,7 @@
 
 """Tests accuracy and correct TF1 usage for integrated_gradients."""
 import unittest
+import unittest.mock as mock
 
 from . import integrated_gradients
 import numpy as np
@@ -30,7 +31,7 @@ class IntegratedGradientsTest(unittest.TestCase):
       contrib = [5 * x[:, 0], x[:, 1] * x[:, 1], tf.sin(x[:, 2])]
       y = contrib[0] + contrib[1] + contrib[2]
       sess = tf.Session(graph=graph)
-      self.sess_spy = unittest.mock.MagicMock(wraps=sess)
+      self.sess_spy = mock.MagicMock(wraps=sess)
 
       self.x_baseline_val = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
       self.x_input_val = np.array([[1.0, 2.0, 3.0]], dtype=np.float)
@@ -69,7 +70,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     x_steps = 1001
     batch_size = 500
     expected_calls = 3  # batch size is 500, ceil(1001/500)=3
-    self.ig_instance.validate_xy_tensor_shape = unittest.mock.MagicMock()
+    self.ig_instance.validate_xy_tensor_shape = mock.MagicMock()
     expected_validate_args = (x_steps, batch_size)
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],

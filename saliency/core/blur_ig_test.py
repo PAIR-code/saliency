@@ -14,6 +14,7 @@
 
 """Tests completeness axiom, batching, and error handling for blur_ig."""
 import unittest
+import unittest.mock as mock
 
 from . import blur_ig
 import numpy as np
@@ -145,7 +146,7 @@ class BlurIgTest(unittest.TestCase):
     x_steps = 50
     expected_keys = [OUTPUT_LAYER_GRADIENTS]
     call_model_args = {'foo': 'bar'}
-    mock_call_model = unittest.mock.MagicMock(
+    mock_call_model = mock.MagicMock(
         return_value={OUTPUT_LAYER_GRADIENTS: [self.x_input_val]})
 
     self.blur_ig_instance.GetMask(

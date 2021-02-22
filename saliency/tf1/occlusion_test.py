@@ -14,6 +14,7 @@
 
 """Tests accuracy and correct TF1 usage for occlusion."""
 import unittest
+import unittest.mock as mock
 
 from . import occlusion
 from . import utils
@@ -32,7 +33,7 @@ class OcclusionTest(unittest.TestCase):
       # Define function to just multiply all values by 3
       y = self.x[:, 1, 1] * 3 + self.x[:, 3, 3] * 3
       self.sess = tf.Session(graph=graph)
-      self.sess_spy = unittest.mock.MagicMock(wraps=self.sess)
+      self.sess_spy = mock.MagicMock(wraps=self.sess)
       # All black except white at [1,1] and [3,3].
       self.x_input_val = np.array([
           [0.0, 0.0, 0.0, 0.0, 0.0],
