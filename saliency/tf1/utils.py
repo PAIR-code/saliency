@@ -20,11 +20,12 @@ from ..core.base import OUTPUT_LAYER_VALUES
 tf = None
 
 def _import_tf():
-    """ Tries to import tensorflow.
-    """
-    global tf
-    if tf is None:
-        import tensorflow as tf
+  """ Tries to import tensorflow.
+  """
+  global tf
+  if tf is None:
+    import tensorflow as tf
+  return tf
 
 MISSING_Y_ERROR_MESSAGE = 'Cannot return key {} because no y was specified'
 MISSING_CONV_LAYER_ERROR_MESSAGE = ('Cannot return key {} because no conv_layer'
