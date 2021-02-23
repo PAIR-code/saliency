@@ -19,15 +19,6 @@ from .base import CoreSaliency
 import numpy as np
 from skimage.transform import resize
 
-GRADIENTS_SHAPE_ERROR_MESSAGE = (
-    "Expected key CONVOLUTION_LAYER_GRADIENTS to be the same shape as input "
-    "x_value_batch - expected {}, actual {}"
-)
-VALUES_SHAPE_ERROR_MESSAGE = (
-    "Expected outermost dimension of CONVOLUTION_LAYER_VALUES to be the same "
-    "as x_value_batch - expected {}, actual {}"
-)
-
 
 class GradCam(CoreSaliency):
   """A CoreSaliency class that computes saliency masks with Grad-CAM.
@@ -86,23 +77,11 @@ class GradCam(CoreSaliency):
         channel
     """
     x_value_batched = np.array([x_value])
-    data = call_model_function(
-        x_value_batched,
+    expected_keys = [CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS]
+    data = call_model_function(x_value_batched,
         call_model_args=call_model_args,
-        expected_keys=[CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS])
-
-    data[CONVOLUTION_LAYER_GRADIENTS] = np.array(
-        data[CONVOLUTION_LAYER_GRADIENTS])
-    data[CONVOLUTION_LAYER_VALUES] = np.array(data[CONVOLUTION_LAYER_VALUES])
-    if data[CONVOLUTION_LAYER_GRADIENTS].shape != x_value_batched.shape:
-      raise ValueError(
-          GRADIENTS_SHAPE_ERROR_MESSAGE.format(
-              x_value_batched.shape, data[CONVOLUTION_LAYER_GRADIENTS].shape))
-    if data[CONVOLUTION_LAYER_VALUES].shape[0] != x_value_batched.shape[0]:
-      raise ValueError(
-          VALUES_SHAPE_ERROR_MESSAGE.format(
-              x_value_batched.shape[0],
-              data[CONVOLUTION_LAYER_VALUES].shape[0]))
+        expected_keys=expected_keys)
+    self.format_call_model_data(data, x_value_batched.shape, expected_keys)
 
     weights = np.mean(data[CONVOLUTION_LAYER_GRADIENTS][0], axis=(0, 1))
     grad_cam = np.zeros(data[CONVOLUTION_LAYER_VALUES][0].shape[0:2],

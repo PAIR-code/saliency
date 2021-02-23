@@ -16,10 +16,28 @@
 import numpy as np
 
 
-OUTPUT_LAYER_GRADIENTS = 'OUTPUT_LAYER_GRADIENTS'
-OUTPUT_LAYER_VALUES = 'OUTPUT_LAYER_VALUES'
 CONVOLUTION_LAYER_GRADIENTS = 'CONVOLUTION_LAYER_GRADIENTS'
 CONVOLUTION_LAYER_VALUES = 'CONVOLUTION_LAYER_VALUES'
+OUTPUT_LAYER_GRADIENTS = 'OUTPUT_LAYER_GRADIENTS'
+OUTPUT_LAYER_VALUES = 'OUTPUT_LAYER_VALUES'
+SHAPE_ERROR_MESSAGE = {
+    CONVOLUTION_LAYER_GRADIENTS: (
+        'Expected key CONVOLUTION_LAYER_GRADIENTS to be the same shape as '
+        'input x_value_batch - expected {}, actual {}'
+    ),
+    CONVOLUTION_LAYER_VALUES: (
+        'Expected outermost dimension of CONVOLUTION_LAYER_VALUES to be the '
+        'same as x_value_batch - expected {}, actual {}'
+    ),
+    OUTPUT_LAYER_GRADIENTS: (
+        'Expected key OUTPUT_LAYER_GRADIENTS to be the same shape as input '
+        'x_value_batch - expected {}, actual {}'
+    ),
+    OUTPUT_LAYER_VALUES: (
+        'Expected outermost dimension of OUTPUT_LAYER_VALUES to be the same as'
+        ' x_value_batch - expected {}, actual {}'
+    ),
+}
 
 
 class CoreSaliency(object):
@@ -92,3 +110,17 @@ class CoreSaliency(object):
         total_gradients += grad
 
     return total_gradients / nsamples
+
+  def format_call_model_data(self, data, input_shape, expected_keys):
+    # For each expected_key in data, convert to numpy array and check shape against input_shape
+    use_outermost_only = [OUTPUT_LAYER_VALUES, CONVOLUTION_LAYER_VALUES]
+    for expected_key in expected_keys:
+      data[expected_key] = np.array(data[expected_key])
+      expected_shape = input_shape
+      actual_shape = data[expected_key].shape
+      if expected_key in use_outermost_only:
+        expected_shape = expected_shape[0]
+        actual_shape = actual_shape[0]
+      if expected_shape != actual_shape:
+        raise ValueError(SHAPE_ERROR_MESSAGE[expected_key].format(
+                       expected_shape, actual_shape))

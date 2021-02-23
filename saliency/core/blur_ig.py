@@ -113,14 +113,9 @@ class BlurIG(CoreSaliency):
             x_step_batched,
             call_model_args=call_model_args,
             expected_keys=[OUTPUT_LAYER_GRADIENTS])
-
-        call_model_data[OUTPUT_LAYER_GRADIENTS] = np.array(
-            call_model_data[OUTPUT_LAYER_GRADIENTS])
-        if call_model_data[OUTPUT_LAYER_GRADIENTS].shape != x_step_batched.shape:
-          raise ValueError(
-              SHAPE_ERROR_MESSAGE.format(
-                  x_step_batched.shape,
-                  call_model_data[OUTPUT_LAYER_GRADIENTS].shape))
+        self.format_call_model_data(call_model_data,
+                                    x_step_batched.shape,
+                                    [OUTPUT_LAYER_GRADIENTS])
 
         tmp = (
             step_vector_diff[i] *

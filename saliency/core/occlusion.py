@@ -18,11 +18,6 @@ from .base import CoreSaliency
 from .base import OUTPUT_LAYER_VALUES
 import numpy as np
 
-SHAPE_ERROR_MESSAGE = (
-    "Expected outermost dimension of OUTPUT_LAYER_VALUES to be the same as "
-    "x_value_batch - expected {}, actual {}"
-)
-
 
 class Occlusion(CoreSaliency):
   """A CoreSaliency class that computes saliency masks by occluding the image.
@@ -38,11 +33,9 @@ class Occlusion(CoreSaliency):
         x_value_batched,
         call_model_args=call_model_args,
         expected_keys=[OUTPUT_LAYER_VALUES])
-    data[OUTPUT_LAYER_VALUES] = np.array(data[OUTPUT_LAYER_VALUES])
-    if data[OUTPUT_LAYER_VALUES].shape[0] != x_value_batched.shape[0]:
-      raise ValueError(
-          SHAPE_ERROR_MESSAGE.format(x_value_batched.shape[0],
-                                     data[OUTPUT_LAYER_VALUES].shape[0]))
+    self.format_call_model_data(data,
+                                x_value_batched.shape,
+                                [OUTPUT_LAYER_VALUES])
     return data[OUTPUT_LAYER_VALUES][0]
 
   def GetMask(self,

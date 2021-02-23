@@ -16,9 +16,12 @@
 import unittest
 import unittest.mock as mock
 
+from .base import SHAPE_ERROR_MESSAGE
 from . import grad_cam
 import numpy as np
 
+CONVOLUTION_LAYER_VALUES = grad_cam.CONVOLUTION_LAYER_VALUES
+CONVOLUTION_LAYER_GRADIENTS = grad_cam.CONVOLUTION_LAYER_GRADIENTS
 INPUT_HEIGHT_WIDTH = 5  # width and height of input images in pixels
 
 
@@ -56,8 +59,8 @@ class GradCamTest(unittest.TestCase):
         output[2, :] = 0
         grad = grad.reshape(x_value_batch.shape)
         output = output.reshape(x_value_batch.shape)
-        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad,
-                grad_cam.CONVOLUTION_LAYER_VALUES: output}
+        return {CONVOLUTION_LAYER_GRADIENTS: grad,
+                CONVOLUTION_LAYER_VALUES: output}
 
       return call_model
 
@@ -89,13 +92,13 @@ class GradCamTest(unittest.TestCase):
     img = np.ones([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
     expected_keys = [
-        grad_cam.CONVOLUTION_LAYER_VALUES, grad_cam.CONVOLUTION_LAYER_GRADIENTS
+        CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS
     ]
     call_model_args = {'foo': 'bar'}
     mock_call_model = mock.MagicMock(
         return_value={
-            grad_cam.CONVOLUTION_LAYER_GRADIENTS: [img],
-            grad_cam.CONVOLUTION_LAYER_VALUES: [img]
+            CONVOLUTION_LAYER_GRADIENTS: [img],
+            CONVOLUTION_LAYER_VALUES: [img]
         })
 
     self.grad_cam_instance.GetMask(
@@ -134,8 +137,8 @@ class GradCamTest(unittest.TestCase):
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
         grad = np.zeros(x_value_batch.shape)
         output = np.zeros(x_value_batch.shape)
-        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad[0],
-                grad_cam.CONVOLUTION_LAYER_VALUES: output}
+        return {CONVOLUTION_LAYER_GRADIENTS: grad[0],
+                CONVOLUTION_LAYER_VALUES: output}
 
       return call_model
 
@@ -146,7 +149,7 @@ class GradCamTest(unittest.TestCase):
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img[1:-1, 1:-1] = 1
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
-    expected_error = grad_cam.GRADIENTS_SHAPE_ERROR_MESSAGE.format(
+    expected_error = SHAPE_ERROR_MESSAGE[CONVOLUTION_LAYER_GRADIENTS].format(
         '\\(1, 5, 5, 1\\)', '\\(5, 5, 1\\)')
 
     with self.assertRaisesRegex(ValueError, expected_error):
@@ -174,8 +177,8 @@ class GradCamTest(unittest.TestCase):
       def call_model(x_value_batch, call_model_args={}, expected_keys=None):
         grad = np.zeros(x_value_batch.shape)
         output = np.zeros(x_value_batch.shape)
-        return {grad_cam.CONVOLUTION_LAYER_GRADIENTS: grad,
-                grad_cam.CONVOLUTION_LAYER_VALUES: output[0]}
+        return {CONVOLUTION_LAYER_GRADIENTS: grad,
+                CONVOLUTION_LAYER_VALUES: output[0]}
 
       return call_model
 
@@ -186,7 +189,7 @@ class GradCamTest(unittest.TestCase):
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
     img[1:-1, 1:-1] = 1
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
-    expected_error = grad_cam.VALUES_SHAPE_ERROR_MESSAGE.format('1', '5')
+    expected_error = SHAPE_ERROR_MESSAGE[CONVOLUTION_LAYER_VALUES].format('1', '5')
 
     with self.assertRaisesRegex(ValueError, expected_error):
       self.grad_cam_instance.GetMask(
