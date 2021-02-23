@@ -17,9 +17,9 @@ import unittest
 import unittest.mock as mock
 
 from . import blur_ig
+from .base import OUTPUT_LAYER_GRADIENTS
+from .base import SHAPE_ERROR_MESSAGE
 import numpy as np
-
-OUTPUT_LAYER_GRADIENTS = blur_ig.OUTPUT_LAYER_GRADIENTS
 
 
 class BlurIgTest(unittest.TestCase):
@@ -173,8 +173,8 @@ class BlurIgTest(unittest.TestCase):
     """Tests that BlurIG errors with incorrect model outputs."""
     x_steps = 2001
     call_model_function = self.create_bad_call_model_function()
-    expected_error = blur_ig.SHAPE_ERROR_MESSAGE.format('\\(100, 5, 5, 1\\)',
-                                                        '\\(5, 5, 1\\)')
+    expected_error = SHAPE_ERROR_MESSAGE[OUTPUT_LAYER_GRADIENTS].format(
+        '\\(100, 5, 5, 1\\)', '\\(5, 5, 1\\)')
 
     # Expect error because shape of gradients returned don't match.
     with self.assertRaisesRegex(ValueError, expected_error):

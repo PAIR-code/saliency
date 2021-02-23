@@ -16,6 +16,8 @@
 import unittest
 import unittest.mock as mock
 
+from .base import OUTPUT_LAYER_VALUES
+from .base import SHAPE_ERROR_MESSAGE
 from . import occlusion
 import numpy as np
 
@@ -111,7 +113,7 @@ class OcclusionTest(unittest.TestCase):
       return call_model
     call_model_function = create_call_model_function()
     img = np.zeros([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH])
-    expected_error = occlusion.SHAPE_ERROR_MESSAGE.format('1', '5')
+    expected_error = SHAPE_ERROR_MESSAGE[OUTPUT_LAYER_VALUES].format('1', '5')
 
     with self.assertRaisesRegex(ValueError, expected_error):
       self.occlusion_instance.GetMask(

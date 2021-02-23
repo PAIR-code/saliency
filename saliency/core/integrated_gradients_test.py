@@ -16,10 +16,10 @@
 import unittest
 import unittest.mock as mock
 
+from .base import OUTPUT_LAYER_GRADIENTS
+from .base import SHAPE_ERROR_MESSAGE
 from . import integrated_gradients
 import numpy as np
-
-OUTPUT_LAYER_GRADIENTS = integrated_gradients.OUTPUT_LAYER_GRADIENTS
 
 
 class IntegratedGradientsTest(unittest.TestCase):
@@ -157,7 +157,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     """Tests that IG errors when receiving incorrect model output."""
     x_steps = 2001
     call_model_function = self.create_bad_call_model_function()
-    expected_error = integrated_gradients.SHAPE_ERROR_MESSAGE.format(
+    expected_error = SHAPE_ERROR_MESSAGE[OUTPUT_LAYER_GRADIENTS].format(
         '\\(500, 3\\)', '\\(3,\\)')
 
     with self.assertRaisesRegex(ValueError, expected_error):

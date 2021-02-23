@@ -16,10 +16,10 @@
 import unittest
 import unittest.mock as mock
 
+from .base import OUTPUT_LAYER_GRADIENTS
+from .base import SHAPE_ERROR_MESSAGE
 from . import gradients
 import numpy as np
-
-OUTPUT_LAYER_GRADIENTS = gradients.OUTPUT_LAYER_GRADIENTS
 
 
 class GradientSaliencyTest(unittest.TestCase):
@@ -93,7 +93,7 @@ class GradientSaliencyTest(unittest.TestCase):
   def testGradientsGetMaskError(self):
     """Tests that GradientSaliency errors when receiving incorrect model output."""
     call_model_function = self.create_bad_call_model_function()
-    expected_error = gradients.SHAPE_ERROR_MESSAGE.format(
+    expected_error = SHAPE_ERROR_MESSAGE[OUTPUT_LAYER_GRADIENTS].format(
         '\\(1, 3\\)', '\\(3,\\)')
     grad_instance = gradients.GradientSaliency()
     x_input = [3, 2, 1]
