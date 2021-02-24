@@ -72,9 +72,9 @@ class UtilsTF1Test(unittest.TestCase):
       y = (conv_layer[0] * 2)[0]
       # y = (conv_layer[0] + conv_layer[1] + conv_layer[2])[0]
     x_value = np.array([[2, 0.5, 19]], dtype=np.float32)
-    # because x[1] is squared, gradient should be 5*2x = 5*2*0.2
-    expected_conv_gradient = np.array([[-2, 5*2*0.5, 0]], dtype=np.float32)
-    expected_output_gradient = expected_conv_gradient * 2
+    # because x[1] is squared, gradient should be 5*2x = 5*2*0.5
+    expected_conv_gradient = np.array([2], dtype=np.float32)
+    expected_output_gradient = np.array([[-2., 5., 0.]]) * 2
 
     call_model_function = utils.create_tf1_call_model_function(
         self.graph, self.sess, y=y, x=x, conv_layer=conv_layer)
@@ -98,12 +98,12 @@ class UtilsTF1Test(unittest.TestCase):
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
       conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1])
       y = (conv_layer[:] * 2)[0]
-      # y = (conv_layer[0] + conv_layer[1] + conv_layer[2])[0]
     x_value = np.array([[2, 0.5, 19]], dtype=np.float32)
     # because x[1] is squared, gradient should be 5*2x = 5*2*0.2
-    expected_conv_gradient = np.array([[-2, 5*2*0.5, 0]], dtype=np.float32)
     expected_conv_layer = [-2*2 + 5*0.5*0.5]
-    expected_output_gradient = expected_conv_gradient * 2
+    # because x[1] is squared, gradient should be 5*2x = 5*2*0.5
+    expected_conv_gradient = np.array([2], dtype=np.float32)
+    expected_output_gradient = np.array([[-2., 5., 0.]]) * 2
 
     call_model_function = utils.create_tf1_call_model_function(
         self.graph, self.sess, y=y, x=x, conv_layer=conv_layer)

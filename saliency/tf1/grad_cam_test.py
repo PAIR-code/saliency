@@ -49,8 +49,9 @@ class GradCamTest(unittest.TestCase):
       # Compute logits and do prediction with pre-defined weights
       flat = tf.reshape(conv1, [-1, INPUT_HEIGHT_WIDTH*INPUT_HEIGHT_WIDTH])
       sum_weights = tf.constant_initializer(np.ones(flat.shape))
-      tf.keras.layers.Dense(
+      logits = tf.keras.layers.Dense(
           units=2, kernel_initializer=sum_weights, name='Logits')(flat)
+      y = logits[0][0]
       
       self.sess = tf.Session()
       init = tf.global_variables_initializer()
@@ -61,6 +62,7 @@ class GradCamTest(unittest.TestCase):
       self.conv_layer = self.graph.get_tensor_by_name('Conv/BiasAdd:0')
       self.grad_cam_instance = grad_cam.GradCam(self.graph,
                                                 self.sess_spy,
+                                                y=y,
                                                 x=self.images,
                                                 conv_layer=self.conv_layer)
 

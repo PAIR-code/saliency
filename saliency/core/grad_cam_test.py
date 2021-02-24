@@ -150,7 +150,7 @@ class GradCamTest(unittest.TestCase):
     img[1:-1, 1:-1] = 1
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
     expected_error = SHAPE_ERROR_MESSAGE[CONVOLUTION_LAYER_GRADIENTS].format(
-        '\\(1, 5, 5, 1\\)', '\\(5, 5, 1\\)')
+        '1', '5')
 
     with self.assertRaisesRegex(ValueError, expected_error):
 

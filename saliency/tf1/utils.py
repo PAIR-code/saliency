@@ -70,8 +70,8 @@ def create_tf1_call_model_function(graph,
       raise ValueError('Expected input tensor for x but is equal to None.')
     if y is not None:
       output_gradients = tf.compat.v1.gradients(y, x)[0]
-    if conv_layer is not None:
-      conv_gradients = tf.compat.v1.gradients(conv_layer, x)[0]
+      if conv_layer is not None:
+        conv_gradients = tf.compat.v1.gradients(y, conv_layer)[0]
 
   def convert_keys_to_fetches(expected_keys):
     """Converts expected keys into an array of fetchable tensors.
@@ -86,17 +86,18 @@ def create_tf1_call_model_function(graph,
       Array of fetches that can be used in a session.run call.
     """
     fetches = []
+    y_tensor_required = [OUTPUT_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS]
+    conv_tensor_required = [CONVOLUTION_LAYER_VALUES, 
+                            CONVOLUTION_LAYER_GRADIENTS]
     for expected_key in expected_keys:
-      if expected_key in [OUTPUT_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS]:
+      if expected_key in y_tensor_required:
         if y is None:
           raise RuntimeError(MISSING_Y_ERROR_MESSAGE.format(expected_key))
         if expected_key == OUTPUT_LAYER_VALUES:
           fetches.append(y)
-        else:
+        elif expected_key == OUTPUT_LAYER_GRADIENTS:
           fetches.append(output_gradients)
-      elif expected_key in [
-          CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS
-      ]:
+      elif expected_key in conv_tensor_required:
         if conv_layer is None:
           raise RuntimeError(MISSING_CONV_LAYER_ERROR_MESSAGE.format(
               expected_key))
