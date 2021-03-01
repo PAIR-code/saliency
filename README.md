@@ -96,7 +96,7 @@ import tensorflow as tf
 def call_model_function(x_value_batched, call_model_args, expected_keys):
 	tape = tf.GradientTape()
 	grads = np.array(tape.gradient(output_layer, images))
-	return {saliency.OUTPUT_LAYER_GRADIENTS: grads}
+	return {saliency.INPUT_OUTPUT_GRADIENTS: grads}
 
 ...
 
