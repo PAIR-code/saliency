@@ -18,6 +18,8 @@ from ..core.base import CONVOLUTION_LAYER_VALUES
 from ..core.base import OUTPUT_LAYER_GRADIENTS
 from ..core.base import OUTPUT_LAYER_VALUES
 tf = None
+VALID_EXPECTED_KEYS = [CONVOLUTION_LAYER_GRADIENTS, CONVOLUTION_LAYER_VALUES,
+                       OUTPUT_LAYER_GRADIENTS, OUTPUT_LAYER_VALUES]
 
 def _import_tf():
   """ Tries to import tensorflow.
@@ -86,7 +88,8 @@ def create_tf1_call_model_function(graph,
       Array of fetches that can be used in a session.run call.
     """
     fetches = []
-    y_tensor_required = [OUTPUT_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS]
+    y_tensor_required = [OUTPUT_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS,
+                         CONVOLUTION_LAYER_GRADIENTS]
     conv_tensor_required = [CONVOLUTION_LAYER_VALUES, 
                             CONVOLUTION_LAYER_GRADIENTS]
     for expected_key in expected_keys:
@@ -97,7 +100,7 @@ def create_tf1_call_model_function(graph,
           fetches.append(y)
         elif expected_key == OUTPUT_LAYER_GRADIENTS:
           fetches.append(output_gradients)
-      elif expected_key in conv_tensor_required:
+      if expected_key in conv_tensor_required:
         if conv_layer is None:
           raise RuntimeError(MISSING_CONV_LAYER_ERROR_MESSAGE.format(
               expected_key))
@@ -105,7 +108,7 @@ def create_tf1_call_model_function(graph,
           fetches.append(conv_layer)
         else:
           fetches.append(conv_gradients)
-      else:
+      if expected_key not in VALID_EXPECTED_KEYS:
         raise ValueError('Invalid expected key {}'.format(expected_key))
     return fetches
 

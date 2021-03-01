@@ -64,8 +64,9 @@ class GradCam(CoreSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (GradCAM), the expected keys are
-            CONVOLUTION_LAYER_GRADIENTS - Gradients of the last convolution
-              layer with respect to the input, including the batch dimension.
+            CONVOLUTION_LAYER_GRADIENTS - Gradients of the output being
+              explained (the logit/softmax value) with respect to the last
+              convolution layer, including the batch dimension.
             CONVOLUTION_OUTPUT - Output of the last convolution layer
               for the given input, including the batch dimension.
       call_model_args: The arguments that will be passed to the call model
@@ -96,7 +97,8 @@ class GradCam(CoreSaliency):
 
     # resize heatmap to be the same size as the input
     if should_resize:
-      grad_cam = grad_cam / np.max(grad_cam)
+      if np.max(grad_cam) > 0:
+        grad_cam = grad_cam / np.max(grad_cam)
       grad_cam = resize(grad_cam, x_value.shape[:2])
 
     # convert grayscale to 3-D
