@@ -16,10 +16,18 @@
 import numpy as np
 
 
+# Gradients of the output being explained (the logit/softmax value) with respect
+# to the last convolution layer, including the batch dimension.
 CONVOLUTION_LAYER_GRADIENTS = 'CONVOLUTION_LAYER_GRADIENTS'
+# Output of the last convolution layer for the given input, including the batch
+# dimension.
 CONVOLUTION_LAYER_VALUES = 'CONVOLUTION_LAYER_VALUES'
+# Gradients of the output being explained (the logit/softmax value) with respect
+# to the input. Shape should be the same shape as x_value_batch.
 OUTPUT_LAYER_GRADIENTS = 'OUTPUT_LAYER_GRADIENTS'
+# Value of the output being explained (the logit/softmax value).
 OUTPUT_LAYER_VALUES = 'OUTPUT_LAYER_VALUES'
+
 SHAPE_ERROR_MESSAGE = {
     CONVOLUTION_LAYER_GRADIENTS: (
         'Expected outermost dimension of CONVOLUTION_LAYER_GRADIENTS to be the '
@@ -58,7 +66,10 @@ class CoreSaliency(object):
             0 is the batch dimension, dimensions 1 through n represent a single
             input).
           call_model_args - Other arguments used to call and run the model.
-          expected_keys - List of keys that are expected in the output.
+          expected_keys - List of keys that are expected in the output. Possible
+            keys in this list are CONVOLUTION_LAYER_GRADIENTS,
+            CONVOLUTION_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS, and
+            OUTPUT_LAYER_VALUES, and are explained in detail where declared.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
 
@@ -87,7 +98,10 @@ class CoreSaliency(object):
             0 is the batch dimension, dimensions 1 through n represent a single
             input).
           call_model_args - Other arguments used to call and run the model.
-          expected_keys - List of keys that are expected in the output.
+          expected_keys - List of keys that are expected in the output. Possible
+            keys in this list are CONVOLUTION_LAYER_GRADIENTS,
+            CONVOLUTION_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS, and
+            OUTPUT_LAYER_VALUES, and are explained in detail where declared.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
       stdev_spread: Amount of noise to add to the input, as fraction of the

@@ -68,9 +68,8 @@ class UtilsTF1Test(unittest.TestCase):
     """Tests that output layer and conv layer gradients are returned correctly."""
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
-      conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1]),
-      y = (conv_layer[0] * 2)[0]
-      # y = (conv_layer[0] + conv_layer[1] + conv_layer[2])[0]
+      conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1])
+      y = (conv_layer[:] * 2)[0]
     x_value = np.array([[2, 0.5, 19]], dtype=np.float32)
     # because x[1] is squared, gradient should be 5*2x = 5*2*0.5
     expected_conv_gradient = np.array([2], dtype=np.float32)
@@ -170,10 +169,32 @@ class UtilsTF1Test(unittest.TestCase):
     with self.assertRaisesRegex(ValueError, expected):
       utils.create_tf1_call_model_function(self.graph, self.sess, y=y)
 
+  def testConvolutionGradientsMissingY(self):
+    """Tests that call_model_function can't get conv values without conv_layer."""
+    with self.graph.as_default():
+      x = tf.placeholder(shape=[None, 3], dtype=np.float32)
+      conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1])
+      y = (conv_layer[:] * 2)[0]
+    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
+    expected = (
+        'Cannot return key CONVOLUTION_LAYER_GRADIENTS because no y '
+        'was specified'
+    )
+
+    with self.assertRaisesRegex(RuntimeError, expected):
+      call_model_function = utils.create_tf1_call_model_function(
+          self.graph, self.sess, x=x, conv_layer=conv_layer)
+      call_model_function(
+          x_value,
+          call_model_args={},
+          expected_keys=[utils.CONVOLUTION_LAYER_GRADIENTS])
+
   def testConvolutionGradientsMissingConvLayer(self):
     """Tests that call_model_function can't get conv values without conv_layer."""
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
+      conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1])
+      y = (conv_layer[:] * 2)[0]
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
     expected = (
         'Cannot return key CONVOLUTION_LAYER_GRADIENTS because no conv_layer '
@@ -182,7 +203,7 @@ class UtilsTF1Test(unittest.TestCase):
 
     with self.assertRaisesRegex(RuntimeError, expected):
       call_model_function = utils.create_tf1_call_model_function(
-          self.graph, self.sess, x=x)
+          self.graph, self.sess, x=x, y=y)
       call_model_function(
           x_value,
           call_model_args={},
@@ -205,6 +226,23 @@ class UtilsTF1Test(unittest.TestCase):
           x_value,
           call_model_args={},
           expected_keys=[utils.CONVOLUTION_LAYER_VALUES])
+
+  def testInvalidKey(self):
+    """Tests that call_model_function can't get conv values without conv_layer."""
+    with self.graph.as_default():
+      x = tf.placeholder(shape=[None, 3], dtype=np.float32)
+      conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1])
+      y = (conv_layer[:] * 2)[0]
+    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
+    expected = 'Invalid expected key FOO_BAR'
+
+    with self.assertRaisesRegex(ValueError, expected):
+      call_model_function = utils.create_tf1_call_model_function(
+          self.graph, self.sess, y=y, x=x, conv_layer=conv_layer)
+      call_model_function(
+          x_value,
+          call_model_args={},
+          expected_keys=['FOO_BAR'])
 
 
 if __name__ == '__main__':
