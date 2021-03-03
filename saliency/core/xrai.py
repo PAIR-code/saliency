@@ -1,5 +1,20 @@
-"""Implementation of XRAI algorithm from the paper:
-https://arxiv.org/abs/1906.02825
+# Copyright 2021 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Implementation of XRAI algorithm.
+
+Paper: https://arxiv.org/abs/1906.02825
 """
 
 from __future__ import absolute_import
@@ -7,16 +22,16 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-_logger = logging.getLogger(__name__)
 
+from .base import CoreSaliency
+from .integrated_gradients import IntegratedGradients
 import numpy as np
 from skimage import segmentation
 from skimage.morphology import dilation
 from skimage.morphology import disk
 from skimage.transform import resize
 
-from .base import SaliencyMask
-from .integrated_gradients import IntegratedGradients
+_logger = logging.getLogger(__name__)
 
 _FELZENSZWALB_SCALE_VALUES = [50, 100, 150, 250, 500, 1200]
 _FELZENSZWALB_SIGMA_VALUES = [0.8]
@@ -26,7 +41,7 @@ _FELZENSZWALB_MIN_SEGMENT_SIZE = 150
 
 
 def _normalize_image(im, value_range, resize_shape=None):
-  """Normalize an image by resizing it and rescaling its values
+  """Normalize an image by resizing it and rescaling its values.
 
   Args:
       im: Input image.
@@ -146,6 +161,7 @@ def _unpack_segs_to_masks(segs):
 
 
 class XRAIParameters(object):
+  """"Dictionary of parameters to specify how to XRAI and return outputs."""
 
   def __init__(self,
                steps=100,
@@ -197,6 +213,7 @@ class XRAIParameters(object):
 
 
 class XRAIOutput(object):
+  """"Dictionary of outputs from a single run of XRAI.GetMaskWithDetails."""
 
   def __init__(self, attribution_mask):
     # The saliency mask of individual input features. For an [HxWx3] image, the
@@ -225,23 +242,28 @@ class XRAIOutput(object):
     self.segments = None
 
 
-class XRAI(SaliencyMask):
+class XRAI(CoreSaliency):
+  """"A CoreSaliency class that computes saliency masks using the XRAI method."""
 
-  def __init__(self, graph, session, y, x):
-    super(XRAI, self).__init__(graph, session, y, x)
+  def __init__(self):
+    super(XRAI, self).__init__()
     # Initialize integrated gradients.
-    self._integrated_gradients = IntegratedGradients(graph, session, y, x)
+    self._integrated_gradients = IntegratedGradients()
 
-  def _get_integrated_gradients(self, im, feed_dict, baselines, steps):
-    """ Takes mean of attributions from all baselines
-    """
+  def _get_integrated_gradients(self, im, call_model_function,
+                                call_model_args, baselines, steps, batch_size):
+    """Takes mean of attributions from all baselines."""
     grads = []
     for baseline in baselines:
       grads.append(
-          self._integrated_gradients.GetMask(im,
-                                             feed_dict=feed_dict,
-                                             x_baseline=baseline,
-                                             x_steps=steps))
+          self._integrated_gradients.GetMask(
+              im,
+              call_model_function,
+              call_model_args=call_model_args,
+              x_baseline=baseline,
+              x_steps=steps,
+              batch_size=batch_size))
+
     return grads
 
   def _make_baselines(self, x_value, x_baselines):
@@ -254,7 +276,7 @@ class XRAI(SaliencyMask):
       for baseline in x_baselines:
         if baseline.shape != x_value.shape:
           raise ValueError(
-              "Baseline size {} does not match input size {}".format(
+              'Baseline size {} does not match input size {}'.format(
                   baseline.shape, x_value.shape))
     return x_baselines
 
@@ -263,46 +285,67 @@ class XRAI(SaliencyMask):
 
   def GetMask(self,
               x_value,
-              feed_dict={},
+              call_model_function,
+              call_model_args={},
               baselines=None,
               segments=None,
               base_attribution=None,
+              batch_size=1,
               extra_parameters=None):
-    """ Applies XRAI method on an input image and returns the result saliency
-    heatmap.
+    """Applies XRAI method on an input image and returns the result saliency heatmap.
 
 
     Args:
-        x_value: input value, not batched.
-        feed_dict: feed dictionary to pass to the TF session.run() call.
-                   Defaults to {}.
+        x_value: Input ndarray.
+        call_model_function: A function that interfaces with a model to return
+          specific data in a dictionary when given an input and other arguments.
+          Expected function signature:
+          - call_model_function(x_value_batch,
+                                call_model_args={},
+                                expected_keys=None):
+            x_value_batch - Input for the model, given as a batch (i.e.
+              dimension 0 is the batch dimension, dimensions 1 through n
+              represent a single input).
+            call_model_args - Other arguments used to call and run the model.
+            expected_keys - List of keys that are expected in the output. For
+              this method (XRAI), the expected keys are
+              INPUT_OUTPUT_GRADIENTS - Gradients of the output being
+                explained (the logit/softmax value) with respect to the input.
+                Shape should be the same shape as x_value_batch.
+        call_model_args: The arguments that will be passed to the call model
+           function, for every call of the model.
         baselines: a list of baselines to use for calculating
-                   Integrated Gradients attribution. Every baseline in
-                   the list should have the same dimensions as the
-                   input. If the value is not set then the algorithm
-                   will make the best effort to select default
-                   baselines. Defaults to None.
+          Integrated Gradients attribution. Every baseline in
+          the list should have the same dimensions as the
+          input. If the value is not set then the algorithm
+          will make the best effort to select default
+          baselines. Defaults to None.
         segments: the list of precalculated image segments that should
-                  be passed to XRAI. Each element of the list is an
-                  [N,M] boolean array, where NxM are the image
-                  dimensions. Each elemeent on the list contains exactly the
-                  mask that corresponds to one segment. If the value is None,
-                  Felzenszwalb's segmentation algorithm will be applied.
-                  Defaults to None.
+          be passed to XRAI. Each element of the list is an
+          [N,M] boolean array, where NxM are the image
+          dimensions. Each elemeent on the list contains exactly the
+          mask that corresponds to one segment. If the value is None,
+          Felzenszwalb's segmentation algorithm will be applied.
+          Defaults to None.
         base_attribution: an optional pre-calculated base attribution that XRAI
-                          should use. The shape of the parameter should match
-                          the shape of `x_value`. If the value is None, the
-                          method calculates Integrated Gradients attribution and
-                          uses it.
+          should use. The shape of the parameter should match
+          the shape of `x_value`. If the value is None, the
+          method calculates Integrated Gradients attribution and
+          uses it.
+        batch_size: Maximum number of x inputs (steps along the integration
+          path) that are passed to call_model_function as a batch.
         extra_parameters: an XRAIParameters object that specifies
-                          additional parameters for the XRAI saliency
-                          method. If it is None, an XRAIParameters object
-                          will be created with default parameters. See
-                          XRAIParameters for more details.
+          additional parameters for the XRAI saliency
+          method. If it is None, an XRAIParameters object
+          will be created with default parameters. See
+          XRAIParameters for more details.
 
     Raises:
         ValueError: If algorithm type is unknown (not full or fast).
-                    If the shape of `base_attribution` dosn't match the shape of `x_value`.
+                    If the shape of `base_attribution` dosn't match the shape of
+                      `x_value`.
+                    If the shape of INPUT_OUTPUT_GRADIENTS doesn't match the
+                      shape of x_value_batch.
 
     Returns:
         np.ndarray: A numpy array that contains the saliency heatmap.
@@ -311,55 +354,78 @@ class XRAI(SaliencyMask):
     TODO(tolgab) Add output_selector functionality from XRAI API doc
     """
     results = self.GetMaskWithDetails(x_value,
-                                      feed_dict=feed_dict,
+                                      call_model_function,
+                                      call_model_args=call_model_args,
                                       baselines=baselines,
                                       segments=segments,
                                       base_attribution=base_attribution,
+                                      batch_size=batch_size,
                                       extra_parameters=extra_parameters)
     return results.attribution_mask
 
   def GetMaskWithDetails(self,
                          x_value,
-                         feed_dict={},
+                         call_model_function,
+                         call_model_args={},
                          baselines=None,
                          segments=None,
                          base_attribution=None,
+                         batch_size=1,
                          extra_parameters=None):
-    """Applies XRAI method on an input image and returns the result saliency
-    heatmap along with other detailed information.
+    """Applies XRAI method on an input image and returns detailed information.
 
 
     Args:
-        x_value: input value, not batched.
-        feed_dict: feed dictionary to pass to the TF session.run() call.
-                   Defaults to {}.
+        x_value: Input ndarray.
+        call_model_function: A function that interfaces with a model to return
+          specific data in a dictionary when given an input and other arguments.
+          Expected function signature:
+          - call_model_function(x_value_batch,
+                                call_model_args={},
+                                expected_keys=None):
+            x_value_batch - Input for the model, given as a batch (i.e.
+              dimension 0 is the batch dimension, dimensions 1 through n
+              represent a single input).
+            call_model_args - Other arguments used to call and run the model.
+            expected_keys - List of keys that are expected in the output. For
+              this method (XRAI), the expected keys are
+              INPUT_OUTPUT_GRADIENTS - Gradients of the output being
+                explained (the logit/softmax value) with respect to the input.
+                Shape should be the same shape as x_value_batch.
+        call_model_args: The arguments that will be passed to the call model
+           function, for every call of the model.
         baselines: a list of baselines to use for calculating
-                   Integrated Gradients attribution. Every baseline in
-                   the list should have the same dimensions as the
-                   input. If the value is not set then the algorithm
-                   will make the best effort to select default
-                   baselines. Defaults to None.
+          Integrated Gradients attribution. Every baseline in
+          the list should have the same dimensions as the
+          input. If the value is not set then the algorithm
+          will make the best effort to select default
+          baselines. Defaults to None.
         segments: the list of precalculated image segments that should
-                  be passed to XRAI. Each element of the list is an
-                  [N,M] boolean array, where NxM are the image
-                  dimensions. Each elemeent on the list contains exactly the
-                  mask that corresponds to one segment. If the value is None,
-                  Felzenszwalb's segmentation algorithm will be applied.
-                  Defaults to None.
+          be passed to XRAI. Each element of the list is an
+          [N,M] boolean array, where NxM are the image
+          dimensions. Each elemeent on the list contains exactly the
+          mask that corresponds to one segment. If the value is None,
+          Felzenszwalb's segmentation algorithm will be applied.
+          Defaults to None.
         base_attribution: an optional pre-calculated base attribution that XRAI
-                          should use. The shape of the parameter should match
-                          the shape of `x_value`. If the value is None, the
-                          method calculates Integrated Gradients attribution and
-                          uses it.
+          should use. The shape of the parameter should match
+          the shape of `x_value`. If the value is None, the
+          method calculates Integrated Gradients attribution and
+          uses it.
+        batch_size: Maximum number of x inputs (steps along the integration
+          path) that are passed to call_model_function as a batch.
         extra_parameters: an XRAIParameters object that specifies
-                          additional parameters for the XRAI saliency
-                          method. If it is None, an XRAIParameters object
-                          will be created with default parameters. See
-                          XRAIParameters for more details.
+          additional parameters for the XRAI saliency
+          method. If it is None, an XRAIParameters object
+          will be created with default parameters. See
+          XRAIParameters for more details.
 
     Raises:
         ValueError: If algorithm type is unknown (not full or fast).
-                    If the shape of `base_attribution` dosn't match the shape of `x_value`.
+                    If the shape of `base_attribution` dosn't match the shape of
+                      `x_value`.
+                    If the shape of INPUT_OUTPUT_GRADIENTS doesn't match the
+                      shape of x_value_batch.
 
     Returns:
         XRAIOutput: an object that contains the output of the XRAI algorithm.
@@ -375,19 +441,21 @@ class XRAI(SaliencyMask):
         base_attribution = np.array(base_attribution)
       if base_attribution.shape != x_value.shape:
         raise ValueError(
-          'The base attribution shape should be the same as the shape of '
-          '`x_value`. Expected {}, got {}'.format(
-            x_value.shape, base_attribution.shape))
+            'The base attribution shape should be the same as the shape of '
+            '`x_value`. Expected {}, got {}'.format(x_value.shape,
+                                                    base_attribution.shape))
 
     # Calculate IG attribution if not provided by the caller.
     if base_attribution is None:
-      _logger.info("Computing IG...")
+      _logger.info('Computing IG...')
       x_baselines = self._make_baselines(x_value, baselines)
 
       attrs = self._get_integrated_gradients(x_value,
-                                             feed_dict=feed_dict,
+                                             call_model_function,
+                                             call_model_args=call_model_args,
                                              baselines=x_baselines,
-                                             steps=extra_parameters.steps)
+                                             steps=extra_parameters.steps,
+                                             batch_size=batch_size)
       # Merge attributions from different baselines.
       attr = np.mean(attrs, axis=0)
     else:
@@ -396,9 +464,10 @@ class XRAI(SaliencyMask):
       attr = base_attribution
 
     # Merge attribution channels for XRAI input
-    attr = _attr_aggregation_max(attr)
+    if len(attr.shape) > 2:
+      attr = _attr_aggregation_max(attr)
 
-    _logger.info("Done with IG. Computing XRAI...")
+    _logger.info('Done with IG. Computing XRAI...')
     if segments is not None:
       segs = segments
     else:
@@ -448,25 +517,25 @@ class XRAI(SaliencyMask):
 
     Args:
         attr: Source attributions for XRAI. XRAI attributions will be same size
-              as the input attr.
+          as the input attr.
         segs: Input segments as a list of boolean masks. XRAI uses these to
-              compute attribution sums.
+          compute attribution sums.
         gain_fun: The function that computes XRAI area attribution from source
-                  attributions. Defaults to _gain_density, which calculates the
-                  density of attributions in a mask.
+          attributions. Defaults to _gain_density, which calculates the
+          density of attributions in a mask.
         area_perc_th: The saliency map is computed to cover area_perc_th of
-                      the image. Lower values will run faster, but produce
-                      uncomputed areas in the image that will be filled to
-                      satisfy completeness. Defaults to 1.0.
+          the image. Lower values will run faster, but produce
+          uncomputed areas in the image that will be filled to
+          satisfy completeness. Defaults to 1.0.
         min_pixel_diff: Do not consider masks that have difference less than
-                        this number compared to the current mask. Set it to 1
-                        to remove masks that completely overlap with the
-                        current mask.
+          this number compared to the current mask. Set it to 1
+          to remove masks that completely overlap with the
+          current mask.
         integer_segments: See XRAIParameters. Defaults to True.
 
     Returns:
         tuple: saliency heatmap and list of masks or an integer image with
-               area ranks depending on the parameter integer_segments.
+           area ranks depending on the parameter integer_segments.
     """
     output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
@@ -490,7 +559,7 @@ class XRAI(SaliencyMask):
         if mask_pixel_diff < min_pixel_diff:
           remove_key_queue.append(mask_key)
           if _logger.isEnabledFor(logging.DEBUG):
-            _logger.debug("Skipping mask with pixel difference: {:.3g},".format(
+            _logger.debug('Skipping mask with pixel difference: {:.3g},'.format(
                 mask_pixel_diff))
           continue
         gain = gain_fun(mask, attr, mask2=current_mask)
@@ -499,7 +568,7 @@ class XRAI(SaliencyMask):
           best_key = mask_key
       for key in remove_key_queue:
         del remaining_masks[key]
-      if len(remaining_masks) == 0:
+      if not remaining_masks:
         break
       added_mask = remaining_masks[best_key]
       mask_diff = _get_diff_mask(added_mask, current_mask)
@@ -512,8 +581,8 @@ class XRAI(SaliencyMask):
       if _logger.isEnabledFor(logging.DEBUG):
         current_attr_sum = np.sum(attr[current_mask])
         _logger.debug(
-            "{} of {} masks added,"
-            "attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks".format(
+            '{} of {} masks added,'
+            'attr_sum: {}, area: {:.3g}/{:.3g}, {} remaining masks'.format(
                 added_masks_cnt, n_masks, current_attr_sum, current_area_perc,
                 area_perc_th, len(remaining_masks)))
       added_masks_cnt += 1
@@ -539,29 +608,30 @@ class XRAI(SaliencyMask):
                  area_perc_th=1.0,
                  min_pixel_diff=50,
                  integer_segments=True):
-    """Run approximate XRAI saliency given attributions and segments. This
-       version does not consider mask overlap during importance ranking,
+    """Run approximate XRAI saliency given attributions and segments.
+
+    Note: This version does not consider mask overlap during importance ranking,
        significantly speeding up the algorithm for less accurate results.
 
     Args:
         attr: Source attributions for XRAI. XRAI attributions will be same size
-              as the input attr.
+          as the input attr.
         segs: Input segments as a list of boolean masks. XRAI uses these to
-              compute attribution sums.
+          compute attribution sums.
         gain_fun: The function that computes XRAI area attribution from source
-                  attributions. Defaults to _gain_density, which calculates the
-                  density of attributions in a mask.
+          attributions. Defaults to _gain_density, which calculates the
+          density of attributions in a mask.
         area_perc_th: This parameter is ignored. Fast version always computes
-                      to 1.0. It is left here for API compatibility.
+          to 1.0. It is left here for API compatibility.
         min_pixel_diff: Do not consider masks that have difference less than
-                        this number compared to the current mask. Set it to 1
-                        to remove masks that completely overlap with the
-                        current mask.
+          this number compared to the current mask. Set it to 1
+          to remove masks that completely overlap with the
+          current mask.
         integer_segments: See XRAIParameters. Defaults to True.
 
     Returns:
         tuple: saliency heatmap and list of masks or an integer image with
-               area ranks depending on the parameter integer_segments.
+          area ranks depending on the parameter integer_segments.
     """
     output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
 
@@ -581,7 +651,7 @@ class XRAI(SaliencyMask):
       mask_pixel_diff = _get_diff_cnt(added_mask, current_mask)
       if mask_pixel_diff < min_pixel_diff:
         if _logger.isEnabledFor(logging.DEBUG):
-          _logger.debug("Skipping mask with pixel difference: {:.3g},".format(
+          _logger.debug('Skipping mask with pixel difference: {:.3g},'.format(
               mask_pixel_diff))
         continue
       mask_gain = gain_fun(mask_diff, attr)
@@ -591,10 +661,10 @@ class XRAI(SaliencyMask):
       if _logger.isEnabledFor(logging.DEBUG):
         current_attr_sum = np.sum(attr[current_mask])
         current_area_perc = np.mean(current_mask)
-        _logger.debug("{} of {} masks processed,"
-                     "attr_sum: {}, area: {:.3g}/{:.3g}".format(
-                         i + 1, n_masks, current_attr_sum, current_area_perc,
-                         area_perc_th))
+        _logger.debug('{} of {} masks processed,'
+                      'attr_sum: {}, area: {:.3g}/{:.3g}'.format(
+                          i + 1, n_masks, current_attr_sum, current_area_perc,
+                          area_perc_th))
     uncomputed_mask = output_attr == -np.inf
     # Assign the uncomputed areas a value such that sum is same as ig
     output_attr[uncomputed_mask] = gain_fun(uncomputed_mask, attr)
