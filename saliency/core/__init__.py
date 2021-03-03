@@ -1,9 +1,8 @@
 #Revert, with one line change
 from .base import *
-from .visualization import *
-from .guided_backprop import *
-from .occlusion import *
-from .integrated_gradients import *
-from .grad_cam import *
-from .xrai import *
 from .blur_ig import *
+from .grad_cam import *
+from .gradients import *
+from .integrated_gradients import *
+from .visualization import *
+from .xrai import *
