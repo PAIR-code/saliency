@@ -309,7 +309,7 @@ class XRAI(CoreSaliency):
             call_model_args - Other arguments used to call and run the model.
             expected_keys - List of keys that are expected in the output. For
               this method (XRAI), the expected keys are
-              OUTPUT_LAYER_GRADIENTS - Gradients of the output being
+              INPUT_OUTPUT_GRADIENTS - Gradients of the output being
                 explained (the logit/softmax value) with respect to the input.
                 Shape should be the same shape as x_value_batch.
         call_model_args: The arguments that will be passed to the call model
@@ -344,7 +344,7 @@ class XRAI(CoreSaliency):
         ValueError: If algorithm type is unknown (not full or fast).
                     If the shape of `base_attribution` dosn't match the shape of
                       `x_value`.
-                    If the shape of OUTPUT_LAYER_GRADIENTS doesn't match the
+                    If the shape of INPUT_OUTPUT_GRADIENTS doesn't match the
                       shape of x_value_batch.
 
     Returns:
@@ -389,7 +389,7 @@ class XRAI(CoreSaliency):
             call_model_args - Other arguments used to call and run the model.
             expected_keys - List of keys that are expected in the output. For
               this method (XRAI), the expected keys are
-              OUTPUT_LAYER_GRADIENTS - Gradients of the output being
+              INPUT_OUTPUT_GRADIENTS - Gradients of the output being
                 explained (the logit/softmax value) with respect to the input.
                 Shape should be the same shape as x_value_batch.
         call_model_args: The arguments that will be passed to the call model
@@ -424,7 +424,7 @@ class XRAI(CoreSaliency):
         ValueError: If algorithm type is unknown (not full or fast).
                     If the shape of `base_attribution` dosn't match the shape of
                       `x_value`.
-                    If the shape of OUTPUT_LAYER_GRADIENTS doesn't match the
+                    If the shape of INPUT_OUTPUT_GRADIENTS doesn't match the
                       shape of x_value_batch.
 
     Returns:

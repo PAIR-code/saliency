@@ -16,7 +16,7 @@
 import unittest
 import unittest.mock as mock
 
-from .base import OUTPUT_LAYER_GRADIENTS
+from .base import INPUT_OUTPUT_GRADIENTS
 from .base import SHAPE_ERROR_MESSAGE
 from . import gradients
 import numpy as np
@@ -34,7 +34,7 @@ class GradientSaliencyTest(unittest.TestCase):
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(self.gradient_fn, 1, x_value_batch)
-      return {OUTPUT_LAYER_GRADIENTS: data}
+      return {INPUT_OUTPUT_GRADIENTS: data}
     call_model.num_calls = 0
 
     return call_model
@@ -44,7 +44,7 @@ class GradientSaliencyTest(unittest.TestCase):
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(self.gradient_fn, 1, x_value_batch)
-      return {OUTPUT_LAYER_GRADIENTS: data[0]}
+      return {INPUT_OUTPUT_GRADIENTS: data[0]}
     call_model.num_calls = 0
 
     return call_model
@@ -66,11 +66,11 @@ class GradientSaliencyTest(unittest.TestCase):
 
   def testGradientCallModelArgs(self):
     """Tests that call_model_function receives all inputs."""
-    expected_keys = [OUTPUT_LAYER_GRADIENTS]
+    expected_keys = [INPUT_OUTPUT_GRADIENTS]
     call_model_args = {'foo': 'bar'}
     x_input = [3, 2, 1]
     mock_call_model = mock.MagicMock(
-        return_value={OUTPUT_LAYER_GRADIENTS: [x_input]})
+        return_value={INPUT_OUTPUT_GRADIENTS: [x_input]})
     grad_instance = gradients.GradientSaliency()
 
     grad_instance.GetMask(x_value=x_input,
@@ -93,7 +93,7 @@ class GradientSaliencyTest(unittest.TestCase):
   def testGradientsGetMaskError(self):
     """Tests that GradientSaliency errors when receiving incorrect model output."""
     call_model_function = self.create_bad_call_model_function()
-    expected_error = SHAPE_ERROR_MESSAGE[OUTPUT_LAYER_GRADIENTS].format(
+    expected_error = SHAPE_ERROR_MESSAGE[INPUT_OUTPUT_GRADIENTS].format(
         '\\(1, 3\\)', '\\(3,\\)')
     grad_instance = gradients.GradientSaliency()
     x_input = [3, 2, 1]

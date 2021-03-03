@@ -13,13 +13,13 @@
 # limitations under the License.
 
 """Utilities to run CallModelSaliency methods using TF1 models."""
-from ..core.base import CONVOLUTION_LAYER_GRADIENTS
 from ..core.base import CONVOLUTION_LAYER_VALUES
-from ..core.base import OUTPUT_LAYER_GRADIENTS
+from ..core.base import CONVOLUTION_OUTPUT_GRADIENTS
+from ..core.base import INPUT_OUTPUT_GRADIENTS
 from ..core.base import OUTPUT_LAYER_VALUES
 tf = None
-VALID_EXPECTED_KEYS = [CONVOLUTION_LAYER_GRADIENTS, CONVOLUTION_LAYER_VALUES,
-                       OUTPUT_LAYER_GRADIENTS, OUTPUT_LAYER_VALUES]
+VALID_EXPECTED_KEYS = [CONVOLUTION_LAYER_VALUES, CONVOLUTION_OUTPUT_GRADIENTS,
+                       INPUT_OUTPUT_GRADIENTS, OUTPUT_LAYER_VALUES]
 
 def _import_tf():
   """ Tries to import tensorflow.
@@ -88,17 +88,17 @@ def create_tf1_call_model_function(graph,
       Array of fetches that can be used in a session.run call.
     """
     fetches = []
-    y_tensor_required = [OUTPUT_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS,
-                         CONVOLUTION_LAYER_GRADIENTS]
+    y_tensor_required = [OUTPUT_LAYER_VALUES, INPUT_OUTPUT_GRADIENTS,
+                         CONVOLUTION_OUTPUT_GRADIENTS]
     conv_tensor_required = [CONVOLUTION_LAYER_VALUES, 
-                            CONVOLUTION_LAYER_GRADIENTS]
+                            CONVOLUTION_OUTPUT_GRADIENTS]
     for expected_key in expected_keys:
       if expected_key in y_tensor_required:
         if y is None:
           raise RuntimeError(MISSING_Y_ERROR_MESSAGE.format(expected_key))
         if expected_key == OUTPUT_LAYER_VALUES:
           fetches.append(y)
-        elif expected_key == OUTPUT_LAYER_GRADIENTS:
+        elif expected_key == INPUT_OUTPUT_GRADIENTS:
           fetches.append(output_gradients)
       if expected_key in conv_tensor_required:
         if conv_layer is None:

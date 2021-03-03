@@ -13,8 +13,8 @@
 # limitations under the License.
 
 """Utilities to compute saliency using the GradCam method."""
-from .base import CONVOLUTION_LAYER_GRADIENTS
 from .base import CONVOLUTION_LAYER_VALUES
+from .base import CONVOLUTION_OUTPUT_GRADIENTS
 from .base import CoreSaliency
 import numpy as np
 from skimage.transform import resize
@@ -64,11 +64,11 @@ class GradCam(CoreSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (GradCAM), the expected keys are
-            CONVOLUTION_LAYER_GRADIENTS - Gradients of the output being
+            CONVOLUTION_LAYER_VALUES - Output of the last convolution layer
+              for the given input, including the batch dimension.
+            CONVOLUTION_OUTPUT_GRADIENTS - Gradients of the output being
               explained (the logit/softmax value) with respect to the last
               convolution layer, including the batch dimension.
-            CONVOLUTION_OUTPUT - Output of the last convolution layer
-              for the given input, including the batch dimension.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
       should_resize: boolean that determines whether a low-res Grad-CAM mask
@@ -78,13 +78,13 @@ class GradCam(CoreSaliency):
         channel
     """
     x_value_batched = np.array([x_value])
-    expected_keys = [CONVOLUTION_LAYER_VALUES, CONVOLUTION_LAYER_GRADIENTS]
+    expected_keys = [CONVOLUTION_LAYER_VALUES, CONVOLUTION_OUTPUT_GRADIENTS]
     data = call_model_function(x_value_batched,
         call_model_args=call_model_args,
         expected_keys=expected_keys)
     self.format_call_model_data(data, x_value_batched.shape, expected_keys)
 
-    weights = np.mean(data[CONVOLUTION_LAYER_GRADIENTS][0], axis=(0, 1))
+    weights = np.mean(data[CONVOLUTION_OUTPUT_GRADIENTS][0], axis=(0, 1))
     grad_cam = np.zeros(data[CONVOLUTION_LAYER_VALUES][0].shape[0:2],
                         dtype=np.float32)
 

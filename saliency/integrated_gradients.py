@@ -15,7 +15,7 @@
 """Utilities to compute saliency using the Integrated Gradients method."""
 
 from .base import CoreSaliency
-from .base import OUTPUT_LAYER_GRADIENTS
+from .base import INPUT_OUTPUT_GRADIENTS
 import numpy as np
 
 
@@ -43,7 +43,7 @@ class IntegratedGradients(CoreSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (Integrated Gradients), the expected keys are
-            OUTPUT_LAYER_GRADIENTS - Gradients of the output being
+            INPUT_OUTPUT_GRADIENTS - Gradients of the output being
               explained (the logit/softmax value) with respect to the input.
               Shape should be the same shape as x_value_batch.
       call_model_args: The arguments that will be passed to the call model
@@ -71,13 +71,13 @@ class IntegratedGradients(CoreSaliency):
         call_model_data = call_model_function(
             x_step_batched,
             call_model_args=call_model_args,
-            expected_keys=[OUTPUT_LAYER_GRADIENTS])
+            expected_keys=[INPUT_OUTPUT_GRADIENTS])
 
         self.format_call_model_data(call_model_data,
                                     x_step_batched.shape,
-                                    [OUTPUT_LAYER_GRADIENTS])
+                                    [INPUT_OUTPUT_GRADIENTS])
 
-        total_gradients += call_model_data[OUTPUT_LAYER_GRADIENTS].sum(axis=0)
+        total_gradients += call_model_data[INPUT_OUTPUT_GRADIENTS].sum(axis=0)
         x_step_batched = []
 
     return total_gradients * x_diff / x_steps
