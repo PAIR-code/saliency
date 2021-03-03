@@ -42,8 +42,8 @@ class UtilsTF1Test(unittest.TestCase):
     call_model_function = utils.create_tf1_call_model_function(
         self.graph, self.sess, y, x)
     data = call_model_function(x_value, call_model_args={},
-                               expected_keys=[utils.OUTPUT_LAYER_GRADIENTS])
-    actual = data[utils.OUTPUT_LAYER_GRADIENTS]
+                               expected_keys=[utils.INPUT_OUTPUT_GRADIENTS])
+    actual = data[utils.INPUT_OUTPUT_GRADIENTS]
 
     self.assertIsNone(np.testing.assert_almost_equal(expected, actual))
 
@@ -81,10 +81,10 @@ class UtilsTF1Test(unittest.TestCase):
         x_value,
         call_model_args={},
         expected_keys=[
-            utils.CONVOLUTION_LAYER_GRADIENTS, utils.OUTPUT_LAYER_GRADIENTS
+            utils.CONVOLUTION_OUTPUT_GRADIENTS, utils.INPUT_OUTPUT_GRADIENTS
         ])
-    actual_conv_gradient = data[utils.CONVOLUTION_LAYER_GRADIENTS]
-    actual_output_gradient = data[utils.OUTPUT_LAYER_GRADIENTS]
+    actual_conv_gradient = data[utils.CONVOLUTION_OUTPUT_GRADIENTS]
+    actual_output_gradient = data[utils.INPUT_OUTPUT_GRADIENTS]
 
     self.assertIsNone(np.testing.assert_almost_equal(
         expected_conv_gradient, actual_conv_gradient))
@@ -111,11 +111,11 @@ class UtilsTF1Test(unittest.TestCase):
         call_model_args={},
         expected_keys=[
             utils.CONVOLUTION_LAYER_VALUES,
-            utils.OUTPUT_LAYER_GRADIENTS,
-            utils.CONVOLUTION_LAYER_GRADIENTS
+            utils.INPUT_OUTPUT_GRADIENTS,
+            utils.CONVOLUTION_OUTPUT_GRADIENTS
         ])
-    actual_conv_gradient = data[utils.CONVOLUTION_LAYER_GRADIENTS]
-    actual_output_gradient = data[utils.OUTPUT_LAYER_GRADIENTS]
+    actual_conv_gradient = data[utils.CONVOLUTION_OUTPUT_GRADIENTS]
+    actual_output_gradient = data[utils.INPUT_OUTPUT_GRADIENTS]
     actual_conv_layer = data[utils.CONVOLUTION_LAYER_VALUES]
 
     self.assertIsNone(
@@ -132,7 +132,7 @@ class UtilsTF1Test(unittest.TestCase):
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = ('Cannot return key OUTPUT_LAYER_GRADIENTS because no y was '
+    expected = ('Cannot return key INPUT_OUTPUT_GRADIENTS because no y was '
                 'specified')
 
     with self.assertRaisesRegex(RuntimeError, expected):
@@ -141,7 +141,7 @@ class UtilsTF1Test(unittest.TestCase):
       call_model_function(
           x_value,
           call_model_args={},
-          expected_keys=[utils.OUTPUT_LAYER_GRADIENTS])
+          expected_keys=[utils.INPUT_OUTPUT_GRADIENTS])
 
   def testOutputValuesMissingY(self):
     """Tests that call_model_function can't get output values without y."""
@@ -177,7 +177,7 @@ class UtilsTF1Test(unittest.TestCase):
       y = (conv_layer[:] * 2)[0]
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
     expected = (
-        'Cannot return key CONVOLUTION_LAYER_GRADIENTS because no y '
+        'Cannot return key CONVOLUTION_OUTPUT_GRADIENTS because no y '
         'was specified'
     )
 
@@ -187,7 +187,7 @@ class UtilsTF1Test(unittest.TestCase):
       call_model_function(
           x_value,
           call_model_args={},
-          expected_keys=[utils.CONVOLUTION_LAYER_GRADIENTS])
+          expected_keys=[utils.CONVOLUTION_OUTPUT_GRADIENTS])
 
   def testConvolutionGradientsMissingConvLayer(self):
     """Tests that call_model_function can't get conv values without conv_layer."""
@@ -197,7 +197,7 @@ class UtilsTF1Test(unittest.TestCase):
       y = (conv_layer[:] * 2)[0]
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
     expected = (
-        'Cannot return key CONVOLUTION_LAYER_GRADIENTS because no conv_layer '
+        'Cannot return key CONVOLUTION_OUTPUT_GRADIENTS because no conv_layer '
         'was specified'
     )
 
@@ -207,7 +207,7 @@ class UtilsTF1Test(unittest.TestCase):
       call_model_function(
           x_value,
           call_model_args={},
-          expected_keys=[utils.CONVOLUTION_LAYER_GRADIENTS])
+          expected_keys=[utils.CONVOLUTION_OUTPUT_GRADIENTS])
 
   def testConvolutionLayerMissingConvLayer(self):
     """Tests that call_model_function can't get conv grads without conv_layer."""

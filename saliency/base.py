@@ -16,29 +16,29 @@
 import numpy as np
 
 
-# Gradients of the output being explained (the logit/softmax value) with respect
-# to the last convolution layer, including the batch dimension.
-CONVOLUTION_LAYER_GRADIENTS = 'CONVOLUTION_LAYER_GRADIENTS'
 # Output of the last convolution layer for the given input, including the batch
 # dimension.
 CONVOLUTION_LAYER_VALUES = 'CONVOLUTION_LAYER_VALUES'
 # Gradients of the output being explained (the logit/softmax value) with respect
+# to the last convolution layer, including the batch dimension.
+CONVOLUTION_OUTPUT_GRADIENTS = 'CONVOLUTION_OUTPUT_GRADIENTS'
+# Gradients of the output being explained (the logit/softmax value) with respect
 # to the input. Shape should be the same shape as x_value_batch.
-OUTPUT_LAYER_GRADIENTS = 'OUTPUT_LAYER_GRADIENTS'
+INPUT_OUTPUT_GRADIENTS = 'INPUT_OUTPUT_GRADIENTS'
 # Value of the output being explained (the logit/softmax value).
 OUTPUT_LAYER_VALUES = 'OUTPUT_LAYER_VALUES'
 
 SHAPE_ERROR_MESSAGE = {
-    CONVOLUTION_LAYER_GRADIENTS: (
-        'Expected outermost dimension of CONVOLUTION_LAYER_GRADIENTS to be the '
-        'same as x_value_batch - expected {}, actual {}'
-    ),
     CONVOLUTION_LAYER_VALUES: (
         'Expected outermost dimension of CONVOLUTION_LAYER_VALUES to be the '
         'same as x_value_batch - expected {}, actual {}'
     ),
-    OUTPUT_LAYER_GRADIENTS: (
-        'Expected key OUTPUT_LAYER_GRADIENTS to be the same shape as input '
+    CONVOLUTION_OUTPUT_GRADIENTS: (
+        'Expected outermost dimension of CONVOLUTION_OUTPUT_GRADIENTS to be the '
+        'same as x_value_batch - expected {}, actual {}'
+    ),
+    INPUT_OUTPUT_GRADIENTS: (
+        'Expected key INPUT_OUTPUT_GRADIENTS to be the same shape as input '
         'x_value_batch - expected {}, actual {}'
     ),
     OUTPUT_LAYER_VALUES: (
@@ -67,8 +67,8 @@ class CoreSaliency(object):
             input).
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. Possible
-            keys in this list are CONVOLUTION_LAYER_GRADIENTS,
-            CONVOLUTION_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS, and
+            keys in this list are CONVOLUTION_LAYER_VALUES, 
+            CONVOLUTION_OUTPUT_GRADIENTS, INPUT_OUTPUT_GRADIENTS, and
             OUTPUT_LAYER_VALUES, and are explained in detail where declared.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
@@ -99,8 +99,8 @@ class CoreSaliency(object):
             input).
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. Possible
-            keys in this list are CONVOLUTION_LAYER_GRADIENTS,
-            CONVOLUTION_LAYER_VALUES, OUTPUT_LAYER_GRADIENTS, and
+            keys in this list are CONVOLUTION_LAYER_VALUES,
+            CONVOLUTION_OUTPUT_GRADIENTS, INPUT_OUTPUT_GRADIENTS, and
             OUTPUT_LAYER_VALUES, and are explained in detail where declared.
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
@@ -128,7 +128,7 @@ class CoreSaliency(object):
   def format_call_model_data(self, data, input_shape, expected_keys):
     # For each expected_key in data, convert to numpy array and check shape against input_shape
     use_outermost_only = [OUTPUT_LAYER_VALUES, CONVOLUTION_LAYER_VALUES,
-                          CONVOLUTION_LAYER_GRADIENTS]
+                          CONVOLUTION_OUTPUT_GRADIENTS]
     for expected_key in expected_keys:
       data[expected_key] = np.array(data[expected_key])
       expected_shape = input_shape

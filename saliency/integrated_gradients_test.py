@@ -16,7 +16,7 @@
 import unittest
 import unittest.mock as mock
 
-from .base import OUTPUT_LAYER_GRADIENTS
+from .base import INPUT_OUTPUT_GRADIENTS
 from .base import SHAPE_ERROR_MESSAGE
 from . import integrated_gradients
 import numpy as np
@@ -56,7 +56,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(gradient_fn, 1, x_value_batch)
-      return {OUTPUT_LAYER_GRADIENTS: data}
+      return {INPUT_OUTPUT_GRADIENTS: data}
     call_model.num_calls = 0
 
     return call_model
@@ -70,7 +70,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     def call_model(x_value_batch, call_model_args={}, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(gradient_fn, 1, x_value_batch)
-      return {OUTPUT_LAYER_GRADIENTS: data[0]}
+      return {INPUT_OUTPUT_GRADIENTS: data[0]}
     call_model.num_calls = 0
 
     return call_model
@@ -129,10 +129,10 @@ class IntegratedGradientsTest(unittest.TestCase):
   def testIntegratedGradientsCallModelArgs(self):
     """Tests that call_model_function receives all inputs."""
     x_steps = 50
-    expected_keys = [OUTPUT_LAYER_GRADIENTS]
+    expected_keys = [INPUT_OUTPUT_GRADIENTS]
     call_model_args = {'foo': 'bar'}
     mock_call_model = mock.MagicMock(
-        return_value={OUTPUT_LAYER_GRADIENTS: [self.x_input_val]})
+        return_value={INPUT_OUTPUT_GRADIENTS: [self.x_input_val]})
 
     self.ig_instance.GetMask(
         x_value=self.x_input_val,
@@ -157,7 +157,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     """Tests that IG errors when receiving incorrect model output."""
     x_steps = 2001
     call_model_function = self.create_bad_call_model_function()
-    expected_error = SHAPE_ERROR_MESSAGE[OUTPUT_LAYER_GRADIENTS].format(
+    expected_error = SHAPE_ERROR_MESSAGE[INPUT_OUTPUT_GRADIENTS].format(
         '\\(500, 3\\)', '\\(3,\\)')
 
     with self.assertRaisesRegex(ValueError, expected_error):

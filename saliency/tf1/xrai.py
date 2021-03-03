@@ -71,7 +71,7 @@ class XRAI(TF1CoreSaliency):
         ValueError: If algorithm type is unknown (not full or fast).
                     If the shape of `base_attribution` dosn't match the shape of
                       `x_value`.
-                    If call_model_function cannot return OUTPUT_LAYER_GRADIENTS.
+                    If call_model_function cannot return INPUT_OUTPUT_GRADIENTS.
 
     Returns:
         np.ndarray: A numpy array that contains the saliency heatmap.
@@ -139,7 +139,7 @@ class XRAI(TF1CoreSaliency):
         ValueError: If algorithm type is unknown (not full or fast).
                     If the shape of `base_attribution` dosn't match the shape of
                       `x_value`.
-                    If call_model_function cannot return OUTPUT_LAYER_GRADIENTS.
+                    If call_model_function cannot return INPUT_OUTPUT_GRADIENTS.
     Returns:
         XRAIOutput: an object that contains the output of the XRAI algorithm.
     TODO(tolgab) Add output_selector functionality from XRAI API doc

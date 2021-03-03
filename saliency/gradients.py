@@ -15,11 +15,11 @@
 """Utilities to compute saliency by returning the output gradients."""
 
 from .base import CoreSaliency
-from .base import OUTPUT_LAYER_GRADIENTS
+from .base import INPUT_OUTPUT_GRADIENTS
 import numpy as np
 
 SHAPE_ERROR_MESSAGE = (
-    "Expected key OUTPUT_LAYER_GRADIENTS to be the same shape as input "
+    "Expected key INPUT_OUTPUT_GRADIENTS to be the same shape as input "
     "x_value_batch - expected {}, actual {}"
 )
 
@@ -44,7 +44,7 @@ class GradientSaliency(CoreSaliency):
           call_model_args - Other arguments used to call and run the model.
           expected_keys - List of keys that are expected in the output. For this
             method (Gradients), the expected keys are
-            OUTPUT_LAYER_GRADIENTS - Gradients of the output layer
+            INPUT_OUTPUT_GRADIENTS - Gradients of the output layer
               (logit/softmax) with respect to the input. Shape should be the
               same shape as x_value_batch.
       call_model_args: The arguments that will be passed to the call model
@@ -54,10 +54,10 @@ class GradientSaliency(CoreSaliency):
     call_model_data = call_model_function(
         x_value_batched,
         call_model_args=call_model_args,
-        expected_keys=[OUTPUT_LAYER_GRADIENTS])
+        expected_keys=[INPUT_OUTPUT_GRADIENTS])
 
     self.format_call_model_data(call_model_data,
                                 x_value_batched.shape,
-                                [OUTPUT_LAYER_GRADIENTS])
+                                [INPUT_OUTPUT_GRADIENTS])
 
-    return call_model_data[OUTPUT_LAYER_GRADIENTS][0]
+    return call_model_data[INPUT_OUTPUT_GRADIENTS][0]
