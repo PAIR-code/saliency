@@ -36,16 +36,16 @@ MISSING_CONV_LAYER_ERROR_MESSAGE = ('Cannot return key {} because no conv_layer'
 
 def create_tf1_call_model_function(graph,
                                    session,
-                                   y=None,
-                                   x=None,
+                                   y,
+                                   x,
                                    conv_layer=None):
   """Creates a call_model_function which calls the TF1 model specified.
 
   Args:
     graph: The TensorFlow graph to evaluate masks on.
     session: The current TensorFlow session.
-    y: (Optional) The output tensor of the model. This tensor should be of size
-      1.
+    y: The output tensor of the model. This tensor shape should be (None,), 
+      (batch_size), or () if not batching inputs.
     x: The input tensor of the model. The outer dimension should be the batch
       size.
     conv_layer: (Optional) The convolution layer tensor of the model. The outer

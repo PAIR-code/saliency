@@ -23,10 +23,10 @@ new methods!
 ## Download
 
 ```
-# If using the core subpackage:
+# To install the core subpackage:
 pip install saliency
 
-# If using the core or tf1 subpackage:
+# To install core and tf1 subpackages:
 pip install saliency[tf1]
 
 ```
@@ -51,14 +51,16 @@ The saliency library has two subpackages:
 Each saliency mask class extends from the `CoreSaliency` base class. This class
 contains the following methods:
 
-*   `GetMask(x_value, call_model_function, call_model_args)`: Returns a mask of
+*   `GetMask(x_value, call_model_function, call_model_args=None)`: Returns a mask
+    of
     the shape of non-batched `x_value` given by the saliency technique.
-*   `GetSmoothedMask(x_value, call_model_function, call_model_args)`: Returns a
-     mask smoothed of the shape of non-batched `x_value` with the SmoothGrad
-     technique.
+*   ```GetSmoothedMask(x_value, call_model_function, call_model_args=None, 
+    stdev_spread=.15, nsamples=25, magnitude=True)```: 
+    Returns a mask smoothed of the shape of non-batched `x_value` with the 
+    SmoothGrad technique.
 
 
-The visualization module contains two visualization methods:
+The visualization module contains two methods for saliency visualization:
 
 * ```VisualizeImageGrayscale(image_3d, percentile)```: Marginalizes across the
   absolute value of each channel to create a 2D single channel image, and clips
@@ -84,7 +86,7 @@ output format is in the `CoreSaliency` description, as well as separately for ea
 [This example iPython notebook](http://github.com/pair-code/saliency/blob/master/Examples_core.ipynb)
 showing these techniques is a good starting place.
 
-Here is a condensed example of using IG+SmoothGrad with TensorFlow:
+Here is a condensed example of using IG+SmoothGrad with TensorFlow 2:
 
 ```
 import saliency.core as saliency
@@ -111,7 +113,7 @@ smoothgrad_ig = ig_saliency.GetSmoothedMask(image,
 
 # Compute a 2D tensor for visualization.
 grayscale_visualization = saliency.VisualizeImageGrayscale(
-    smoothgrad_guided_backprop)
+    smoothgrad_ig)
 ```
 
 ### TF1

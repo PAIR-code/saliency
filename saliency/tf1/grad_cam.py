@@ -34,7 +34,7 @@ class GradCam(TF1CoreSaliency):
 
   """
 
-  def __init__(self, graph, session, y=None, x=None, conv_layer=None):
+  def __init__(self, graph, session, y, x, conv_layer):
     super(GradCam, self).__init__(graph, session, y, x, conv_layer)
     self.core_instance = core_grad_cam.GradCam()
 

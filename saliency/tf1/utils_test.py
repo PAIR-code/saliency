@@ -127,68 +127,6 @@ class UtilsTF1Test(unittest.TestCase):
         np.testing.assert_almost_equal(expected_output_gradient,
                                        actual_output_gradient))
 
-  def testOutputGradientsMissingY(self):
-    """Tests that call_model_function can't get output gradients without y."""
-    with self.graph.as_default():
-      x = tf.placeholder(shape=[None, 3], dtype=np.float32)
-    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = ('Cannot return key INPUT_OUTPUT_GRADIENTS because no y was '
-                'specified')
-
-    with self.assertRaisesRegex(RuntimeError, expected):
-      call_model_function = utils.create_tf1_call_model_function(
-          self.graph, self.sess, x=x)
-      call_model_function(
-          x_value,
-          call_model_args={},
-          expected_keys=[utils.INPUT_OUTPUT_GRADIENTS])
-
-  def testOutputValuesMissingY(self):
-    """Tests that call_model_function can't get output values without y."""
-    with self.graph.as_default():
-      x = tf.placeholder(shape=[None, 3], dtype=np.float32)
-    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = ('Cannot return key OUTPUT_LAYER_VALUES because no y was '
-                'specified')
-
-    with self.assertRaisesRegex(RuntimeError, expected):
-      call_model_function = utils.create_tf1_call_model_function(
-          self.graph, self.sess, x=x)
-      call_model_function(
-          x_value,
-          call_model_args={},
-          expected_keys=[utils.OUTPUT_LAYER_VALUES])
-
-  def testMissingX(self):
-    """Tests that call_model_function errors with missing x."""
-    with self.graph.as_default():
-      x = tf.placeholder(shape=[None, 3], dtype=np.float32)
-      y = (5 * x[:, 0] - 3 * x[:, 1])[0]
-    expected = 'Expected input tensor for x but is equal to None'
-
-    with self.assertRaisesRegex(ValueError, expected):
-      utils.create_tf1_call_model_function(self.graph, self.sess, y=y)
-
-  def testConvolutionGradientsMissingY(self):
-    """Tests that call_model_function can't get conv values without conv_layer."""
-    with self.graph.as_default():
-      x = tf.placeholder(shape=[None, 3], dtype=np.float32)
-      conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1])
-      y = (conv_layer[:] * 2)[0]
-    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = (
-        'Cannot return key CONVOLUTION_OUTPUT_GRADIENTS because no y '
-        'was specified'
-    )
-
-    with self.assertRaisesRegex(RuntimeError, expected):
-      call_model_function = utils.create_tf1_call_model_function(
-          self.graph, self.sess, x=x, conv_layer=conv_layer)
-      call_model_function(
-          x_value,
-          call_model_args={},
-          expected_keys=[utils.CONVOLUTION_OUTPUT_GRADIENTS])
-
   def testConvolutionGradientsMissingConvLayer(self):
     """Tests that call_model_function can't get conv values without conv_layer."""
     with self.graph.as_default():
@@ -203,29 +141,11 @@ class UtilsTF1Test(unittest.TestCase):
 
     with self.assertRaisesRegex(RuntimeError, expected):
       call_model_function = utils.create_tf1_call_model_function(
-          self.graph, self.sess, x=x, y=y)
+          self.graph, self.sess, y=y, x=x)
       call_model_function(
           x_value,
           call_model_args={},
           expected_keys=[utils.CONVOLUTION_OUTPUT_GRADIENTS])
-
-  def testConvolutionLayerMissingConvLayer(self):
-    """Tests that call_model_function can't get conv grads without conv_layer."""
-    with self.graph.as_default():
-      x = tf.placeholder(shape=[None, 3], dtype=np.float32)
-    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-    expected = (
-        'Cannot return key CONVOLUTION_LAYER_VALUES because no conv_layer was '
-        'specified'
-    )
-
-    with self.assertRaisesRegex(RuntimeError, expected):
-      call_model_function = utils.create_tf1_call_model_function(
-          self.graph, self.sess, x=x)
-      call_model_function(
-          x_value,
-          call_model_args={},
-          expected_keys=[utils.CONVOLUTION_LAYER_VALUES])
 
   def testInvalidKey(self):
     """Tests that call_model_function can't get conv values without conv_layer."""

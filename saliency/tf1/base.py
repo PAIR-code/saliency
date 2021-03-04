@@ -26,14 +26,14 @@ Y_SHAPE_ERROR_MESSAGE = ('Unexpected shape for y tensor. Expected shape {},'
 class TF1Saliency(object):
   """Base class for TF saliency masks. Alone, this class doesn't do anything."""
 
-  def __init__(self, graph, session, y=None, x=None):
+  def __init__(self, graph, session, y, x):
     """TF1-specific class to create saliency masks.
 
     Args:
       graph: The TensorFlow graph to evaluate masks on.
       session: The current TensorFlow session.
       y: The output tensor to compute the SaliencyMask against. This tensor
-          should be of size 1.
+          shape should be (None,), (batch_size), or () if not batching inputs.
       x: The input tensor to compute the SaliencyMask against. The outer
           dimension should be the batch size.
     """
@@ -92,14 +92,14 @@ class TF1CoreSaliency(TF1Saliency):
   Alone, this class doesn't do anything.
   """
 
-  def __init__(self, graph, session, y=None, x=None, conv_layer=None):
+  def __init__(self, graph, session, y, x, conv_layer=None):
     """TF1-specific class to create saliency masks using CoreSaliency.
 
     Args:
       graph: The TensorFlow graph to evaluate masks on.
       session: The current TensorFlow session.
       y: The output tensor to compute the SaliencyMask against. This tensor
-          should be of size 1.
+          shape should be (None,), (batch_size), or () if not batching inputs.
       x: The input tensor to compute the SaliencyMask against. The outer
           dimension should be the batch size.
       conv_layer: The convolution layer tensor of the model. The outer
@@ -121,7 +121,6 @@ class TF1CoreSaliency(TF1Saliency):
         ValueError: If x tensor shape is incompatible with batching parameters.
                     If y tensor shape is incompatible with batching parameters.
     """
-    target_size = 1
     batch_remainder = x_steps % batch_size
     if batch_remainder==0:
       target_size = batch_size
