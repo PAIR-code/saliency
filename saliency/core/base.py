@@ -60,7 +60,7 @@ class CoreSaliency(object):
         specific data in a dictionary when given an input and other arguments.
         Expected function signature:
         - call_model_function(x_value_batch,
-                              call_model_args={},
+                              call_model_args=None,
                               expected_keys=None):
           x_value_batch - Input for the model, given as a batch (i.e. dimension
             0 is the batch dimension, dimensions 1 through n represent a single
@@ -92,7 +92,7 @@ class CoreSaliency(object):
         specific data in a dictionary when given an input and other arguments.
         Expected function signature:
         - call_model_function(x_value_batch,
-                              call_model_args={},
+                              call_model_args=None,
                               expected_keys=None):
           x_value_batch - Input for the model, given as a batch (i.e. dimension
             0 is the batch dimension, dimensions 1 through n represent a single

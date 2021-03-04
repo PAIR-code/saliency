@@ -59,7 +59,7 @@ class BlurIgTest(unittest.TestCase):
     self.blur_ig_instance = blur_ig.BlurIG()
 
   def create_call_model_function(self):
-    def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+    def call_model(x_value_batch, call_model_args=None, expected_keys=None):
       call_model.num_calls += 1
       return {INPUT_OUTPUT_GRADIENTS: np.cos(x_value_batch)}
     call_model.num_calls = 0
@@ -68,7 +68,7 @@ class BlurIgTest(unittest.TestCase):
 
   def create_bad_call_model_function(self):
     # Bad call model function, gradients do not match shape of input.
-    def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+    def call_model(x_value_batch, call_model_args=None, expected_keys=None):
       call_model.num_calls += 1
       return {INPUT_OUTPUT_GRADIENTS: np.cos(x_value_batch)[0]}
     call_model.num_calls = 0
@@ -84,7 +84,7 @@ class BlurIgTest(unittest.TestCase):
     # Calculate the Blur IG attribution of the input.
     mask = self.blur_ig_instance.GetMask(
         x_value=self.x_input_val, call_model_function=call_model_function,
-        call_model_args={}, max_sigma=self.max_sigma, steps=x_steps)
+        call_model_args=None, max_sigma=self.max_sigma, steps=x_steps)
 
     # Because the baseline is blurred, all zero values should still have some
     # attribution (introduced noise).
@@ -105,7 +105,7 @@ class BlurIgTest(unittest.TestCase):
     mask = self.blur_ig_instance.GetMask(
         x_value=self.x_input_val,
         call_model_function=call_model_function,
-        call_model_args={},
+        call_model_args=None,
         max_sigma=self.max_sigma,
         steps=x_steps,
         batch_size=batch_size)
@@ -129,7 +129,7 @@ class BlurIgTest(unittest.TestCase):
     mask = self.blur_ig_instance.GetMask(
         x_value=self.x_input_val,
         call_model_function=call_model_function,
-        call_model_args={},
+        call_model_args=None,
         max_sigma=self.max_sigma,
         steps=x_steps,
         batch_size=batch_size)
@@ -181,7 +181,7 @@ class BlurIgTest(unittest.TestCase):
       self.blur_ig_instance.GetMask(
           x_value=self.x_input_val,
           call_model_function=call_model_function,
-          call_model_args={},
+          call_model_args=None,
           max_sigma=self.max_sigma,
           steps=x_steps,
           batch_size=100)

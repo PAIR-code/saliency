@@ -113,7 +113,7 @@ def create_tf1_call_model_function(graph,
     return fetches
 
   def call_model_function(x_value_batch,
-                          call_model_args={},
+                          call_model_args=None,
                           expected_keys=None):
     """Calls a TF1 model and returns the expected keys.
 
