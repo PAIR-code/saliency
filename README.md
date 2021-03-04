@@ -54,8 +54,7 @@ contains the following methods:
 *   `GetMask(x_value, call_model_function, call_model_args=None)`: Returns a mask
     of
     the shape of non-batched `x_value` given by the saliency technique.
-*   ```GetSmoothedMask(x_value, call_model_function, call_model_args=None, 
-    stdev_spread=.15, nsamples=25, magnitude=True)```: 
+*   `GetSmoothedMask(x_value, call_model_function, call_model_args=None, stdev_spread=.15, nsamples=25, magnitude=True)`: 
     Returns a mask smoothed of the shape of non-batched `x_value` with the 
     SmoothGrad technique.
 
