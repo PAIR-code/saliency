@@ -108,7 +108,7 @@ image = GetImagePNG(...)
 ig_saliency = saliency.IntegratedGradients()
 smoothgrad_ig = ig_saliency.GetSmoothedMask(image, 
 											call_model_function, 
-                                            call_model_args={})
+                                            call_model_args=None)
 
 # Compute a 2D tensor for visualization.
 grayscale_visualization = saliency.VisualizeImageGrayscale(

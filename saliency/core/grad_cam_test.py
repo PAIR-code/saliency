@@ -46,7 +46,7 @@ class GradCamTest(unittest.TestCase):
 
     def create_call_model_function():
 
-      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+      def call_model(x_value_batch, call_model_args=None, expected_keys=None):
         # simulates conv layer output and grads where the kernel for the conv
         # layer is a horizontal line detector of kernel size 3 and the input is
         # a 3x3 square of ones in the center of the image.
@@ -74,7 +74,7 @@ class GradCamTest(unittest.TestCase):
     mask = self.grad_cam_instance.GetMask(
         img,
         call_model_function=call_model_function,
-        call_model_args={},
+        call_model_args=None,
         should_resize=True,
         three_dims=False)
 
@@ -134,7 +134,7 @@ class GradCamTest(unittest.TestCase):
 
     def create_call_model_function():
 
-      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+      def call_model(x_value_batch, call_model_args=None, expected_keys=None):
         grad = np.zeros(x_value_batch.shape)
         output = np.zeros(x_value_batch.shape)
         return {CONVOLUTION_LAYER_VALUES: output,
@@ -157,7 +157,7 @@ class GradCamTest(unittest.TestCase):
       self.grad_cam_instance.GetMask(
           img,
           call_model_function=call_model_function,
-          call_model_args={},
+          call_model_args=None,
           should_resize=True,
           three_dims=False)
 
@@ -174,7 +174,7 @@ class GradCamTest(unittest.TestCase):
 
     def create_call_model_function():
 
-      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+      def call_model(x_value_batch, call_model_args=None, expected_keys=None):
         grad = np.zeros(x_value_batch.shape)
         output = np.zeros(x_value_batch.shape)
         return {CONVOLUTION_OUTPUT_GRADIENTS: grad,
@@ -195,7 +195,7 @@ class GradCamTest(unittest.TestCase):
       self.grad_cam_instance.GetMask(
           img,
           call_model_function=call_model_function,
-          call_model_args={},
+          call_model_args=None,
           should_resize=True,
           three_dims=False)
 

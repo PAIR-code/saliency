@@ -31,7 +31,7 @@ class GradientSaliencyTest(unittest.TestCase):
     return np.array([5, 2*arr[1], np.cos(arr[2])])
 
   def create_call_model_function(self):
-    def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+    def call_model(x_value_batch, call_model_args=None, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(self.gradient_fn, 1, x_value_batch)
       return {INPUT_OUTPUT_GRADIENTS: data}
@@ -41,7 +41,7 @@ class GradientSaliencyTest(unittest.TestCase):
 
   def create_bad_call_model_function(self):
     # Bad call model function since gradient shape doesn't match input.
-    def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+    def call_model(x_value_batch, call_model_args=None, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(self.gradient_fn, 1, x_value_batch)
       return {INPUT_OUTPUT_GRADIENTS: data[0]}
@@ -58,7 +58,7 @@ class GradientSaliencyTest(unittest.TestCase):
 
     mask = grad_instance.GetMask(x_value=x_input,
                                  call_model_function=call_model_function,
-                                 call_model_args={})
+                                 call_model_args=None)
 
     # Verify the result.
     np.testing.assert_almost_equal(mask, self.expected_val, decimal=2)
@@ -102,7 +102,7 @@ class GradientSaliencyTest(unittest.TestCase):
 
       grad_instance.GetMask(x_value=x_input,
                             call_model_function=call_model_function,
-                            call_model_args={})
+                            call_model_args=None)
 
 
 if __name__ == '__main__':

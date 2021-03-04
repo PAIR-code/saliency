@@ -41,7 +41,7 @@ class UtilsTF1Test(unittest.TestCase):
 
     call_model_function = utils.create_tf1_call_model_function(
         self.graph, self.sess, y, x)
-    data = call_model_function(x_value, call_model_args={},
+    data = call_model_function(x_value, call_model_args=None,
                                expected_keys=[utils.INPUT_OUTPUT_GRADIENTS])
     actual = data[utils.INPUT_OUTPUT_GRADIENTS]
 
@@ -59,7 +59,7 @@ class UtilsTF1Test(unittest.TestCase):
     call_model_function = utils.create_tf1_call_model_function(
         self.graph, self.sess, y, x)
     data = call_model_function(
-        x_value, call_model_args={}, expected_keys=[utils.OUTPUT_LAYER_VALUES])
+        x_value, call_model_args=None, expected_keys=[utils.OUTPUT_LAYER_VALUES])
     actual = data[utils.OUTPUT_LAYER_VALUES]
 
     self.assertIsNone(np.testing.assert_almost_equal(expected, actual))
@@ -79,7 +79,7 @@ class UtilsTF1Test(unittest.TestCase):
         self.graph, self.sess, y=y, x=x, conv_layer=conv_layer)
     data = call_model_function(
         x_value,
-        call_model_args={},
+        call_model_args=None,
         expected_keys=[
             utils.CONVOLUTION_OUTPUT_GRADIENTS, utils.INPUT_OUTPUT_GRADIENTS
         ])
@@ -108,7 +108,7 @@ class UtilsTF1Test(unittest.TestCase):
         self.graph, self.sess, y=y, x=x, conv_layer=conv_layer)
     data = call_model_function(
         x_value,
-        call_model_args={},
+        call_model_args=None,
         expected_keys=[
             utils.CONVOLUTION_LAYER_VALUES,
             utils.INPUT_OUTPUT_GRADIENTS,
@@ -144,7 +144,7 @@ class UtilsTF1Test(unittest.TestCase):
           self.graph, self.sess, y=y, x=x)
       call_model_function(
           x_value,
-          call_model_args={},
+          call_model_args=None,
           expected_keys=[utils.CONVOLUTION_OUTPUT_GRADIENTS])
 
   def testInvalidKey(self):
@@ -161,7 +161,7 @@ class UtilsTF1Test(unittest.TestCase):
           self.graph, self.sess, y=y, x=x, conv_layer=conv_layer)
       call_model_function(
           x_value,
-          call_model_args={},
+          call_model_args=None,
           expected_keys=['FOO_BAR'])
 
 

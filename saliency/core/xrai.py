@@ -286,7 +286,7 @@ class XRAI(CoreSaliency):
   def GetMask(self,
               x_value,
               call_model_function,
-              call_model_args={},
+              call_model_args=None,
               baselines=None,
               segments=None,
               base_attribution=None,
@@ -301,7 +301,7 @@ class XRAI(CoreSaliency):
           specific data in a dictionary when given an input and other arguments.
           Expected function signature:
           - call_model_function(x_value_batch,
-                                call_model_args={},
+                                call_model_args=None,
                                 expected_keys=None):
             x_value_batch - Input for the model, given as a batch (i.e.
               dimension 0 is the batch dimension, dimensions 1 through n
@@ -366,7 +366,7 @@ class XRAI(CoreSaliency):
   def GetMaskWithDetails(self,
                          x_value,
                          call_model_function,
-                         call_model_args={},
+                         call_model_args=None,
                          baselines=None,
                          segments=None,
                          base_attribution=None,
@@ -381,7 +381,7 @@ class XRAI(CoreSaliency):
           specific data in a dictionary when given an input and other arguments.
           Expected function signature:
           - call_model_function(x_value_batch,
-                                call_model_args={},
+                                call_model_args=None,
                                 expected_keys=None):
             x_value_batch - Input for the model, given as a batch (i.e.
               dimension 0 is the batch dimension, dimensions 1 through n

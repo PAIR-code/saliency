@@ -51,7 +51,7 @@ class BlurIG(CoreSaliency):
   def GetMask(self,
               x_value,
               call_model_function,
-              call_model_args={},
+              call_model_args=None,
               max_sigma=50,
               steps=100,
               grad_step=0.01,

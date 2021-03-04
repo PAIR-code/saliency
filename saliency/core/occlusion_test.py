@@ -44,7 +44,7 @@ class OcclusionTest(unittest.TestCase):
 
     def create_call_model_function():
 
-      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+      def call_model(x_value_batch, call_model_args=None, expected_keys=None):
         # simulates output where all values are multiplied by 3.
         output = [np.sum(x_value_batch) * 3]
         return {occlusion.OUTPUT_LAYER_VALUES: output}
@@ -65,7 +65,7 @@ class OcclusionTest(unittest.TestCase):
     mask = self.occlusion_instance.GetMask(
         img,
         call_model_function=call_model_function,
-        call_model_args={},
+        call_model_args=None,
         size=3,
         value=0)
 
@@ -106,7 +106,7 @@ class OcclusionTest(unittest.TestCase):
 
     def create_call_model_function():
       # Bad call model function since the expected output is a single value
-      def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+      def call_model(x_value_batch, call_model_args=None, expected_keys=None):
         output = np.ones(INPUT_HEIGHT_WIDTH)
         return {occlusion.OUTPUT_LAYER_VALUES: output}
 
@@ -119,7 +119,7 @@ class OcclusionTest(unittest.TestCase):
       self.occlusion_instance.GetMask(
           img,
           call_model_function=call_model_function,
-          call_model_args={},
+          call_model_args=None,
           size=3,
           value=0)
 

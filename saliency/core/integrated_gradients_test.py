@@ -53,7 +53,7 @@ class IntegratedGradientsTest(unittest.TestCase):
       # d(f(x,y,z)) = [5, 2y, cos(z)]
       return np.array([5, 2*arr[1], np.cos(arr[2])])
 
-    def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+    def call_model(x_value_batch, call_model_args=None, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(gradient_fn, 1, x_value_batch)
       return {INPUT_OUTPUT_GRADIENTS: data}
@@ -67,7 +67,7 @@ class IntegratedGradientsTest(unittest.TestCase):
       return np.array([5, 2*arr[1], np.cos(arr[2])])
 
     # Bad call model function since gradient shape doesn't match input
-    def call_model(x_value_batch, call_model_args={}, expected_keys=None):
+    def call_model(x_value_batch, call_model_args=None, expected_keys=None):
       call_model.num_calls += 1
       data = np.apply_along_axis(gradient_fn, 1, x_value_batch)
       return {INPUT_OUTPUT_GRADIENTS: data[0]}
@@ -82,7 +82,7 @@ class IntegratedGradientsTest(unittest.TestCase):
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val,
                                     call_model_function=call_model_function,
-                                    call_model_args={},
+                                    call_model_args=None,
                                     x_baseline=self.x_baseline_val,
                                     x_steps=x_steps)
 
@@ -99,7 +99,7 @@ class IntegratedGradientsTest(unittest.TestCase):
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val,
                                     call_model_function=call_model_function,
-                                    call_model_args={},
+                                    call_model_args=None,
                                     x_baseline=self.x_baseline_val,
                                     x_steps=x_steps,
                                     batch_size=batch_size)
@@ -117,7 +117,7 @@ class IntegratedGradientsTest(unittest.TestCase):
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val,
                                     call_model_function=call_model_function,
-                                    call_model_args={},
+                                    call_model_args=None,
                                     x_baseline=self.x_baseline_val,
                                     x_steps=x_steps,
                                     batch_size=batch_size)
@@ -164,7 +164,7 @@ class IntegratedGradientsTest(unittest.TestCase):
 
       self.ig_instance.GetMask(x_value=self.x_input_val,
                                call_model_function=call_model_function,
-                               call_model_args={},
+                               call_model_args=None,
                                x_baseline=self.x_baseline_val,
                                x_steps=x_steps,
                                batch_size=500)
