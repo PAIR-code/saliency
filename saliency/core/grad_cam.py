@@ -82,7 +82,7 @@ class GradCam(CoreSaliency):
     data = call_model_function(x_value_batched,
         call_model_args=call_model_args,
         expected_keys=expected_keys)
-    self.format_call_model_data(data, x_value_batched.shape, expected_keys)
+    self.format_and_check_call_model_output(data, x_value_batched.shape, expected_keys)
 
     weights = np.mean(data[CONVOLUTION_OUTPUT_GRADIENTS][0], axis=(0, 1))
     grad_cam = np.zeros(data[CONVOLUTION_LAYER_VALUES][0].shape[0:2],

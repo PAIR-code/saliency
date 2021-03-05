@@ -33,7 +33,7 @@ class Occlusion(CoreSaliency):
         x_value_batched,
         call_model_args=call_model_args,
         expected_keys=[OUTPUT_LAYER_VALUES])
-    self.format_call_model_data(data,
+    self.format_and_check_call_model_output(data,
                                 x_value_batched.shape,
                                 [OUTPUT_LAYER_VALUES])
     return data[OUTPUT_LAYER_VALUES][0]
