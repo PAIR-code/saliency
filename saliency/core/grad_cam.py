@@ -77,7 +77,7 @@ class GradCam(CoreSaliency):
         converted into a 3D mask by copying the 2D mask value's into each color
         channel
     """
-    x_value_batched = np.array([x_value])
+    x_value_batched = np.expand_dims(x_value, axis=0)
     expected_keys = [CONVOLUTION_LAYER_VALUES, CONVOLUTION_OUTPUT_GRADIENTS]
     data = call_model_function(x_value_batched,
         call_model_args=call_model_args,

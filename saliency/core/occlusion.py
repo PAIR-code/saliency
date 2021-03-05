@@ -28,7 +28,7 @@ class Occlusion(CoreSaliency):
   """
 
   def getY(self, x_value, call_model_function, call_model_args):
-    x_value_batched = np.array([x_value])
+    x_value_batched = np.expand_dims(x_value, axis=0)
     data = call_model_function(
         x_value_batched,
         call_model_args=call_model_args,

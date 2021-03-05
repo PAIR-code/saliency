@@ -67,7 +67,7 @@ class IntegratedGradients(CoreSaliency):
       x_step = x_baseline + alpha * x_diff
       x_step_batched.append(x_step)
       if len(x_step_batched) == batch_size or alpha == 1:
-        x_step_batched = np.array(x_step_batched)
+        x_step_batched = np.asarray(x_step_batched)
         call_model_output = call_model_function(
             x_step_batched,
             call_model_args=call_model_args,

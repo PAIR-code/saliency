@@ -130,7 +130,7 @@ class CoreSaliency(object):
     use_outermost_only = [OUTPUT_LAYER_VALUES, CONVOLUTION_LAYER_VALUES,
                           CONVOLUTION_OUTPUT_GRADIENTS]
     for expected_key in expected_keys:
-      output[expected_key] = np.array(output[expected_key])
+      output[expected_key] = np.asarray(output[expected_key])
       expected_shape = input_shape
       actual_shape = output[expected_key].shape
       if expected_key in use_outermost_only:

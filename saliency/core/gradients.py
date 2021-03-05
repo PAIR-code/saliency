@@ -45,7 +45,7 @@ class GradientSaliency(CoreSaliency):
       call_model_args: The arguments that will be passed to the call model
         function, for every call of the model.
     """
-    x_value_batched = np.array([x_value])
+    x_value_batched = np.expand_dims(x_value, axis=0)
     call_model_output = call_model_function(
         x_value_batched,
         call_model_args=call_model_args,

@@ -103,7 +103,7 @@ class BlurIG(CoreSaliency):
       x_step_batched.append(x_step)
       gaussian_gradient_batched.append(gaussian_gradient)
       if len(x_step_batched) == batch_size or i == steps - 1:
-        x_step_batched = np.array(x_step_batched)
+        x_step_batched = np.asarray(x_step_batched)
         call_model_output = call_model_function(
             x_step_batched,
             call_model_args=call_model_args,
