@@ -49,7 +49,7 @@ class UtilsTF1Test(unittest.TestCase):
 
   def testOutputValuesSuccess(self):
     """Tests that output layer values are returned correctly."""
-    with self.graph.as_default():
+    with self.graph.as_default(): 
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
       y = (5 * x[:, 0] - 3 * x[:, 1]**2)[0]
     x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float32)
