@@ -18,11 +18,6 @@ from .base import CoreSaliency
 from .base import INPUT_OUTPUT_GRADIENTS
 import numpy as np
 
-SHAPE_ERROR_MESSAGE = (
-    "Expected key INPUT_OUTPUT_GRADIENTS to be the same shape as input "
-    "x_value_batch - expected {}, actual {}"
-)
-
 
 class GradientSaliency(CoreSaliency):
   """"A CoreSaliency class that computes saliency masks with gradients."""

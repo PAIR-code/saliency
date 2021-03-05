@@ -20,11 +20,6 @@ from .base import INPUT_OUTPUT_GRADIENTS
 import numpy as np
 from scipy import ndimage
 
-SHAPE_ERROR_MESSAGE = (
-    "Expected key INPUT_OUTPUT_GRADIENTS to be the same shape as input "
-    "x_value_batch - expected {}, actual {}"
-)
-
 
 def gaussian_blur(image, sigma):
   """Returns Gaussian blur filtered 3d (WxHxC) image.
