@@ -109,18 +109,18 @@ class BlurIG(CoreSaliency):
       gaussian_gradient_batched.append(gaussian_gradient)
       if len(x_step_batched) == batch_size or i == steps - 1:
         x_step_batched = np.array(x_step_batched)
-        call_model_data = call_model_function(
+        call_model_output = call_model_function(
             x_step_batched,
             call_model_args=call_model_args,
             expected_keys=[INPUT_OUTPUT_GRADIENTS])
-        self.format_call_model_data(call_model_data,
-                                    x_step_batched.shape,
-                                    [INPUT_OUTPUT_GRADIENTS])
+        self.format_and_check_call_model_output(call_model_output,
+                                                x_step_batched.shape,
+                                                [INPUT_OUTPUT_GRADIENTS])
 
         tmp = (
             step_vector_diff[i] *
             np.multiply(gaussian_gradient_batched,
-                        call_model_data[INPUT_OUTPUT_GRADIENTS]))
+                        call_model_output[INPUT_OUTPUT_GRADIENTS]))
         total_gradients += tmp.sum(axis=0)
         x_step_batched = []
         gaussian_gradient_batched = []

@@ -125,7 +125,7 @@ class CoreSaliency(object):
 
     return total_gradients / nsamples
 
-  def format_call_model_data(self, data, input_shape, expected_keys):
+  def format_and_check_call_model_output(self, output, input_shape, expected_keys):
     # For each expected_key in data, convert to numpy array and check shape against input_shape
     use_outermost_only = [OUTPUT_LAYER_VALUES, CONVOLUTION_LAYER_VALUES,
                           CONVOLUTION_OUTPUT_GRADIENTS]
