@@ -57,7 +57,7 @@ class CoreSaliency(object):
     Args:
       x_value: Input ndarray.
       call_model_function: A function that interfaces with a model to return
-        specific data in a dictionary when given an input and other arguments.
+        specific output in a dictionary when given an input and other arguments.
         Expected function signature:
         - call_model_function(x_value_batch,
                               call_model_args=None,
@@ -89,7 +89,7 @@ class CoreSaliency(object):
     Args:
       x_value: Input ndarray.
       call_model_function: A function that interfaces with a model to return
-        specific data in a dictionary when given an input and other arguments.
+        specific output in a dictionary when given an input and other arguments.
         Expected function signature:
         - call_model_function(x_value_batch,
                               call_model_args=None,
@@ -126,13 +126,13 @@ class CoreSaliency(object):
     return total_gradients / nsamples
 
   def format_and_check_call_model_output(self, output, input_shape, expected_keys):
-    # For each expected_key in data, convert to numpy array and check shape against input_shape
+    # For each expected_key in output, convert to numpy array and check shape against input_shape
     use_outermost_only = [OUTPUT_LAYER_VALUES, CONVOLUTION_LAYER_VALUES,
                           CONVOLUTION_OUTPUT_GRADIENTS]
     for expected_key in expected_keys:
-      data[expected_key] = np.array(data[expected_key])
+      output[expected_key] = np.array(output[expected_key])
       expected_shape = input_shape
-      actual_shape = data[expected_key].shape
+      actual_shape = output[expected_key].shape
       if expected_key in use_outermost_only:
         expected_shape = expected_shape[0]
         actual_shape = actual_shape[0]
