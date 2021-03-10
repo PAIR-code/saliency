@@ -22,6 +22,8 @@ import numpy as np
 class GradientSaliency(CoreSaliency):
   """A CoreSaliency class that computes saliency masks with gradients."""
 
+  expected_keys = [INPUT_OUTPUT_GRADIENTS]
+
   def GetMask(self, x_value, call_model_function, call_model_args=None):
     """Returns a vanilla gradients mask.
 
@@ -49,10 +51,10 @@ class GradientSaliency(CoreSaliency):
     call_model_output = call_model_function(
         x_value_batched,
         call_model_args=call_model_args,
-        expected_keys=[INPUT_OUTPUT_GRADIENTS])
+        expected_keys=self.expected_keys)
 
     self.format_and_check_call_model_output(call_model_output,
                                             x_value_batched.shape,
-                                            [INPUT_OUTPUT_GRADIENTS])
+                                            self.expected_keys)
 
     return call_model_output[INPUT_OUTPUT_GRADIENTS][0]

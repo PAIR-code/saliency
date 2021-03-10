@@ -27,15 +27,17 @@ class Occlusion(CoreSaliency):
   evidence for the class, otherwise it is negative evidence.
   """
 
+  expected_keys = [OUTPUT_LAYER_VALUES]
+
   def getY(self, x_value, call_model_function, call_model_args):
     x_value_batched = np.expand_dims(x_value, axis=0)
     data = call_model_function(
         x_value_batched,
         call_model_args=call_model_args,
-        expected_keys=[OUTPUT_LAYER_VALUES])
+        expected_keys=self.expected_keys)
     self.format_and_check_call_model_output(data,
                                 x_value_batched.shape,
-                                [OUTPUT_LAYER_VALUES])
+                                self.expected_keys)
     return data[OUTPUT_LAYER_VALUES][0]
 
   def GetMask(self,

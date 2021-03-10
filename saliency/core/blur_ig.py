@@ -43,6 +43,8 @@ class BlurIG(CoreSaliency):
   and prediction label using a path that successively blurs the image.
   """
 
+  expected_keys = [INPUT_OUTPUT_GRADIENTS]
+
   def GetMask(self,
               x_value,
               call_model_function,
@@ -107,10 +109,10 @@ class BlurIG(CoreSaliency):
         call_model_output = call_model_function(
             x_step_batched,
             call_model_args=call_model_args,
-            expected_keys=[INPUT_OUTPUT_GRADIENTS])
+            expected_keys=self.expected_keys)
         self.format_and_check_call_model_output(call_model_output,
                                                 x_step_batched.shape,
-                                                [INPUT_OUTPUT_GRADIENTS])
+                                                self.expected_keys)
 
         tmp = (
             step_vector_diff[i] *

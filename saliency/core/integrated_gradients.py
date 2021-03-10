@@ -25,6 +25,8 @@ class IntegratedGradients(CoreSaliency):
   https://arxiv.org/abs/1703.01365
   """
 
+  expected_keys = [INPUT_OUTPUT_GRADIENTS]
+
   def GetMask(self, x_value, call_model_function, call_model_args=None,
               x_baseline=None, x_steps=25, batch_size=1):
     """Returns an integrated gradients mask.
@@ -71,11 +73,11 @@ class IntegratedGradients(CoreSaliency):
         call_model_output = call_model_function(
             x_step_batched,
             call_model_args=call_model_args,
-            expected_keys=[INPUT_OUTPUT_GRADIENTS])
+            expected_keys=self.expected_keys)
 
         self.format_and_check_call_model_output(call_model_output,
                                                 x_step_batched.shape,
-                                                [INPUT_OUTPUT_GRADIENTS])
+                                                self.expected_keys)
 
         total_gradients += call_model_output[INPUT_OUTPUT_GRADIENTS].sum(axis=0)
         x_step_batched = []
