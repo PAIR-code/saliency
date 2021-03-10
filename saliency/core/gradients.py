@@ -20,7 +20,7 @@ import numpy as np
 
 
 class GradientSaliency(CoreSaliency):
-  """"A CoreSaliency class that computes saliency masks with gradients."""
+  """A CoreSaliency class that computes saliency masks with gradients."""
 
   def GetMask(self, x_value, call_model_function, call_model_args=None):
     """Returns a vanilla gradients mask.

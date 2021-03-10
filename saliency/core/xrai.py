@@ -161,7 +161,7 @@ def _unpack_segs_to_masks(segs):
 
 
 class XRAIParameters(object):
-  """"Dictionary of parameters to specify how to XRAI and return outputs."""
+  """Dictionary of parameters to specify how to XRAI and return outputs."""
 
   def __init__(self,
                steps=100,
@@ -213,7 +213,7 @@ class XRAIParameters(object):
 
 
 class XRAIOutput(object):
-  """"Dictionary of outputs from a single run of XRAI.GetMaskWithDetails."""
+  """Dictionary of outputs from a single run of XRAI.GetMaskWithDetails."""
 
   def __init__(self, attribution_mask):
     # The saliency mask of individual input features. For an [HxWx3] image, the
@@ -243,7 +243,7 @@ class XRAIOutput(object):
 
 
 class XRAI(CoreSaliency):
-  """"A CoreSaliency class that computes saliency masks using the XRAI method."""
+  """A CoreSaliency class that computes saliency masks using the XRAI method."""
 
   def __init__(self):
     super(XRAI, self).__init__()
