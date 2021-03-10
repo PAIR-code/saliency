@@ -126,14 +126,25 @@ class CoreSaliency(object):
     return total_gradients / nsamples
 
   def format_and_check_call_model_output(self, output, input_shape, expected_keys):
-    # For each expected_key in output, convert to numpy array and check shape against input_shape
-    use_outermost_only = [OUTPUT_LAYER_VALUES, CONVOLUTION_LAYER_VALUES,
-                          CONVOLUTION_OUTPUT_GRADIENTS]
+    """Converts keys in the output into an np.ndarray, and confirms its shape.
+
+    Args:
+      output: The output dictionary of data to be formatted.
+      input_shape: The shape of the input that yielded the output
+      expected_keys: List of keys inside output to format/check for shape agreement.
+
+    Raises:
+        ValueError: If output shapes do not match expected shape."""
+    # If key is in check_full_shape, the shape should be equal to the input shape (e.g. 
+    # INPUT_OUTPUT_GRADIENTS, which gives gradients for each value of the input). Otherwise,
+    # only checks the outermost dimension of output to match input_shape (i.e. the batch size
+    # should be the same).
+    check_full_shape = [INPUT_OUTPUT_GRADIENTS]
     for expected_key in expected_keys:
       output[expected_key] = np.asarray(output[expected_key])
       expected_shape = input_shape
       actual_shape = output[expected_key].shape
-      if expected_key in use_outermost_only:
+      if expected_key not in check_full_shape:
         expected_shape = expected_shape[0]
         actual_shape = actual_shape[0]
       if expected_shape != actual_shape:
