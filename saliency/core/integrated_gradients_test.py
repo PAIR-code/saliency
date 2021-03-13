@@ -33,11 +33,11 @@ class IntegratedGradientsTest(unittest.TestCase):
     # Calculate the value of `y` at the baseline. `y` is returned as multiple
     # numbers, with the assumption that in a real network these values would be
     # summed to a single output number.
-    self.x_baseline_val = np.array([0.5, 1.0, 1.0], dtype=np.float)
+    self.x_baseline_val = np.array([0.5, 1.0, 1.0], dtype=float)
     y_baseline_val = y_fn(self.x_baseline_val)
 
     # Calculate the value of `y` at the input.
-    self.x_input_val = np.array([1.0, 2.0, 3.0], dtype=np.float)
+    self.x_input_val = np.array([1.0, 2.0, 3.0], dtype=float)
     y_input_val = y_fn(self.x_input_val)
 
     # Because each variable is independent, the expected contribution is equal

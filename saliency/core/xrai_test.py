@@ -155,13 +155,13 @@ class XraiTest(unittest.TestCase):
     # Create the first segment.
     rec_1 = sk_draw.rectangle(start=(10, 10), end=(30, 30),
                               shape=(IMAGE_SIZE, IMAGE_SIZE))
-    seg_1 = np.zeros(shape=(IMAGE_SIZE, IMAGE_SIZE), dtype=np.bool)
+    seg_1 = np.zeros(shape=(IMAGE_SIZE, IMAGE_SIZE), dtype=bool)
     seg_1[tuple(rec_1)] = True
 
     # Create the second segment.
     rec_2 = sk_draw.rectangle(start=(60, 60), end=(100, 100),
                               shape=(IMAGE_SIZE, IMAGE_SIZE))
-    seg_2 = np.zeros(shape=(IMAGE_SIZE, IMAGE_SIZE), dtype=np.bool)
+    seg_2 = np.zeros(shape=(IMAGE_SIZE, IMAGE_SIZE), dtype=bool)
     seg_2[tuple(rec_2)] = True
 
     # Calculate the XRAI attribution.

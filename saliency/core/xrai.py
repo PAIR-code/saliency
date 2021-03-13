@@ -118,7 +118,7 @@ def _get_segments_felzenszwalb(im,
                      order=0,
                      preserve_range=True,
                      mode='constant',
-                     anti_aliasing=False).astype(np.int)
+                     anti_aliasing=False).astype(int)
       segs.append(seg)
   masks = _unpack_segs_to_masks(segs)
   if dilation_rad:
@@ -537,7 +537,7 @@ class XRAI(CoreSaliency):
         tuple: saliency heatmap and list of masks or an integer image with
            area ranks depending on the parameter integer_segments.
     """
-    output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
+    output_attr = -np.inf * np.ones(shape=attr.shape, dtype=float)
 
     n_masks = len(segs)
     current_area_perc = 0.0
@@ -594,7 +594,7 @@ class XRAI(CoreSaliency):
     if np.any(uncomputed_mask):
       masks_trace.append(uncomputed_mask)
     if integer_segments:
-      attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
+      attr_ranks = np.zeros(shape=attr.shape, dtype=int)
       for i, mask in enumerate(masks_trace):
         attr_ranks[mask] = i + 1
       return output_attr, attr_ranks
@@ -633,7 +633,7 @@ class XRAI(CoreSaliency):
         tuple: saliency heatmap and list of masks or an integer image with
           area ranks depending on the parameter integer_segments.
     """
-    output_attr = -np.inf * np.ones(shape=attr.shape, dtype=np.float)
+    output_attr = -np.inf * np.ones(shape=attr.shape, dtype=float)
 
     n_masks = len(segs)
     current_mask = np.zeros(attr.shape, dtype=bool)
@@ -672,7 +672,7 @@ class XRAI(CoreSaliency):
     if np.any(uncomputed_mask):
       masks_trace.append(uncomputed_mask)
     if integer_segments:
-      attr_ranks = np.zeros(shape=attr.shape, dtype=np.int)
+      attr_ranks = np.zeros(shape=attr.shape, dtype=int)
       for i, mask in enumerate(masks_trace):
         attr_ranks[mask] = i + 1
       return output_attr, attr_ranks

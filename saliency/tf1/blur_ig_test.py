@@ -43,7 +43,7 @@ class BlurIgTest(unittest.TestCase):
           [0.0, 0.0, 0.0, 0.0, 0.0],
           [0.0, 0.0, 0.0, 0.0, 0.0],
       ],
-                                  dtype=np.float)
+                                  dtype=float)
       self.x_input_val = self.x_input_val.reshape((5, 5, 1))
       # Calculate the value of `y` at the input.
       y_input_val = self.sess.run(y, feed_dict={self.x: [self.x_input_val]})

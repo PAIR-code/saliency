@@ -133,7 +133,7 @@ class UtilsTF1Test(unittest.TestCase):
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
       conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1])
       y = (conv_layer[:] * 2)[0]
-    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
+    x_value = np.array([[0.5, 0.8, 1.0]], dtype=float)
     expected = (
         'Cannot return key CONVOLUTION_OUTPUT_GRADIENTS because no conv_layer '
         'was specified'
@@ -153,7 +153,7 @@ class UtilsTF1Test(unittest.TestCase):
       x = tf.placeholder(shape=[None, 3], dtype=np.float32)
       conv_layer = (-2 * x[:, 0] + 5 * x[:, 1] * x[:, 1])
       y = (conv_layer[:] * 2)[0]
-    x_value = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
+    x_value = np.array([[0.5, 0.8, 1.0]], dtype=float)
     expected = 'Invalid expected key FOO_BAR'
 
     with self.assertRaisesRegex(ValueError, expected):

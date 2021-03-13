@@ -34,7 +34,7 @@ class BaseTest(unittest.TestCase):
       self.x_indexed = self.x[0]
       self.y_indexed = self.y[0]
       self.sess = tf.Session(graph=self.graph)
-      self.x_input_val = np.array([1.0, 2.0, 3.0], dtype=np.float)
+      self.x_input_val = np.array([1.0, 2.0, 3.0], dtype=float)
 
   def testValidateTensorsErrorX(self):
     """Tests that an error is thrown when x tensor is set up incorrectly."""

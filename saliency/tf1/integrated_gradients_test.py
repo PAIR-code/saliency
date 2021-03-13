@@ -33,8 +33,8 @@ class IntegratedGradientsTest(unittest.TestCase):
       sess = tf.Session(graph=graph)
       self.sess_spy = mock.MagicMock(wraps=sess)
 
-      self.x_baseline_val = np.array([[0.5, 0.8, 1.0]], dtype=np.float)
-      self.x_input_val = np.array([[1.0, 2.0, 3.0]], dtype=np.float)
+      self.x_baseline_val = np.array([[0.5, 0.8, 1.0]], dtype=float)
+      self.x_input_val = np.array([[1.0, 2.0, 3.0]], dtype=float)
 
       # Calculate the value of `contrib` at the baseline and input. `y` is
       # the sum of contrib and each variable is independent, so the expected

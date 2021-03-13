@@ -41,7 +41,7 @@ class OcclusionTest(unittest.TestCase):
           [0.0, 0.0, 0.0, 0.0, 0.0],
           [0.0, 0.0, 0.0, 1.0, 0.0],
           [0.0, 0.0, 0.0, 0.0, 0.0],
-      ], dtype=np.float)
+      ], dtype=float)
 
       # The computed Occlusion mask should bias the center, but the quadrants
       # with nonzero values should be greater than the other two (exact expected
