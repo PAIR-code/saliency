@@ -1,8 +1,3 @@
-from .base import *
-from .visualization import *
-from .guided_backprop import *
-from .occlusion import *
-from .integrated_gradients import *
-from .grad_cam import *
-from .xrai import *
-from .blur_ig import *
+"""Library to calculate saliency using TF1 and other ML frameworks."""
+from . import core
+from . import tf1
