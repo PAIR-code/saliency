@@ -2,7 +2,7 @@
 
 &#x1F534;&nbsp;&nbsp; Now framework-agnostic! [(Example core notebook)](Examples_core.ipynb) &nbsp;&#x1F534;
 
-If upgrading from an older version, update old imports to `import saliency.tf1 as saliency`. We provide wrappers to make framework-agnostic version compatible with TF1 models. [(Example TF1 notebook)](Examples_tf1.ipynb)
+If upgrading from an older version, update old imports to `import saliency.tf1 as saliency`. We provide wrappers to make the framework-agnostic version compatible with TF1 models. [(Example TF1 notebook)](Examples_tf1.ipynb)
 
 ## Introduction
 
