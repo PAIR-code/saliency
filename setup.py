@@ -24,7 +24,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.1.1',
 
-    description='Saliency methods for TensorFlow',
+    description='Framework-agnostic saliency methods',
     long_description=long_description,
     long_description_content_type='text/markdown',
 

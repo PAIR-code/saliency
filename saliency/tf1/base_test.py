@@ -14,7 +14,6 @@
 
 """Tests input and output tensor validation for TF1CoreSaliency classes."""
 import unittest
-
 from . import base
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -25,6 +24,7 @@ class BaseTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
+    tf.enable_v2_tensorshape()
     self.graph = tf.Graph()
     with self.graph.as_default():
       x = tf.placeholder(shape=[None, 3], dtype=tf.float32)
@@ -36,10 +36,50 @@ class BaseTest(unittest.TestCase):
       self.sess = tf.Session(graph=self.graph)
       self.x_input_val = np.array([1.0, 2.0, 3.0], dtype=float)
 
+  def testValidateTensorsBatched(self):
+    """Tests that now error is thrown when y tensor is a single value."""
+    x_steps = 1000
+    batch_size = 9
+    base_instance = base.TF1CoreSaliency(self.graph,
+                                         self.sess,
+                                         self.y,
+                                         self.x)
+    
+    # Check validate doesn't throw any ValueError
+    base_instance.validate_xy_tensor_shape(x_steps, batch_size)
+
+  def testValidateTensorsBatchedV1Shape(self):
+    """Tests that now error is thrown when y tensor is a single value."""
+    x_steps = 1000
+    batch_size = 9
+    tf.disable_v2_tensorshape()
+    base_instance = base.TF1CoreSaliency(self.graph,
+                                         self.sess,
+                                         self.y,
+                                         self.x)
+    
+    # Check validate doesn't throw any ValueError
+    base_instance.validate_xy_tensor_shape(x_steps, batch_size)
+
   def testValidateTensorsErrorX(self):
     """Tests that an error is thrown when x tensor is set up incorrectly."""
     x_steps = 1000
     batch_size = 5
+    base_instance = base.TF1CoreSaliency(self.graph,
+                                         self.sess,
+                                         self.y,
+                                         self.x_indexed)
+    expected_error = base.X_SHAPE_ERROR_MESSAGE.format(
+        'None or 5', '3')
+
+    with self.assertRaisesRegex(ValueError, expected_error):
+      base_instance.validate_xy_tensor_shape(x_steps, batch_size)
+
+  def testValidateTensorsErrorXV1Shape(self):
+    """Tests that an error is thrown when x tensor is set up incorrectly."""
+    x_steps = 1000
+    batch_size = 5
+    tf.disable_v2_tensorshape()
     base_instance = base.TF1CoreSaliency(self.graph,
                                          self.sess,
                                          self.y,
@@ -59,7 +99,22 @@ class BaseTest(unittest.TestCase):
                                          self.y_indexed,
                                          self.x)
     expected_error = base.Y_SHAPE_ERROR_MESSAGE.format(
-        '\\(None,\\)', '\\(\\)')
+        '\\[None\\]', '\\[\\]')
+
+    with self.assertRaisesRegex(ValueError, expected_error):
+      base_instance.validate_xy_tensor_shape(x_steps, batch_size)
+
+  def testValidateTensorsErrorYV1Shape(self):
+    """Tests that an error is thrown when x tensor is set up incorrectly."""
+    x_steps = 1000
+    batch_size = 9
+    tf.disable_v2_tensorshape()
+    base_instance = base.TF1CoreSaliency(self.graph,
+                                         self.sess,
+                                         self.y_indexed,
+                                         self.x)
+    expected_error = base.Y_SHAPE_ERROR_MESSAGE.format(
+        '\\[None\\]', '\\[\\]')
 
     with self.assertRaisesRegex(ValueError, expected_error):
       base_instance.validate_xy_tensor_shape(x_steps, batch_size)
@@ -68,6 +123,19 @@ class BaseTest(unittest.TestCase):
     """Tests that now error is thrown when y tensor is a single value."""
     x_steps = 1000
     batch_size = 1
+    base_instance = base.TF1CoreSaliency(self.graph,
+                                         self.sess,
+                                         self.y_indexed,
+                                         self.x)
+    
+    # Check validate doesn't throw any ValueError
+    base_instance.validate_xy_tensor_shape(x_steps, batch_size)
+
+  def testValidateTensorsSingleYV1Shape(self):
+    """Tests that now error is thrown when y tensor is a single value."""
+    x_steps = 1000
+    batch_size = 1
+    tf.disable_v2_tensorshape()
     base_instance = base.TF1CoreSaliency(self.graph,
                                          self.sess,
                                          self.y_indexed,

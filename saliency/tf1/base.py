@@ -130,23 +130,24 @@ class TF1CoreSaliency(TF1Saliency):
     # y should be shape (None,), (target_size), or () if target_size=1
     y_size = 1
     y_none_dim = False
-    for shape in self.y.shape:
+    y_shape = self.y.get_shape().as_list()
+    for shape in y_shape:
       if shape is None:
         y_none_dim = True
       else:
         y_size *= shape
     y_size_tuple = (y_size, y_none_dim)
     if y_size_tuple not in [(1, True), (target_size, False)]:
-      expected = '(None,)'
-      if target_size != None:
+      expected = '[None]'
+      if target_size is not None:
         expected += ' or tensor with size {}'.format(target_size)
-      raise ValueError(Y_SHAPE_ERROR_MESSAGE.format(expected, self.y.shape))
-      
+      raise ValueError(Y_SHAPE_ERROR_MESSAGE.format(expected, y_shape))
+
     # x.shape[0] should be shape None or target_size
-    x_outer_size = self.x.shape[0]
+    x_outer_size = self.x.get_shape().as_list()[0]
     if x_outer_size not in [None, target_size]:
       expected = 'None'
-      if target_size != None:
+      if target_size is not None:
         expected += ' or {}'.format(target_size)
       raise ValueError(X_SHAPE_ERROR_MESSAGE.format(expected, x_outer_size))
 
