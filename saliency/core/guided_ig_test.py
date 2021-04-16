@@ -104,6 +104,22 @@ class GuidedIGTest(unittest.TestCase):
                        max_dist=0.4)
     np.testing.assert_allclose(mask, [18.0, 9.0], rtol=0.01)
 
+  def testIndependentQuadraticInputIsLessThanBaseline(self):
+    """Tests attributions of the quadratic function with independent partials.
+
+    The expected result should be equal to the regular Integrated Gradients
+    attribution regardless of the parameters. This method tests the case when
+    the baseline values are higher than the input.
+    """
+    gig = guided_ig.GuidedIG()
+    mask = gig.GetMask(x_value=[0, 0],
+                       call_model_function=self._quadratic_indep_test_func,
+                       x_baseline=[3, 3],
+                       x_steps=1000,
+                       fraction=0.1,
+                       max_dist=0.4)
+    np.testing.assert_allclose(mask, [-18.0, -9.0], rtol=0.01)
+
   def testDependentQuadraticIG(self):
     """Tests attributions of the quadratic function with dependent partials.
 

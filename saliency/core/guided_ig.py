@@ -125,8 +125,8 @@ def guided_ig_impl(x_input, x_baseline, grad_func, steps=200, fraction=0.25,
       x_old = x.copy()
       x_alpha = translate_x_to_alpha(x, x_input, x_baseline)
       x_alpha[np.isnan(x_alpha)] = alpha_max
-      # All features that felt too behind in terms of alpha, should be assigned
-      # the x_min values.
+      # All features that fell behind the [alpha_min, alpha_max] interval in
+      # terms of alpha, should be assigned the x_min values.
       x[x_alpha < alpha_min] = x_min[x_alpha < alpha_min]
 
       # Calculate current L1 distance from the input.
