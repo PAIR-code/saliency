@@ -5,5 +5,6 @@ from .grad_cam import *
 from .gradients import *
 from .guided_ig import *
 from .integrated_gradients import *
+from .occlusion import *
 from .visualization import *
 from .xrai import *
