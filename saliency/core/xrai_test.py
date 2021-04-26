@@ -29,11 +29,12 @@ class XraiTest(unittest.TestCase):
   """To run: "python -m saliency.core.xrai_test" from the top-level directory."""
 
   def setUp(self):
+    super(XraiTest, self).setUp()
     def call_model_function():
       return
     # Mock IntegratedGradients.
-    self.mock_ig = mock.patch(
-      __name__ + '.xrai.IntegratedGradients').start()
+    self.patcher_ig = mock.patch(__name__ + '.xrai.IntegratedGradients')
+    self.mock_ig = self.patcher_ig.start()
     self.input_image = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) * 0.3 + 0.5
     self.ig_bl_1_attr = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) - 0.4
     self.ig_bl_2_attr = np.random.rand(IMAGE_SIZE, IMAGE_SIZE, 3) - 0.4
@@ -52,7 +53,8 @@ class XraiTest(unittest.TestCase):
     self.call_model_function = call_model_function
 
   def tearDown(self):
-    self.mock_ig.stop()
+    super(XraiTest, self).tearDown()
+    self.patcher_ig.stop()
 
   def testXraiGetMaskFullFlat(self):
     # Calculate XRAI attribution using GetMaskWithDetails(...) method.
