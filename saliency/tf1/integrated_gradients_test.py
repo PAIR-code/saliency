@@ -66,7 +66,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     self.assertEqual(self.sess_spy.run.call_count, x_steps)
 
   def testIntegratedGradientsGetMaskBatched(self):
-    """Tests that mutiple IG batches are created and aggregated correctly."""
+    """Tests that multiple IG batches are created and aggregated correctly."""
     x_steps = 1001
     batch_size = 500
     expected_calls = 3  # batch size is 500, ceil(1001/500)=3
