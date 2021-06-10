@@ -1,14 +1,5 @@
 'use strict';
 
-var masks = [
-  'VanillaGrad',
-  'IntegGrad',
-  'GuidedBackProp',
-  'NoisyGrad',
-  'IntegGrad+NoisyGrad',
-  'GuidedBackProp+NoisyGrad'
-];
-
 var imgxmasks = [
   'VanillaGradIm',
   'IntegGradIm',
@@ -17,6 +8,25 @@ var imgxmasks = [
   'IntegGradIm+NoisyGrad',
   'GuidedBackPropIm+NoisyGrad'
 ];
+
+var MASK_DICT = {
+  'smoothgrad' : [
+    'VanillaGrad',
+    'IntegGrad',
+    'GuidedBackProp',
+    'NoisyGrad',
+    'IntegGrad+NoisyGrad',
+    'GuidedBackProp+NoisyGrad'
+  ],
+  'guided-ig' : [
+    'VanillaGrad',
+    'IntegGrad'
+  ],
+  'xrai' : [
+    'VanillaGrad',
+    'GuidedBackProp',
+  ]
+}
 
 var mode = 0; // masks or imgxmasks
 
@@ -32,257 +42,261 @@ var idCorrectMap = {};
 var checkpoints = [];
 var checkpoint_freq = 1;
 
-var tbody = document.querySelector('#table tbody');
-var xhr = new XMLHttpRequest();
-xhr.open('GET', 'metadata.json');
-xhr.onload = () => {
-  var metadata = JSON.parse(xhr.responseText);
+function buildImageTable() {
+  var tbody = document.querySelector('#table tbody');
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'metadata.json');
+  xhr.onload = () => {
+    var metadata = JSON.parse(xhr.responseText);
 
-  metadata.forEach((row, ogid) => {
-    var i = row["id"] - 1;
+    metadata.forEach((row, ogid) => {
+      var i = row["id"] - 1;
 
-    var topPred = row.top5[0][0].split(',')[0];
-    var label = row.label.split(',')[0];
+      var topPred = row.top5[0][0].split(',')[0];
+      var label = row.label.split(',')[0];
 
-    var isCorrectPrediction = true;
-    if (topPred !== label) {
-      isCorrectPrediction = false;
-    }
-    idCorrectMap[i] = isCorrectPrediction;
-
-    idImgMap[i] = [];
-    idLoadedMap[i] = false;
-    idWrtMap[i] = 0;
-
-    // Header
-    var trheader = document.createElement('tr');
-    trheader.className = 'label-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
-
-    var tdspacer = document.createElement('td');
-    trheader.appendChild(tdspacer);
-
-    var labelcell = document.createElement('td');
-    labelcell.colSpan = 5;
-    if (isCorrectPrediction) {
-      labelcell.innerHTML = '<i>Label: ' + label + '</i>';
-    } else {
-      labelcell.innerHTML = 'Show gradient of:';
-
-      var linksContainer = document.createElement('div');
-
-      var labelLink = document.createElement('a');
-      labelLink.innerText = 'Label: ' + label;
-      labelLink.className = 'selected-gradient-wrt gradient-wrt';
-
-      var predictionLink = document.createElement('a');
-      predictionLink.innerText = 'Prediction: ' + topPred;
-      predictionLink.className = 'gradient-wrt';
-
-      linksContainer.appendChild(labelLink);
-      linksContainer.appendChild(document.createElement('br'));
-      linksContainer.appendChild(predictionLink);
-      labelcell.appendChild(linksContainer);
-
-      $(labelLink).click(function(clickedLink, otherLink, id) {
-        $(clickedLink).addClass('selected-gradient-wrt');
-        $(otherLink).removeClass('selected-gradient-wrt');
-        idWrtMap[id] = 0;
-
-        var images = idImgMap[id];
-        var newattr = mode === 0 ? 'data-mask-src' : 'data-imgxmask-src';
-        for (var i = 0; i < images.length; i++) {
-          images[i].src = images[i].getAttribute(newattr);
-        }
-      }.bind(null, labelLink, predictionLink, i));
-
-      $(predictionLink).click(function(clickedLink, otherLink, id) {
-        $(clickedLink).addClass('selected-gradient-wrt');
-        $(otherLink).removeClass('selected-gradient-wrt');
-        idWrtMap[id] = 1;
-
-        var images = idImgMap[id];
-        var newattr = mode === 0 ? 'data-mask-wrt-pred-src' : 'data-imgxmask-wrt-pred-src';
-        for (var i = 0; i < images.length; i++) {
-          images[i].src = images[i].getAttribute(newattr);
-        }
-      }.bind(null, predictionLink, labelLink, i));
-
-    }
-
-    labelcell.className = 'image-label';
-    trheader.appendChild(labelcell);
-    if (i % checkpoint_freq == 0) {
-      checkpoints.push(trheader);
-    }
-
-    tbody.appendChild(trheader);
-
-    // Images.
-    var tr = document.createElement('tr');
-    tr.className = 'images-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
-    tbody.appendChild(tr);
-
-    // ID
-    var td = document.createElement('td');
-    tr.appendChild(td);
-    td.style.width = '4%';
-    td.innerHTML = (i + 1);
-    td.style.fontSize = '20px';
-
-    // Image.
-    td = document.createElement('td');
-    td.style.width = '32%';
-    td.className = 'main-img';
-    td.style.position = 'relative';
-    tr.appendChild(td);
-
-    var img = document.createElement('img');
-    img.setAttribute('data-mask-src', 'images/' + (i+1) + '.png');
-    img.setAttribute('data-imgxmask-src', 'images/' + (i+1) + '.png');
-    img.setAttribute('data-mask-wrt-pred-src', 'images/' + (i+1) + '.png');
-    img.setAttribute('data-imgxmask-wrt-pred-src', 'images/' + (i+1) + '.png');
-
-    img.style.position = 'absolute';
-    img.style.zIndex = 10;
-    img.style.top = 0;
-    img.style.left = 0;
-    idImgMap[i].push(img);
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.setAttribute('data-id', i);
-
-    var ogimg = img;
-    var canvas = document.createElement('canvas');
-    canvas.style.position = 'absolute';
-    canvas.style.zIndex = 15;
-    canvas.style.top = 0;
-    canvas.style.left = 0;
-    canvas.width = 1;
-    canvas.height = 1;
-
-    td.appendChild(img);
-    td.appendChild(canvas);
-    tr.appendChild(td);
-
-    // Table 2x3.
-    td = document.createElement('td');
-    td.className = 'grads-container';
-    td.setAttribute('data-id', i);
-    tr.appendChild(td);
-    var table = document.createElement('table');
-    table.className = 'inner';
-    td.appendChild(table);
-
-    $(canvas).click(function(i, event) {
-      idClickMap[i] = false;
-      canvas.style.display = 'none';
-    }.bind(null, i));
-
-    $(td).mouseout(function(i, event) {
-      if (idClickMap[i]) {
-        return;
+      var isCorrectPrediction = true;
+      if (topPred !== label) {
+        isCorrectPrediction = false;
       }
-      canvas.style.display = 'none';
-    }.bind(null, i));
+      idCorrectMap[i] = isCorrectPrediction;
 
-    // Row 1.
-    tr = document.createElement('tr');
-    table.appendChild(tr);
+      idImgMap[i] = [];
+      idLoadedMap[i] = false;
+      idWrtMap[i] = 0;
+ 
+      // Header
+      var trheader = document.createElement('tr');
+      trheader.className = 'label-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
 
-    for (var m = 0; m < 3; m++) {
-      var mask = masks[m];
-      var imgxmask = imgxmasks[m];
+      var tdspacer = document.createElement('td');
+      trheader.appendChild(tdspacer);
 
+      var labelcell = document.createElement('td');
+      labelcell.colSpan = 5;
+      if (isCorrectPrediction) {
+        labelcell.innerHTML = '<i>Label: ' + label + '</i>';
+      } else {
+        labelcell.innerHTML = 'Show gradient of:';
+
+        var linksContainer = document.createElement('div');
+
+        var labelLink = document.createElement('a');
+        labelLink.innerText = 'Label: ' + label;
+        labelLink.className = 'selected-gradient-wrt gradient-wrt';
+
+        var predictionLink = document.createElement('a');
+        predictionLink.innerText = 'Prediction: ' + topPred;
+        predictionLink.className = 'gradient-wrt';
+
+        linksContainer.appendChild(labelLink);
+        linksContainer.appendChild(document.createElement('br'));
+        linksContainer.appendChild(predictionLink);
+        labelcell.appendChild(linksContainer);
+
+        $(labelLink).click(function(clickedLink, otherLink, id) {
+          $(clickedLink).addClass('selected-gradient-wrt');
+          $(otherLink).removeClass('selected-gradient-wrt');
+          idWrtMap[id] = 0;
+
+          var images = idImgMap[id];
+          var newattr = mode === 0 ? 'data-mask-src' : 'data-imgxmask-src';
+          for (var i = 0; i < images.length; i++) {
+            images[i].src = images[i].getAttribute(newattr);
+          }
+        }.bind(null, labelLink, predictionLink, i));
+
+        $(predictionLink).click(function(clickedLink, otherLink, id) {
+          $(clickedLink).addClass('selected-gradient-wrt');
+          $(otherLink).removeClass('selected-gradient-wrt');
+          idWrtMap[id] = 1;
+
+          var images = idImgMap[id];
+          var newattr = mode === 0 ? 'data-mask-wrt-pred-src' : 'data-imgxmask-wrt-pred-src';
+          for (var i = 0; i < images.length; i++) {
+            images[i].src = images[i].getAttribute(newattr);
+          }
+        }.bind(null, predictionLink, labelLink, i));
+
+      }
+
+      labelcell.className = 'image-label';
+      trheader.appendChild(labelcell);
+      if (i % checkpoint_freq == 0) {
+        checkpoints.push(trheader);
+      }
+
+      tbody.appendChild(trheader);
+
+      // Images.
+      var tr = document.createElement('tr');
+      tr.className = 'images-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
+      tbody.appendChild(tr);
+
+      // ID
+      var td = document.createElement('td');
+      tr.appendChild(td);
+      td.style.width = '4%';
+      td.innerHTML = (i + 1);
+      td.style.fontSize = '20px';
+
+      // Image.
       td = document.createElement('td');
-      td.className = 'grad';
+      td.style.width = '32%';
+      td.className = 'main-img';
+      td.style.position = 'relative';
+      tr.appendChild(td);
+
       var img = document.createElement('img');
-      tr.appendChild(td).appendChild(img);
-      img.setAttribute('data-mask-src', 'images/' + (i+1) + '_' + mask + '.png');
-      img.setAttribute('data-imgxmask-src', 'images/' + (i+1) + '_' + imgxmask + '.png');
-      if (!isCorrectPrediction) {
-        img.setAttribute('data-mask-wrt-pred-src', 'images/' + (i+1) + '_' + mask + '_wrt_pred.png');
-        img.setAttribute('data-imgxmask-wrt-pred-src', 'images/' + (i+1) + '_' + imgxmask + '_wrt_pred.png');
-      }
+      img.setAttribute('data-mask-src', 'images/' + (i+1) + '.png');
+      img.setAttribute('data-imgxmask-src', 'images/' + (i+1) + '.png');
+      img.setAttribute('data-mask-wrt-pred-src', 'images/' + (i+1) + '.png');
+      img.setAttribute('data-imgxmask-wrt-pred-src', 'images/' + (i+1) + '.png');
+
+      img.style.position = 'absolute';
+      img.style.zIndex = 10;
+      img.style.top = 0;
+      img.style.left = 0;
+      idImgMap[i].push(img);
+      img.style.width = '100%';
+      img.style.height = '100%';
       img.setAttribute('data-id', i);
 
-      img.className = 'grad';
-      idImgMap[i].push(img);
+      var ogimg = img;
+      var canvas = document.createElement('canvas');
+      canvas.style.position = 'absolute';
+      canvas.style.zIndex = 15;
+      canvas.style.top = 0;
+      canvas.style.left = 0;
+      canvas.width = 1;
+      canvas.height = 1;
 
-      $(img).mouseover(function(i, event) {
+      td.appendChild(img);
+      td.appendChild(canvas);
+      tr.appendChild(td);
+
+      // Table 2x3.
+      td = document.createElement('td');
+      td.className = 'grads-container';
+      td.setAttribute('data-id', i);
+      tr.appendChild(td);
+      var table = document.createElement('table');
+      table.className = 'inner';
+      td.appendChild(table);
+
+      $(canvas).click(function(i, event) {
+        idClickMap[i] = false;
+        canvas.style.display = 'none';
+      }.bind(null, i));
+
+      $(td).mouseout(function(i, event) {
         if (idClickMap[i]) {
           return;
         }
-        combineImageAndMask(ogimg, event.target, canvas);
+        canvas.style.display = 'none';
       }.bind(null, i));
 
-      $(img).click(function(i, event) {
-        idClickMap[i] = true;
-        combineImageAndMask(ogimg, event.target, canvas);
-      }.bind(null, i));
-    }
+      // Row 1.
+      tr = document.createElement('tr');
+      table.appendChild(tr);
+      var firstRowCount = masks.length < 3 ? masks.length : 3;
+      for (var m = 0; m < firstRowCount; m++) {
+        var mask = masks[m];
+        var imgxmask = imgxmasks[m];
 
-    td = document.createElement('td');
-    var div = document.createElement('div');
-    div.innerHTML = 'Plain';
-    div.className = 'rotated';
-    td.appendChild(div);
-    tr.appendChild(td);
+        td = document.createElement('td');
+        td.className = 'grad';
+        var img = document.createElement('img');
+        tr.appendChild(td).appendChild(img);
+        img.setAttribute('data-mask-src', 'images/' + (i+1) + '_' + mask + '.png');
+        img.setAttribute('data-imgxmask-src', 'images/' + (i+1) + '_' + imgxmask + '.png');
+        if (!isCorrectPrediction) {
+          img.setAttribute('data-mask-wrt-pred-src', 'images/' + (i+1) + '_' + mask + '_wrt_pred.png');
+          img.setAttribute('data-imgxmask-wrt-pred-src', 'images/' + (i+1) + '_' + imgxmask + '_wrt_pred.png');
+        }
+        img.setAttribute('data-id', i);
 
-    // Row 2.
-    tr = document.createElement('tr');
-    table.appendChild(tr);
+        img.className = 'grad';
+        idImgMap[i].push(img);
 
-    for (var m = 3; m < 6; m++) {
-      var mask = masks[m];
-      var imgxmask = imgxmasks[m];
+        $(img).mouseover(function(i, event) {
+          if (idClickMap[i]) {
+            return;
+          }
+          combineImageAndMask(ogimg, event.target, canvas);
+        }.bind(null, i));
 
-      td = document.createElement('td');
-      td.className = 'grad';
-      var img = document.createElement('img');
-      tr.appendChild(td).appendChild(img);
-      img.setAttribute('data-mask-src', 'images/' + (i+1) + '_' + mask + '.png');
-      img.setAttribute('data-imgxmask-src', 'images/' + (i+1) + '_' + imgxmask + '.png');
-      if (!isCorrectPrediction) {
-        img.setAttribute('data-mask-wrt-pred-src', 'images/' + (i+1) + '_' + mask + '_wrt_pred.png');
-        img.setAttribute('data-imgxmask-wrt-pred-src', 'images/' + (i+1) + '_' + imgxmask + '_wrt_pred.png');
+        $(img).click(function(i, event) {
+          idClickMap[i] = true;
+          combineImageAndMask(ogimg, event.target, canvas);
+        }.bind(null, i));
       }
 
-      img.setAttribute('data-id', i);
-      idImgMap[i].push(img);
+      if (masks.length > 3) {
+        td = document.createElement('td');
+        var div = document.createElement('div');
+        div.innerHTML = 'Plain';
+        div.className = 'rotated';
+        td.appendChild(div);
+        tr.appendChild(td);
 
-      $(img).mouseover(function(i, event) {
-        if (idClickMap[i]) {
-          return;
+        // Row 2.
+        tr = document.createElement('tr');
+        table.appendChild(tr);
+
+        for (var m = 3; m < 6; m++) {
+          var mask = masks[m];
+          var imgxmask = imgxmasks[m];
+
+          td = document.createElement('td');
+          td.className = 'grad';
+          var img = document.createElement('img');
+          tr.appendChild(td).appendChild(img);
+          img.setAttribute('data-mask-src', 'images/' + (i+1) + '_' + mask + '.png');
+          img.setAttribute('data-imgxmask-src', 'images/' + (i+1) + '_' + imgxmask + '.png');
+          if (!isCorrectPrediction) {
+            img.setAttribute('data-mask-wrt-pred-src', 'images/' + (i+1) + '_' + mask + '_wrt_pred.png');
+            img.setAttribute('data-imgxmask-wrt-pred-src', 'images/' + (i+1) + '_' + imgxmask + '_wrt_pred.png');
+          }
+
+          img.setAttribute('data-id', i);
+          idImgMap[i].push(img);
+
+          $(img).mouseover(function(i, event) {
+            if (idClickMap[i]) {
+              return;
+            }
+            combineImageAndMask(ogimg, event.target, canvas);
+          }.bind(null, i));
+          $(img).click(function(i, event) {
+            combineImageAndMask(ogimg, event.target, canvas);
+            idClickMap[i] = true;
+          }.bind(null, i));
         }
-        combineImageAndMask(ogimg, event.target, canvas);
-      }.bind(null, i));
-      $(img).click(function(i, event) {
-        combineImageAndMask(ogimg, event.target, canvas);
-        idClickMap[i] = true;
-      }.bind(null, i));
-    }
 
-    td = document.createElement('td');
-    div = document.createElement('div');
-    div.innerHTML = 'SmoothGrad';
-    div.className = 'rotated smoothgrad-label';
-    td.appendChild(div);
-    tr.appendChild(td);
+        td = document.createElement('td');
+        div = document.createElement('div');
+        div.innerHTML = 'SmoothGrad';
+        div.className = 'rotated smoothgrad-label';
+        td.appendChild(div);
+        tr.appendChild(td);
 
-    // Spacing footer
-    var trfooter = document.createElement('tr');
-    trfooter.className = 'footer-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
-    var tdfooter = document.createElement('td');
-    tdfooter.colSpan = 6;
-    tdfooter.style.outline = 'none';
-    trfooter.appendChild(tdfooter);
-    tbody.appendChild(trfooter);
+      }
 
-  });
-  readyPage();
-};
-xhr.send();
+      // Spacing footer
+      var trfooter = document.createElement('tr');
+      trfooter.className = 'footer-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
+      var tdfooter = document.createElement('td');
+      tdfooter.colSpan = 6;
+      tdfooter.style.outline = 'none';
+      trfooter.appendChild(tdfooter);
+      tbody.appendChild(trfooter);
 
+    });
+    readyPage();
+  };
+  xhr.send();
+}
 
 function getImagePixels(img, width, height) {
   var canvas = document.createElement('canvas');
@@ -436,6 +450,38 @@ function readyPage() {
       $('#headers').width($('.attribution-container').width());
     }
     resize();
+    console.log('2');
+    // var scrollContaine3r = $('#scroll-container').hide();
 
   });
+}
+
+function onHashUpdate(newHash) {
+  $(`a[href="#${currentHash}"]`).removeClass('active');
+  $(`a[href="#${newHash}"]`).addClass('active');
+  console.log('check');
+  // ignore imgxmasks since it is only used by smoothgrad
+  currentHash = newHash;
+  masks = MASK_DICT[newHash];
+  $.get(`templates/${newHash}.html`, function(data) {
+      $("#scroll-container").replaceWith(data);
+      buildImageTable();
+  });
+}
+
+var validHashes = Object.keys(MASK_DICT);
+$(window).on('hashchange', function(e){
+  // Your Code goes here
+  var hash = location.hash.slice(1);
+  if (validHashes.includes(hash) && hash != currentHash) {
+    onHashUpdate(hash);
+  }
+ });
+
+var currentHash = '';
+var masks = [];
+if (!!location.hash && validHashes.includes(location.hash.slice(1))) {
+  onHashUpdate(location.hash.slice(1));
+} else {
+  location.hash = validHashes[0];
 }
