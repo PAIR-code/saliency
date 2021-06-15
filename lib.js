@@ -20,13 +20,32 @@ var MASK_DICT = {
   ],
   'guided-ig' : [
     'VanillaGrad',
-    'IntegGrad'
+    'IntegGrad',
+    'IntegGrad+NoisyGrad',
+    'GuidedBackProp+NoisyGrad'
   ],
   'xrai' : [
     'VanillaGrad',
     'GuidedBackProp',
+    'IntegGrad+NoisyGrad',
+    'GuidedBackProp+NoisyGrad'
   ]
-}
+};
+
+var ROW_NAMES_DICT = {
+  'smoothgrad' : [
+    'Plain',
+    'SmoothGrad'
+  ],
+  'guided-ig' : [
+    'IntegGrad',
+    'Guided IG'
+  ],
+  'xrai' : [
+    'Pixel-level',
+    'XRAI',
+  ]
+};
 
 var mode = 0; // masks or imgxmasks
 
@@ -199,8 +218,8 @@ function buildImageTable() {
       // Row 1.
       tr = document.createElement('tr');
       table.appendChild(tr);
-      var firstRowCount = masks.length < 3 ? masks.length : 3;
-      for (var m = 0; m < firstRowCount; m++) {
+      var columnCount = masks.length / 2;
+      for (var m = 0; m < columnCount; m++) {
         var mask = masks[m];
         var imgxmask = imgxmasks[m];
 
@@ -232,56 +251,66 @@ function buildImageTable() {
         }.bind(null, i));
       }
 
-      if (masks.length > 3) {
+      td = document.createElement('td');
+      var div = document.createElement('div');
+      div.innerHTML = rowNames[0];
+      div.className = 'rotated';
+      td.appendChild(div);
+      tr.appendChild(td);
+      for (var m = columnCount; m < 3; m++) {
         td = document.createElement('td');
         var div = document.createElement('div');
-        div.innerHTML = 'Plain';
-        div.className = 'rotated';
         td.appendChild(div);
         tr.appendChild(td);
+      }
 
-        // Row 2.
-        tr = document.createElement('tr');
-        table.appendChild(tr);
+      // Row 2.
+      tr = document.createElement('tr');
+      table.appendChild(tr);
 
-        for (var m = 3; m < 6; m++) {
-          var mask = masks[m];
-          var imgxmask = imgxmasks[m];
-
-          td = document.createElement('td');
-          td.className = 'grad';
-          var img = document.createElement('img');
-          tr.appendChild(td).appendChild(img);
-          img.setAttribute('data-mask-src', 'images/' + (i+1) + '_' + mask + '.png');
-          img.setAttribute('data-imgxmask-src', 'images/' + (i+1) + '_' + imgxmask + '.png');
-          if (!isCorrectPrediction) {
-            img.setAttribute('data-mask-wrt-pred-src', 'images/' + (i+1) + '_' + mask + '_wrt_pred.png');
-            img.setAttribute('data-imgxmask-wrt-pred-src', 'images/' + (i+1) + '_' + imgxmask + '_wrt_pred.png');
-          }
-
-          img.setAttribute('data-id', i);
-          idImgMap[i].push(img);
-
-          $(img).mouseover(function(i, event) {
-            if (idClickMap[i]) {
-              return;
-            }
-            combineImageAndMask(ogimg, event.target, canvas);
-          }.bind(null, i));
-          $(img).click(function(i, event) {
-            combineImageAndMask(ogimg, event.target, canvas);
-            idClickMap[i] = true;
-          }.bind(null, i));
-        }
+      for (var m = columnCount; m < columnCount*2; m++) {
+        var mask = masks[m];
+        var imgxmask = imgxmasks[m];
 
         td = document.createElement('td');
+        td.className = 'grad';
+        var img = document.createElement('img');
+        tr.appendChild(td).appendChild(img);
+        img.setAttribute('data-mask-src', 'images/' + (i+1) + '_' + mask + '.png');
+        img.setAttribute('data-imgxmask-src', 'images/' + (i+1) + '_' + imgxmask + '.png');
+        if (!isCorrectPrediction) {
+          img.setAttribute('data-mask-wrt-pred-src', 'images/' + (i+1) + '_' + mask + '_wrt_pred.png');
+          img.setAttribute('data-imgxmask-wrt-pred-src', 'images/' + (i+1) + '_' + imgxmask + '_wrt_pred.png');
+        }
+
+        img.setAttribute('data-id', i);
+        idImgMap[i].push(img);
+
+        $(img).mouseover(function(i, event) {
+          if (idClickMap[i]) {
+            return;
+          }
+          combineImageAndMask(ogimg, event.target, canvas);
+        }.bind(null, i));
+        $(img).click(function(i, event) {
+          combineImageAndMask(ogimg, event.target, canvas);
+          idClickMap[i] = true;
+        }.bind(null, i));
+      }
+
+      td = document.createElement('td');
+      div = document.createElement('div');
+      div.innerHTML = rowNames[1];
+      div.className = 'rotated second-row-label';
+      td.appendChild(div);
+      tr.appendChild(td);
+      for (var m = columnCount; m < 3; m++) {
+        td = document.createElement('td');
         div = document.createElement('div');
-        div.innerHTML = 'SmoothGrad';
-        div.className = 'rotated smoothgrad-label';
         td.appendChild(div);
         tr.appendChild(td);
-
       }
+
 
       // Spacing footer
       var trfooter = document.createElement('tr');
@@ -463,6 +492,7 @@ function onHashUpdate(newHash) {
   // ignore imgxmasks since it is only used by smoothgrad
   currentHash = newHash;
   masks = MASK_DICT[newHash];
+  rowNames = ROW_NAMES_DICT[newHash];
   $.get(`templates/${newHash}.html`, function(data) {
       $("#scroll-container").replaceWith(data);
       buildImageTable();
@@ -480,6 +510,7 @@ $(window).on('hashchange', function(e){
 
 var currentHash = '';
 var masks = [];
+var rowNames = [];
 if (!!location.hash && validHashes.includes(location.hash.slice(1))) {
   onHashUpdate(location.hash.slice(1));
 } else {
