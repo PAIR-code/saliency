@@ -71,6 +71,14 @@
       outline: 1px solid #ffe8e8;
     }
 
+    .high-confidence-row {
+      background-color: #ecffe8;
+    }
+
+    .high-confidence-row td {
+      outline: 1px solid #ecffe8;
+    }
+
     table.inner tr {
       border: 0;
     }
@@ -354,6 +362,14 @@
       display: table-row !important;
     }
 
+    .show-confident tr.low-confidence-row {
+      display: none;
+    }
+
+    .show-confident tr.high-confidence-row {
+      display: table-row !important;
+    }
+
     .nav {
       margin-top: 5px;
       padding: 10px;
@@ -380,9 +396,9 @@
 </head>
 <body>
   <div class="nav">
-    <a href="#smoothgrad">Smoothgrad</a>
     <a href="#guided-ig">Guided IG</a>
     <a href="#xrai">XRAI</a>
+    <a href="#smoothgrad">Smoothgrad</a>
   </div>
   <div id="scroll-container"></div>
   <script src="lib.js"></script>

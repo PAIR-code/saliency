@@ -10,23 +10,23 @@ var imgxmasks = [
 ];
 
 var MASK_DICT = {
+  'guided-ig' : [
+    'ig',
+    'ig_xrai',
+    'gig',
+    'gig_xrai'
+  ],
+  'xrai' : [
+    'ig',
+    'gig',
+    'ig_xrai',
+    'gig_xrai'
+  ],
   'smoothgrad' : [
     'VanillaGrad',
     'IntegGrad',
     'GuidedBackProp',
     'NoisyGrad',
-    'IntegGrad+NoisyGrad',
-    'GuidedBackProp+NoisyGrad'
-  ],
-  'guided-ig' : [
-    'VanillaGrad',
-    'IntegGrad',
-    'IntegGrad+NoisyGrad',
-    'GuidedBackProp+NoisyGrad'
-  ],
-  'xrai' : [
-    'VanillaGrad',
-    'GuidedBackProp',
     'IntegGrad+NoisyGrad',
     'GuidedBackProp+NoisyGrad'
   ]
@@ -55,92 +55,120 @@ var idClickMap = {};
 // Map of id to 0 (with respect to label) or 1 (with respect to prediction).
 var idWrtMap = {};
 
-var idCorrectMap = {};
+var idHideableMap = {};
 
 // Array of checkpointed divs.
 var checkpoints = [];
 var checkpoint_freq = 1;
 
 function buildImageTable() {
+  idHideableMap = {};
+
   var tbody = document.querySelector('#table tbody');
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', 'metadata.json');
+  xhr.open('GET', `metadata_${currentHash}.json`);
   xhr.onload = () => {
     var metadata = JSON.parse(xhr.responseText);
-
+    console.log({metadata});
     metadata.forEach((row, ogid) => {
       var i = row["id"] - 1;
 
-      var topPred = row.top5[0][0].split(',')[0];
-      var label = row.label.split(',')[0];
+      var addedClassName = '';
+      if(row.label) {
+        var topPred = row.top5[0][0].split(',')[0];
+        var label = row.label.split(',')[0];
 
-      var isCorrectPrediction = true;
-      if (topPred !== label) {
-        isCorrectPrediction = false;
-      }
-      idCorrectMap[i] = isCorrectPrediction;
+        var isCorrectPrediction = true;
+        if (topPred !== label) {
+          isCorrectPrediction = false;
+        }
+        addedClassName = !isCorrectPrediction ? 'incorrect-row' : 'correct-row';
+        idHideableMap[i] = isCorrectPrediction;
 
-      idImgMap[i] = [];
-      idLoadedMap[i] = false;
-      idWrtMap[i] = 0;
- 
-      // Header
-      var trheader = document.createElement('tr');
-      trheader.className = 'label-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
+        idImgMap[i] = [];
+        idLoadedMap[i] = false;
+        idWrtMap[i] = 0;
+  
+        // Header
+        var trheader = document.createElement('tr');
+        trheader.className = 'label-row ' + addedClassName;
 
-      var tdspacer = document.createElement('td');
-      trheader.appendChild(tdspacer);
+        var tdspacer = document.createElement('td');
+        trheader.appendChild(tdspacer);
 
-      var labelcell = document.createElement('td');
-      labelcell.colSpan = 5;
-      if (isCorrectPrediction) {
-        labelcell.innerHTML = '<i>Label: ' + label + '</i>';
+        var labelcell = document.createElement('td');
+        labelcell.colSpan = 5;
+        if (isCorrectPrediction) {
+          labelcell.innerHTML = '<i>Label: ' + label + '</i>';
+        } else {
+          labelcell.innerHTML = 'Show gradient of:';
+
+          var linksContainer = document.createElement('div');
+
+          var labelLink = document.createElement('a');
+          labelLink.innerText = 'Label: ' + label;
+          labelLink.className = 'selected-gradient-wrt gradient-wrt';
+
+          var predictionLink = document.createElement('a');
+          predictionLink.innerText = 'Prediction: ' + topPred;
+          predictionLink.className = 'gradient-wrt';
+
+          linksContainer.appendChild(labelLink);
+          linksContainer.appendChild(document.createElement('br'));
+          linksContainer.appendChild(predictionLink);
+          labelcell.appendChild(linksContainer);
+
+          $(labelLink).click(function(clickedLink, otherLink, id) {
+            $(clickedLink).addClass('selected-gradient-wrt');
+            $(otherLink).removeClass('selected-gradient-wrt');
+            idWrtMap[id] = 0;
+
+            var images = idImgMap[id];
+            var newattr = mode === 0 ? 'data-mask-src' : 'data-imgxmask-src';
+            for (var i = 0; i < images.length; i++) {
+              images[i].src = images[i].getAttribute(newattr);
+            }
+          }.bind(null, labelLink, predictionLink, i));
+
+          $(predictionLink).click(function(clickedLink, otherLink, id) {
+            $(clickedLink).addClass('selected-gradient-wrt');
+            $(otherLink).removeClass('selected-gradient-wrt');
+            idWrtMap[id] = 1;
+
+            var images = idImgMap[id];
+            var newattr = mode === 0 ? 'data-mask-wrt-pred-src' : 'data-imgxmask-wrt-pred-src';
+            for (var i = 0; i < images.length; i++) {
+              images[i].src = images[i].getAttribute(newattr);
+            }
+          }.bind(null, predictionLink, labelLink, i));
+
+        }
+
+        labelcell.className = 'image-label';
+        trheader.appendChild(labelcell);
       } else {
-        labelcell.innerHTML = 'Show gradient of:';
+        var isHighConfidence = Number(row.top_score) > 0.95;
+        addedClassName = !isHighConfidence ? 'low-confidence-row' : 'high-confidence-row';
+        idHideableMap[i] = !isHighConfidence;
 
-        var linksContainer = document.createElement('div');
+        idImgMap[i] = [];
+        idLoadedMap[i] = false;
+        idWrtMap[i] = 0;
 
-        var labelLink = document.createElement('a');
-        labelLink.innerText = 'Label: ' + label;
-        labelLink.className = 'selected-gradient-wrt gradient-wrt';
+        // Header
+        var trheader = document.createElement('tr');
+        trheader.className = 'label-row ' + addedClassName;
 
-        var predictionLink = document.createElement('a');
-        predictionLink.innerText = 'Prediction: ' + topPred;
-        predictionLink.className = 'gradient-wrt';
+        var tdspacer = document.createElement('td');
+        trheader.appendChild(tdspacer);
 
-        linksContainer.appendChild(labelLink);
-        linksContainer.appendChild(document.createElement('br'));
-        linksContainer.appendChild(predictionLink);
-        labelcell.appendChild(linksContainer);
+        var labelcell = document.createElement('td');
+        labelcell.colSpan = 5;
+        labelcell.innerHTML = '<i>Prediction: ' + row.top_label + '</i>';
 
-        $(labelLink).click(function(clickedLink, otherLink, id) {
-          $(clickedLink).addClass('selected-gradient-wrt');
-          $(otherLink).removeClass('selected-gradient-wrt');
-          idWrtMap[id] = 0;
-
-          var images = idImgMap[id];
-          var newattr = mode === 0 ? 'data-mask-src' : 'data-imgxmask-src';
-          for (var i = 0; i < images.length; i++) {
-            images[i].src = images[i].getAttribute(newattr);
-          }
-        }.bind(null, labelLink, predictionLink, i));
-
-        $(predictionLink).click(function(clickedLink, otherLink, id) {
-          $(clickedLink).addClass('selected-gradient-wrt');
-          $(otherLink).removeClass('selected-gradient-wrt');
-          idWrtMap[id] = 1;
-
-          var images = idImgMap[id];
-          var newattr = mode === 0 ? 'data-mask-wrt-pred-src' : 'data-imgxmask-wrt-pred-src';
-          for (var i = 0; i < images.length; i++) {
-            images[i].src = images[i].getAttribute(newattr);
-          }
-        }.bind(null, predictionLink, labelLink, i));
-
+        labelcell.className = 'image-label';
+        trheader.appendChild(labelcell);
       }
-
-      labelcell.className = 'image-label';
-      trheader.appendChild(labelcell);
       if (i % checkpoint_freq == 0) {
         checkpoints.push(trheader);
       }
@@ -149,7 +177,7 @@ function buildImageTable() {
 
       // Images.
       var tr = document.createElement('tr');
-      tr.className = 'images-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
+      tr.className = 'images-row ' + addedClassName;
       tbody.appendChild(tr);
 
       // ID
@@ -314,7 +342,7 @@ function buildImageTable() {
 
       // Spacing footer
       var trfooter = document.createElement('tr');
-      trfooter.className = 'footer-row ' + (!isCorrectPrediction ? 'incorrect-row' : 'correct-row');
+      trfooter.className = 'footer-row ' + addedClassName;
       var tdfooter = document.createElement('td');
       tdfooter.colSpan = 6;
       tdfooter.style.outline = 'none';
@@ -397,7 +425,7 @@ function readyPage() {
         var images = idImgMap[i];
 
         // If only showing misprediction and this is a correct row, don't load it.
-        if (showMispredMode == 1 && idCorrectMap[i]) {
+        if (showMispredMode == 1 && idHideableMap[i]) {
           continue;
         }
 
@@ -405,6 +433,7 @@ function readyPage() {
         var inViewport = elementInViewport(checkpoints[i], parent);
 
         if (inViewport) {
+          console.log('in viewport ', i);
           for (var j = 0; j < images.length; j++) {
             var image = images[j];
             var newattr = mode == 0 ? 'data-mask' : 'data-imgxmask';
@@ -427,6 +456,17 @@ function readyPage() {
         showMispredMode = 1;
       } else {
         $("#table").removeClass('show-mispred');
+        showMispredMode = 0;
+      }
+      updateHeader();
+    });
+
+    $("#show-confident").change(function(event) {
+      if (this.checked) {
+        $("#table").addClass('show-confident');
+        showMispredMode = 1;
+      } else {
+        $("#table").removeClass('show-confident');
         showMispredMode = 0;
       }
       updateHeader();
