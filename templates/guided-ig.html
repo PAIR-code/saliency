@@ -19,14 +19,14 @@
     </div>
   </div>
   <div class="descriptions">
-    <h3>What is a sensitivity mask?</h3>
+    <h3>What are attribution methods?</h3>
     <div class="description">
-        <p>When a machine learning model makes a prediction, often times we would like to determine which features of the input (pixels, for images) were important for the prediction. If the model makes a misprediction, we might want to know which features contributed to the misclassification. We can visualize the feature importance mask as a grayscale image with the same dimensions as the original image with brightness corresponding to importance of the pixel.</p>
+        <p>Attribution methods link a deep neural network's prediction to the input features that most influence that prediction.  If the model makes a misprediction, we might want to know which features contributed to the misclassification. We can visualize the attribution scores for image models as a grayscale image with the same dimensions as the original image with brightness corresponding to the importance of the pixel.</p>
     </div>
     <h3>Computing sensitivity</h3>
     <div class="description">
-      <p>There are many techniques to compute a sensitivity mask for an image for a particular prediction. The simplest approach is to take the gradient of a class prediction neuron with respect to the input pixels. This tells us how much a small change to each pixel would affect the prediction. Visually, this mask tends to be noisy.</p>
-      <p>The SmoothGrad technique often significantly denoises this sensitivity mask. This technique adds pixel-wise Gaussian noise to many copies of the image, and simply averages the resulting gradients.</p>
+      <p>There are many techniques to compute an attribution map for an image for a particular prediction. One popular method is <a href="https://arxiv.org/abs/1703.01365">Integrated Gradients</a> (IG), which has a solid theoretical foundation but it often produces noisy attributions.</p>
+      <p>In our paper, we improve upon the Integrated Gradients method by introducing the concept of Adaptive Path Methods, which calculates attribution in a similar way to Integrated Gradients, but can take advantage of the knowledge of the model to dynamically construct a path that meets a desirable objective. Guided Integrated Gradients (Guided IG) minimizes noise by moving in the direction of lowest associated partial derivatives.</p>
       <p style="margin-top: 2em">
         <div class="imgs-container">
           <div class="img-container"></div>
@@ -45,26 +45,18 @@
           </div>
         </div>
       </p>
+      <p style="margin-top: 2em">
+        <h3>Poster (CVPR 2021)</h3>
+        <div class="poster-container">
+          poster goes here
+        </div>
+      </p>
     </div>
     <div class="description" style="margin-top: 3em">
-      <h3>Augmenting other methods</h3>
-      <p>The SmoothGrad technique augments other sensitivity techniques. With this release, we have provided implementations of several sensitivity techniques and their SmoothGrad counterparts. This is not comprehensive, and we are accepting pull requests to add new methods!</p>
-      <p>
-        Below, we show vanilla gradients, <a href="https://arxiv.org/abs/1703.01365">Integrated gradients</a>, and <a href="https://arxiv.org/abs/1412.6806">Guided Backpropagation</a> as they apply to 200 randomly chosen images from the <a href="http://www.image-net.org/">ImageNet dataset</a> using the <a href="https://arxiv.org/abs/1512.00567">Inception V3 model</a>.
+      <h3>Applying Guided IG on Images</h3>
+      <p>Below, we compare Integrated Gradients and Guided IG as they apply to 200 randomly chosen images from the <a href="http://www.image-net.org/">ImageNet dataset</a> using the <a href="https://arxiv.org/abs/1512.00567">Inception V3 model</a>.
+        Because XRAI uses a pixel-based attribution as input, we show how XRAI attribution differs between the two methods.
       </p>
-      <p style="margin-bottom: 2em">
-        When the model makes a mistake, we show the row with a light red background and give the option to choose which mask to visualize - label or the prediction. Often times you can see why the model made a mistake!
-      </p>
-    </div>
-    <div class="description">
-      <iframe src="https://docs.google.com/presentation/d/e/2PACX-1vQ-JyRSw0he-DoV7wcnEKtd1xHguvCN-u5rTJRGV3LD6q-ruG0X23HRWjMIE8gaf4GPPJhKxAzLoXdI/embed?start=false&loop=true&delayms=30000"
-        frameborder="0"
-        width="960"
-        height="569"
-        allowfullscreen="true"
-        mozallowfullscreen="true"
-        webkitallowfullscreen="true">
-      </iframe>
     </div>
   </div>
   <div class="attribution-container">
