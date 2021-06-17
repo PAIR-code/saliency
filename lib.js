@@ -69,7 +69,6 @@ function buildImageTable() {
   xhr.open('GET', `metadata_${currentHash}.json`);
   xhr.onload = () => {
     var metadata = JSON.parse(xhr.responseText);
-    console.log({metadata});
     metadata.forEach((row, ogid) => {
       var i = row["id"] - 1;
 
@@ -189,9 +188,7 @@ function buildImageTable() {
 
       // Image.
       td = document.createElement('td');
-      td.style.width = '32%';
       td.className = 'main-img';
-      td.style.position = 'relative';
       tr.appendChild(td);
 
       var img = document.createElement('img');
@@ -285,12 +282,6 @@ function buildImageTable() {
       div.className = 'rotated';
       td.appendChild(div);
       tr.appendChild(td);
-      for (var m = columnCount; m < 3; m++) {
-        td = document.createElement('td');
-        var div = document.createElement('div');
-        td.appendChild(div);
-        tr.appendChild(td);
-      }
 
       // Row 2.
       tr = document.createElement('tr');
@@ -332,12 +323,6 @@ function buildImageTable() {
       div.className = 'rotated second-row-label';
       td.appendChild(div);
       tr.appendChild(td);
-      for (var m = columnCount; m < 3; m++) {
-        td = document.createElement('td');
-        div = document.createElement('div');
-        td.appendChild(div);
-        tr.appendChild(td);
-      }
 
 
       // Spacing footer
@@ -433,7 +418,6 @@ function readyPage() {
         var inViewport = elementInViewport(checkpoints[i], parent);
 
         if (inViewport) {
-          console.log('in viewport ', i);
           for (var j = 0; j < images.length; j++) {
             var image = images[j];
             var newattr = mode == 0 ? 'data-mask' : 'data-imgxmask';
@@ -519,7 +503,6 @@ function readyPage() {
       $('#headers').width($('.attribution-container').width());
     }
     resize();
-    console.log('2');
     // var scrollContaine3r = $('#scroll-container').hide();
 
   });
@@ -528,7 +511,6 @@ function readyPage() {
 function onHashUpdate(newHash) {
   $(`a[href="#${currentHash}"]`).removeClass('active');
   $(`a[href="#${newHash}"]`).addClass('active');
-  console.log('check');
   // ignore imgxmasks since it is only used by smoothgrad
   currentHash = newHash;
   masks = MASK_DICT[newHash];
