@@ -27,28 +27,19 @@
     <div class="description">
       <p>There are many techniques to compute an attribution map for an image for a particular prediction. One popular method is <a href="https://arxiv.org/abs/1703.01365">Integrated Gradients</a> (IG), which has a solid theoretical foundation but it often produces noisy attributions.</p>
       <p>In our paper, we improve upon the Integrated Gradients method by introducing the concept of Adaptive Path Methods, which calculates attribution in a similar way to Integrated Gradients, but can take advantage of the knowledge of the model to dynamically construct a path that meets a desirable objective. Guided Integrated Gradients (Guided IG) minimizes noise by moving in the direction of lowest associated partial derivatives.</p>
-      <p style="margin-top: 2em">
-        <div class="imgs-container">
-          <div class="img-container"></div>
-          <div class="img-container">Integrated Gradients</div>
-          <div class="img-container">Guided Integrated Gradients</div>
-        </div>
-        <div class="imgs-container">
-          <div class="img-container">
-            <img src="images/finch.png"/>
-          </div>
-          <div class="img-container">
-            <img src="images/finch_ig.png"/>
-          </div>
-          <div class="img-container">
-            <img src="images/finch_gig.png">
-          </div>
-        </div>
-      </p>
+      <table class="animation-container">
+        <tr style="height: 700px;">
+          <td style="width: 100px; font-size: 24px;">
+            <div class="animation-label">Integrated Gradients</div>
+            <div class="animation-label">Guided Integrated Gradients</div>
+          </td>
+          <td><img src="images/finch_animation.gif" style="width: 700px"></td>
+        </tr>
+      </table>
       <p style="margin-top: 2em">
         <h3>Poster (CVPR 2021)</h3>
-        <a href="docs/ICCV_XRAI_Poster.pdf" target="_blank">
-          <img src="images/xrai_poster.png" style="width: 100%"/>
+        <a href="docs/CVPR_Guided_IG_Poster.pdf" target="_blank">
+          <img src="images/gig_poster.png" style="width: 100%"/>
         </a>
       </p>
     </div>
