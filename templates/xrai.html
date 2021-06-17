@@ -3,7 +3,7 @@
     <div class="cover-container">
       <div class="icons">
         <div class="paper-icon">
-          <a href="https://arxiv.org/abs/1706.03825">
+          <a href="https://arxiv.org/abs/1906.02825">
             <img src="images/xrai_paper_icon.png" style="width: 100px"/><br>Paper
           </a>
         </div>
@@ -14,7 +14,7 @@
         </div>
       </div>
       <div class="title"><h1>XRAI</h1></div>
-      <div class="authors">etc, etc, etc</div>
+      <div class="authors">Andrei Kapishnikov, Tolga Bolukbasi, Fernanda Viégas, Michael Terry</div>
       <div class="team-link"><a href="https://research.google.com/bigpicture/">Google Big Picture</a></div>
     </div>
   </div>
@@ -30,34 +30,19 @@
       <p>However, pixel-based attributions can sometimes be challenging to read and interpret. Salient pixels may be scattered across the image, with positive and negative attributions intermixed. 
         XRAI identifies salient regions as opposed to pixels. The algorithm uses a pixel-level attribution method such as Integrated Gradients or Guided IG as well as segmentation maps, and then identifies important regions by summing attributions as segments.
       </p>
-      <p style="margin-top: 2em">
-        <div class="imgs-container">
-          <div class="img-container"></div>
-          <div class="img-container">Gradient</div>
-          <div class="img-container">SmoothGrad</div>
-        </div>
-        <div class="imgs-container">
-          <div class="img-container">
-            <img src="images/obelisk.png"/>
-          </div>
-          <div class="img-container">
-            <img src="images/obelisk_gradient.png"/>
-          </div>
-          <div class="img-container">
-            <img src="images/obelisk_smoothgrad.png">
-          </div>
-        </div>
-      </p>
+      <div style="margin-top: 2em">
+        <img src="images/xrai_schematic.png" style="width: 90%"/>
+      </div>
       <p style="margin-top: 2em">
         <h3>Poster (CVPR 2021)</h3>
-        <div class="poster-container">
-          poster goes here
-        </div>
+        <a href="docs/ICCV_XRAI_Poster.pdf" target="_blank">
+          <img src="images/xrai_poster.png" style="width: 90%"/>
+        </a>
       </p>
     </div>
     <div class="description" style="margin-top: 3em">
       <h3>Applying XRAI on Images</h3>
-      <p>Below, we compare XRAI using Integrated Gradients and Guided IG as they apply to 200 randomly chosen images from the <a href="http://www.image-net.org/">ImageNet dataset</a> using the <a href="https://arxiv.org/abs/1512.00567">Inception V3 model</a>.
+      <p>Below, we compare XRAI to the pixel-wise Integrated Gradients and Guided IG attribution methods as they apply to 200 randomly chosen images from the <a href="http://www.image-net.org/">ImageNet dataset</a> using the <a href="https://arxiv.org/abs/1512.00567">Inception V3 model</a>.
         Because XRAI uses a pixel-based attribution as input, we show how XRAI attribution differs between the two methods.
       </p>
     </div>
