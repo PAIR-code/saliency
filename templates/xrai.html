@@ -1,0 +1,72 @@
+<div id="scroll-container">
+  <div class="cover smoothgrad-display">
+    <div class="cover-container">
+      <div class="icons">
+        <div class="paper-icon">
+          <a href="https://arxiv.org/abs/1906.02825">
+            <img src="images/xrai_paper_icon.png" style="width: 100px"/><br>Paper
+          </a>
+        </div>
+        <div class="paper-icon" style="margin-left: 20px">
+          <a href="http://github.com/pair-code/saliency">
+            <img src="images/code_icon.png" style="width: 100px"/><br>Code
+          </a>
+        </div>
+      </div>
+      <div class="title"><h1>XRAI</h1></div>
+      <div class="authors">Andrei Kapishnikov, Tolga Bolukbasi, Fernanda Viégas, Michael Terry</div>
+      <div class="team-link"><a href="https://research.google.com/bigpicture/">Google Big Picture</a></div>
+    </div>
+  </div>
+  <div class="descriptions">
+    <h3>What are saliency methods?</h3>
+    <div class="description">
+        <p>Saliency methods link a deep neural network's (DNN) prediction to the input features that most influence that prediction. If the model makes a misprediction, we might want to know which features contributed to the misclassification. We can visualize the saliency map for image models as a grayscale image with the same dimensions as the original image with brightness corresponding to the importance of the pixel.
+        </p>
+    </div>
+    <h3>XRAI and region-based saliency methods</h3>
+    <div class="description">
+      <p>Pixel-based saliency methods provide fine-grained attributions for image models. By attributing individual pixels, these techniques provide fine-grained attributions.</p>
+      <p>However, pixel-based attributions can sometimes be challenging to read and interpret. Salient pixels may be scattered across the image, with positive and negative attributions intermixed. 
+        XRAI identifies salient regions as opposed to pixels. The algorithm uses a pixel-level attribution method such as Integrated Gradients or Guided IG as well as segmentation maps, and then identifies important regions by summing attributions as segments.
+      </p>
+      <div style="margin-top: 2em">
+        <img src="images/xrai_schematic.png" style="width: 90%"/>
+      </div>
+      <p style="margin-top: 2em">
+        <h3>Poster (CVPR 2021)</h3>
+        <a href="docs/ICCV_XRAI_Poster.pdf" target="_blank">
+          <img class="poster" src="images/xrai_poster.png"/>
+        </a>
+      </p>
+    </div>
+    <div class="description" style="margin-top: 3em">
+      <h3>Applying XRAI on Images</h3>
+      <p>Below, we compare XRAI to the pixel-wise Integrated Gradients and Guided IG attribution methods as they apply to 200 randomly chosen images from the <a href="http://www.image-net.org/">ImageNet dataset</a> using the <a href="https://arxiv.org/abs/1512.00567">Inception V3 model</a>.
+        Because XRAI uses a pixel-based attribution as input, we show how XRAI attribution differs between the two methods.
+      </p>
+    </div>
+  </div>
+  <div class="attribution-container">
+    <div id="headers">
+      <span style="width: 4%"></span><!--
+      --><span style="width: 38%">Image</span><!--
+      --><span style="width: 19%">IntegGrad</span><!--
+      --><span style="width: 19%">Guided IG</span>
+    </div>
+    <div id="table-container">
+      <div class="grad-wrt-container">
+        <input type="checkbox" id="show-confident"/>
+        Only show highly confident predictions
+      </div>
+      <div class="pointer-container">
+        <img src="images/pointer.png" width="30px"/>
+        Mouse over images
+      </div>
+      <table id="table" class="fewer-columns">
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

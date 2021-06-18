@@ -1,0 +1,89 @@
+<div id="scroll-container">
+  <div class="cover smoothgrad-display">
+    <div class="cover-container">
+      <div class="icons">
+        <div class="paper-icon">
+          <a href="https://arxiv.org/abs/1706.03825">
+            <img src="images/paper_icon.png" style="width: 100px"/><br>Paper
+          </a>
+        </div>
+        <div class="paper-icon" style="margin-left: 20px">
+          <a href="http://github.com/pair-code/saliency">
+            <img src="images/code_icon.png" style="width: 100px"/><br>Code
+          </a>
+        </div>
+      </div>
+      <div class="title"><h1>SmoothGrad</h1></div>
+      <div class="authors">Daniel Smilkov, Nikhil Thorat, Been Kim, Fernanda Viégas, Martin Wattenberg</div>
+      <div class="team-link"><a href="https://research.google.com/bigpicture/">Google Big Picture</a></div>
+    </div>
+  </div>
+  <div class="descriptions">
+    <h3>What is a sensitivity mask?</h3>
+    <div class="description">
+        <p>When a machine learning model makes a prediction, often times we would like to determine which features of the input (pixels, for images) were important for the prediction. If the model makes a misprediction, we might want to know which features contributed to the misclassification. We can visualize the feature importance mask as a grayscale image with the same dimensions as the original image with brightness corresponding to importance of the pixel.</p>
+    </div>
+    <h3>Computing sensitivity</h3>
+    <div class="description">
+      <p>There are many techniques to compute a sensitivity mask for an image for a particular prediction. The simplest approach is to take the gradient of a class prediction neuron with respect to the input pixels. This tells us how much a small change to each pixel would affect the prediction. Visually, this mask tends to be noisy.</p>
+      <p>The SmoothGrad technique often significantly denoises this sensitivity mask. This technique adds pixel-wise Gaussian noise to many copies of the image, and simply averages the resulting gradients.</p>
+      <p style="margin-top: 2em">
+        <div class="imgs-container">
+          <div class="img-container"></div>
+          <div class="img-container">Gradient</div>
+          <div class="img-container">SmoothGrad</div>
+        </div>
+        <div class="imgs-container">
+          <div class="img-container">
+            <img src="images/obelisk.png"/>
+          </div>
+          <div class="img-container">
+            <img src="images/obelisk_gradient.png"/>
+          </div>
+          <div class="img-container">
+            <img src="images/obelisk_smoothgrad.png">
+          </div>
+        </div>
+      </p>
+    </div>
+    <div class="description" style="margin-top: 3em">
+      <h3>Augmenting other methods</h3>
+      <p>The SmoothGrad technique augments other sensitivity techniques. With this release, we have provided implementations of several sensitivity techniques and their SmoothGrad counterparts. This is not comprehensive, and we are accepting pull requests to add new methods!</p>
+      <p>
+        Below, we show vanilla gradients, <a href="https://arxiv.org/abs/1703.01365">Integrated gradients</a>, and <a href="https://arxiv.org/abs/1412.6806">Guided Backpropagation</a> as they apply to 200 randomly chosen images from the <a href="http://www.image-net.org/">ImageNet dataset</a> using the <a href="https://arxiv.org/abs/1512.00567">Inception V3 model</a>.
+      </p>
+      <p style="margin-bottom: 2em">
+        When the model makes a mistake, we show the row with a light red background and give the option to choose which mask to visualize - label or the prediction. Often times you can see why the model made a mistake!
+      </p>
+    </div>
+  </div>
+  <div class="attribution-container">
+    <div id="headers">
+      <span style="width: 4%"></span><!--
+    --><span style="width: 32%">Image</span><!--
+    --><span style="width: 16%">Gradient</span><!--
+    --><span style="width: 16%">Integrated</span><!--
+    --><span style="width: 16%">Guided Backprop</span><!--
+    --><div class="img-times-selector-container">
+        <div class="img-times-selector">
+          <div class="select-grad grad-selected">Gradient</div>
+          <div class="select-img-times-grad grad-unselected">Gradient × Image</div>
+        </div>
+      </div>
+    </div>
+    <div id="table-container">
+      <div class="grad-wrt-container">
+        <input type="checkbox" id="show-confident"/>
+        Only show highly confident predictions
+      </div>
+      <div class="pointer-container">
+        <img src="images/pointer.png" width="30px"/>
+        Mouse over images
+      </div>
+      <table id="table">
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
