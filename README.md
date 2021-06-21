@@ -10,9 +10,9 @@ If upgrading from an older version, update old imports to `import saliency.tf1 a
 
 This repository contains code for the following saliency techniques:
 
+*   Guided Integrated Gradients* ([paper](https://arxiv.org/abs/2106.09788), [poster](https://github.com/PAIR-code/saliency/blob/master/docs/CVPR_Guided_IG_Poster.pdf))
 *   XRAI* ([paper](https://arxiv.org/abs/1906.02825), [poster](https://github.com/PAIR-code/saliency/blob/master/docs/ICCV_XRAI_Poster.pdf))
 *   SmoothGrad* ([paper](https://arxiv.org/abs/1706.03825))
-*   Guided Integrated Gradients* (TBD)
 *   Vanilla Gradients
     ([paper](https://scholar.google.com/scholar?q=Visualizing+higher-layer+features+of+a+deep+network&btnG=&hl=en&as_sdt=0%2C22),
     [paper](https://arxiv.org/abs/1312.6034))
