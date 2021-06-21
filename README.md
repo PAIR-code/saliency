@@ -2,6 +2,8 @@
 
 &#x1F534;&nbsp;&nbsp; Now framework-agnostic! [(Example core notebook)](Examples_core.ipynb) &nbsp;&#x1F534;
 
+&#x1F517;&nbsp;&nbsp; For further explanation of the methods and more examples of the resulting maps, see our [Github Pages website](https://pair-code.github.io/saliency)  &nbsp;&#x1F517;
+
 If upgrading from an older version, update old imports to `import saliency.tf1 as saliency`. We provide wrappers to make the framework-agnostic version compatible with TF1 models. [(Example TF1 notebook)](Examples_tf1.ipynb)
 
 ## Introduction
