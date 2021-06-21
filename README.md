@@ -2,15 +2,17 @@
 
 &#x1F534;&nbsp;&nbsp; Now framework-agnostic! [(Example core notebook)](Examples_core.ipynb) &nbsp;&#x1F534;
 
+&#x1F517;&nbsp;&nbsp; For further explanation of the methods and more examples of the resulting maps, see our [Github Pages website](https://pair-code.github.io/saliency)  &nbsp;&#x1F517;
+
 If upgrading from an older version, update old imports to `import saliency.tf1 as saliency`. We provide wrappers to make the framework-agnostic version compatible with TF1 models. [(Example TF1 notebook)](Examples_tf1.ipynb)
 
 ## Introduction
 
 This repository contains code for the following saliency techniques:
 
+*   Guided Integrated Gradients* ([paper](https://arxiv.org/abs/2106.09788), [poster](https://github.com/PAIR-code/saliency/blob/master/docs/CVPR_Guided_IG_Poster.pdf))
 *   XRAI* ([paper](https://arxiv.org/abs/1906.02825), [poster](https://github.com/PAIR-code/saliency/blob/master/docs/ICCV_XRAI_Poster.pdf))
 *   SmoothGrad* ([paper](https://arxiv.org/abs/1706.03825))
-*   Guided Integrated Gradients* (TBD)
 *   Vanilla Gradients
     ([paper](https://scholar.google.com/scholar?q=Visualizing+higher-layer+features+of+a+deep+network&btnG=&hl=en&as_sdt=0%2C22),
     [paper](https://arxiv.org/abs/1312.6034))
