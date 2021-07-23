@@ -508,6 +508,20 @@ function readyPage() {
   });
 }
 
+function changeHash(hash) {
+  location.hash = hash;
+  window.scrollTo(0,0);
+}
+
+function navigateHome() {
+  $(`a[href="#${currentHash}"]`).removeClass('active');
+  $(`a[href="#home"]`).addClass('active');
+  currentHash = 'home';
+  $.get(`templates/home.html`, function(data) {
+      $("#scroll-container").replaceWith(data);
+  });
+}
+
 function onHashUpdate(newHash) {
   $(`a[href="#${currentHash}"]`).removeClass('active');
   $(`a[href="#${newHash}"]`).addClass('active');
@@ -527,6 +541,8 @@ $(window).on('hashchange', function(e){
   var hash = location.hash.slice(1);
   if (validHashes.includes(hash) && hash != currentHash) {
     onHashUpdate(hash);
+  } else {
+    navigateHome();
   }
  });
 
@@ -535,6 +551,8 @@ var masks = [];
 var rowNames = [];
 if (!!location.hash && validHashes.includes(location.hash.slice(1))) {
   onHashUpdate(location.hash.slice(1));
+} else if (!!location.hash && location.hash.slice(1) === 'home') {
+  navigateHome();
 } else {
-  location.hash = validHashes[0];
+  location.hash = 'home';
 }

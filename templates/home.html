@@ -1,0 +1,51 @@
+<div id="scroll-container">
+  <div class="cover">
+    <div class="cover-container">
+      <div class="icons">
+      </div>
+      <div class="title"><h1>PAIR Saliency</h1></div>
+      <div class="authors">Framework-agnostic implementation for state-of-the-art saliency methods (XRAI, BlurIG, SmoothGrad, and more).      </div>
+      <div class="team-link">Developed by <a href="https://research.google.com/">Google PAIR</a></div>
+    </div>
+  </div>
+  <div class="descriptions">
+    <h3>PAIR Saliency Methods</h3>
+    <div class="description">
+      <p>Learn more about saliency methods developed by PAIR by navigating to our other pages:
+      </p>
+      <div class="method-container">
+        <div class="method" onclick="changeHash('guided-ig')">
+          <p><u>Guided IG (Guided Integrated Gradients)</u> improves upon Integrated Gradients by introducing the idea of an adaptive path method.
+            By calculating integration along a different path than Integrated Gradients,
+            high gradient areas are avoided which often leads to an overall reduction in irrelevant attributions.</p>
+          <img src="images/preview_gig.png">
+        </div>
+        <div class="method" onclick="changeHash('xrai')">
+          <p><u>XRAI (eXplanation with Ranked Area Integrals)</u> attributes regions instead of individual pixels.
+            It does it by aggregating pixel level attributions within regions to find image areas that positively or negatively impact the prediction. As a result,
+            the XRAI attributions are often much easier to interpret than pixel-level saliency.</p>
+          <img src="images/preview_xrai.png">
+        </div>
+        <div class="method" onclick="changeHash('smoothgrad')">
+          <p><u>SmoothGrad</u> creates a set of noisy images then averages gradients (or another saliency method) with respect to these images.
+            This often sharpens the resulting saliency map, and removes irrelevant noisy regions.</p>
+          <img src="images/preview_smoothgrad.png">
+        </div>
+
+      </div>
+    </div>
+    <h3>About the repository</h3>
+    <div class="description">
+        <p>If you want to learn how to apply methods from this repository to your own model, we have example notebooks for the following frameworks:</p>
+        <ul>
+          <li><a href="https://github.com/PAIR-code/saliency/blob/master/Examples_pytorch.ipynb" target=”_blank”>PyTorch</a></li>
+          <li><a href="https://github.com/PAIR-code/saliency/blob/master/Examples_core.ipynb" target=”_blank”>TensorFlow 2</a></li>
+          <li><a href="https://github.com/PAIR-code/saliency/blob/master/Examples_tf1.ipynb" target=”_blank”>TensorFlow 1</a></li>
+        </ul>
+        <p>We also support other frameworks, provided that you write a function that returns model outputs and gradients.
+          For additional info on visualization and downloading the library, <a href="https://github.com/PAIR-code/saliency" target=”_blank”>you can visit the repository homepage here.</a>
+        </p>
+    </div>
+  </div>
+  <div id="table-container"></div>
+</div>
