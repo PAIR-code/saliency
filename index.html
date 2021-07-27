@@ -202,6 +202,10 @@
       opacity: .8;
     }
 
+    .descriptions ul {
+      font-size: 16px;
+    }
+
     .cover {
       color: #ddd;
     }
@@ -396,15 +400,37 @@
       display: table-row !important;
     }
 
+    .method {
+      border: solid 1px transparent;
+      display: flex;
+      flex-flow: row wrap;
+      margin-bottom: 16px;
+      padding: 5px 10px;
+    }
+
+    .method:hover {
+      border: solid 1px #1e283a;
+      cursor: pointer;
+    }
+
+    .method p {
+      margin: 25px auto 20px 0;
+      max-width: 420px;
+    }
+
+    .method img {
+      width: 500px;
+    }
+
     .nav {
-      margin-top: 5px;
+      margin-top: 6px;
       padding: 10px;
     }
 
     .nav a {
       color: #313b4e;
       font-size: 18px;
-      padding: 12px 18px;
+      padding: 13px 18px;
       text-decoration: none;
     }
 
@@ -415,6 +441,18 @@
       border-radius: 15px 15px 0 0;
     }
 
+    .home-icon {
+      content:url("images/home-color.svg");
+    }
+
+    .home-nav-container {
+      display: inline-block;
+    }
+
+    .active .home-icon {
+      content:url("images/home-grey.svg");
+    }
+
     .poster-preview {
       margin: auto;
     }
@@ -422,6 +460,11 @@
 </head>
 <body>
   <div class="nav">
+    <div class="home-nav-container">
+    <a href="#home">
+      <img class="home-icon" height="24" width="24">
+    </a>
+    </div>
     <a href="#guided-ig">Guided IG</a>
     <a href="#xrai">XRAI</a>
     <a href="#smoothgrad">Smoothgrad</a>
