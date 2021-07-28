@@ -28,7 +28,7 @@ class IntegratedGradients(TF1CoreSaliency):
 
   def GetMask(self,
               x_value,
-              feed_dict={},
+              feed_dict=None,
               x_baseline=None,
               x_steps=25,
               batch_size=1):

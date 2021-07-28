@@ -59,7 +59,7 @@ class OcclusionTest(unittest.TestCase):
     expected_calls = 10  # 5x5 image with size 3 window, 1 extra call for input
     # Calculate the occlusion attribution of the input.
     mask = self.occlusion_instance.GetMask(self.x_input_val,
-                                           feed_dict={},
+                                           feed_dict=None,
                                            size=3,
                                            value=0)
 

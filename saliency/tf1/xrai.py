@@ -28,7 +28,7 @@ class XRAI(TF1CoreSaliency):
 
   def GetMask(self,
               x_value,
-              feed_dict={},
+              feed_dict=None,
               baselines=None,
               segments=None,
               base_attribution=None,
@@ -97,7 +97,7 @@ class XRAI(TF1CoreSaliency):
 
   def GetMaskWithDetails(self,
                          x_value,
-                         feed_dict={},
+                         feed_dict=None,
                          baselines=None,
                          segments=None,
                          base_attribution=None,

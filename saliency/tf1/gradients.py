@@ -24,7 +24,7 @@ class GradientSaliency(TF1CoreSaliency):
     super(GradientSaliency, self).__init__(graph, session, y, x)
     self.core_instance = core_gradients.GradientSaliency()
 
-  def GetMask(self, x_value, feed_dict={}):
+  def GetMask(self, x_value, feed_dict=None):
     """Returns a vanilla gradient mask.
 
     Args:

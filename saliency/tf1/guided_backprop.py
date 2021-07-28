@@ -73,7 +73,7 @@ class GuidedBackprop(TF1Saliency):
 
         self.guided_grads_node = tf.gradients(imported_y, imported_x)[0]
 
-  def GetMask(self, x_value, feed_dict={}):
+  def GetMask(self, x_value, feed_dict=None):
     """Returns a GuidedBackprop mask.
 
     Args:
