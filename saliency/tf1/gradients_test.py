@@ -47,7 +47,7 @@ class GradientsTest(unittest.TestCase):
     expected_val = np.array([5, 2*2, np.cos(3)])
 
     mask = self.grad_instance.GetMask(x_value=self.x_input_val,
-                                     feed_dict={})
+                                     feed_dict=None)
 
     # Verify the result.
     np.testing.assert_almost_equal(mask, expected_val, decimal=2)

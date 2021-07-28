@@ -85,7 +85,7 @@ class GradCamTest(unittest.TestCase):
     img = img.reshape([INPUT_HEIGHT_WIDTH, INPUT_HEIGHT_WIDTH, 1])
     mask = self.grad_cam_instance.GetMask(
         img,
-        feed_dict={},
+        feed_dict=None,
         should_resize=True,
         three_dims=False)
 

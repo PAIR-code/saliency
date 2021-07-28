@@ -32,7 +32,7 @@ class BlurIG(TF1CoreSaliency):
 
   def GetMask(self,
               x_value,
-              feed_dict={},
+              feed_dict=None,
               max_sigma=50,
               steps=100,
               grad_step=0.01,

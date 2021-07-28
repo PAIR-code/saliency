@@ -43,7 +43,7 @@ class TF1Saliency(object):
     self.y = y
     self.x = x
 
-  def GetMask(self, x_value, feed_dict={}):
+  def GetMask(self, x_value, feed_dict=None):
     """Returns an unsmoothed mask.
 
     Args:
@@ -54,7 +54,7 @@ class TF1Saliency(object):
 
   def GetSmoothedMask(self,
                       x_value,
-                      feed_dict={},
+                      feed_dict=None,
                       stdev_spread=.15,
                       nsamples=25,
                       magnitude=True,
@@ -151,7 +151,7 @@ class TF1CoreSaliency(TF1Saliency):
         expected += ' or {}'.format(target_size)
       raise ValueError(X_SHAPE_ERROR_MESSAGE.format(expected, x_outer_size))
 
-  def GetMask(self, x_value, feed_dict={}):
+  def GetMask(self, x_value, feed_dict=None):
     """Returns an unsmoothed mask.
 
     Args:
@@ -162,7 +162,7 @@ class TF1CoreSaliency(TF1Saliency):
 
   def GetSmoothedMask(self,
                       x_value,
-                      feed_dict={},
+                      feed_dict=None,
                       stdev_spread=.15,
                       nsamples=25,
                       magnitude=True,

@@ -77,7 +77,7 @@ class BlurIgTest(unittest.TestCase):
 
     # Calculate the Blur IG attribution of the input.
     mask = self.blur_ig_instance.GetMask(self.x_input_val,
-                                         feed_dict={},
+                                         feed_dict=None,
                                          max_sigma=self.max_sigma,
                                          steps=x_steps)
 
@@ -97,7 +97,7 @@ class BlurIgTest(unittest.TestCase):
     expected_validate_args = (x_steps, batch_size)
 
     mask = self.blur_ig_instance.GetMask(self.x_input_val,
-                                         feed_dict={},
+                                         feed_dict=None,
                                          max_sigma=self.max_sigma,
                                          steps=x_steps,
                                          batch_size=batch_size)
@@ -118,7 +118,7 @@ class BlurIgTest(unittest.TestCase):
     expected_calls = 1  # batch size is 1000, ceil(999/1000)=1
 
     mask = self.blur_ig_instance.GetMask(self.x_input_val,
-                                         feed_dict={},
+                                         feed_dict=None,
                                          max_sigma=self.max_sigma,
                                          steps=x_steps,
                                          batch_size=batch_size)

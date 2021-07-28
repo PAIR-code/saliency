@@ -57,7 +57,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     x_steps = 1000
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                                    feed_dict={},
+                                    feed_dict=None,
                                     x_baseline=self.x_baseline_val[0],
                                     x_steps=x_steps)
 
@@ -74,7 +74,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     expected_validate_args = (x_steps, batch_size)
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                                    feed_dict={},
+                                    feed_dict=None,
                                     x_baseline=self.x_baseline_val[0],
                                     x_steps=x_steps,
                                     batch_size=batch_size)
@@ -92,7 +92,7 @@ class IntegratedGradientsTest(unittest.TestCase):
     expected_calls = 1  # batch size is 1000, ceil(999/1000)=1
 
     mask = self.ig_instance.GetMask(x_value=self.x_input_val[0],
-                                    feed_dict={},
+                                    feed_dict=None,
                                     x_baseline=self.x_baseline_val[0],
                                     x_steps=x_steps,
                                     batch_size=batch_size)

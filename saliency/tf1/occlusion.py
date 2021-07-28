@@ -24,7 +24,7 @@ class Occlusion(TF1CoreSaliency):
     super(Occlusion, self).__init__(graph, session, y, x)
     self.core_instance = core_occlusion.Occlusion()
 
-  def GetMask(self, x_value, feed_dict={}, size=15, value=0):
+  def GetMask(self, x_value, feed_dict=None, size=15, value=0):
     """Returns an occlusion mask.
 
     Args:

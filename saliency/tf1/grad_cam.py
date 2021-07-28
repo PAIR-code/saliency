@@ -38,7 +38,7 @@ class GradCam(TF1CoreSaliency):
     super(GradCam, self).__init__(graph, session, y, x, conv_layer)
     self.core_instance = core_grad_cam.GradCam()
 
-  def GetMask(self, x_value, feed_dict={}, should_resize=True, three_dims=True):
+  def GetMask(self, x_value, feed_dict=None, should_resize=True, three_dims=True):
     """Returns a GradCAM mask.
 
     Args:
