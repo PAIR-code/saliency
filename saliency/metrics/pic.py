@@ -28,9 +28,9 @@ methods:
    to compute_pic_metric(...).
 2) Call compute_pic_metric(...) for every image and store the results in a list.
    Use separate lists for different saliency methods. Be aware, that the
-   method can return None. If that happens, skip the image. At the end of this
-   step, you should have multiple lists with results: one list per saliency
-   method.
+   method can raise ComputePicMetricError. If that happens, skip the image.
+   At the end of this step, you should have multiple lists with results: one
+   list per saliency method.
 3) Aggregate the results obtained in step 2 by calling
    aggregate_individual_pic_results(...). One call should be made per saliency
    method (i.e. per list obtained in step 2).
@@ -57,7 +57,7 @@ def create_blurred_image(full_img: np.ndarray, pixel_mask: np.ndarray,
   Args:
     full_img: an original input image that should be used as the source for
       interpolation. The image should be represented by a numpy array with
-      dimensions [H, W, C].
+      dimensions [H, W, C] or [H, W].
     pixel_mask: a binary mask, where 'True' values represent pixels that should
       be retrieved from the original image as the source for the interpolation
       and 'False' values represent pixels, which values should be found. The
@@ -114,7 +114,8 @@ def create_blurred_image(full_img: np.ndarray, pixel_mask: np.ndarray,
   return blurred_img.astype(data_type)
 
 
-def generate_random_mask(image_shape: Sequence, fraction=0.01) -> np.ndarray:
+def generate_random_mask(image_height: int, image_width: int,
+    fraction=0.01) -> np.ndarray:
   """Generates a random pixel mask.
 
     The result of this method can be used as the initial seed to generate
@@ -122,17 +123,15 @@ def generate_random_mask(image_shape: Sequence, fraction=0.01) -> np.ndarray:
     method.
 
     Args:
-      image_shape: shape of the image for which the mask should be generated.
-        Only the first two dimensions are uses.
+      image_height: the image height for which the mask should be generated.
+      image_width: the image width for which the mask should be generated.
       fraction: the fraction of the mask pixels that should be set to true.
         The valid value range is [0.0, 1.0]. Set the value to 0.0 if no
         information from the original image should be used in the blurred image.
     Returns:
       The binary mask with the `fraction` of elements set to True.
   """
-  height = image_shape[0]
-  width = image_shape[1]
-  mask = np.zeros(shape=[height, width], dtype=bool)
+  mask = np.zeros(shape=[image_height, image_width], dtype=bool)
   size = mask.size
   indices = np.random.choice(size, replace=False, size=int(size * fraction))
   mask[np.unravel_index(indices, mask.shape)] = True
@@ -144,7 +143,7 @@ def estimate_image_entropy(image: np.ndarray) -> float:
 
     Args:
       image: an image, which entropy should be estimated. The dimensions of the
-        array should be [H, W, C] of type uint8.
+        array should be [H, W, C] or [H, W] of type uint8.
     Returns:
       The estimated amount of information in the image.
   """
@@ -155,6 +154,14 @@ def estimate_image_entropy(image: np.ndarray) -> float:
   length = buffer.tell()
   buffer.close()
   return length
+
+
+class ComputePicMetricError(Exception):
+  """An error that can be raised by the compute_pic_metric(...) method.
+
+  See the method description for more information.
+  """
+  pass
 
 
 class ComputePicMetricResult(NamedTuple):
@@ -168,6 +175,9 @@ class ComputePicMetricResult(NamedTuple):
   blurred_images: Sequence[np.ndarray]
   # Model predictions for images in the `blurred_images` sequence.
   predictions: Sequence[float]
+  # Saliency thresholds that were used to generate corresponding
+  # `blurred_images`.
+  thresholds: Sequence[float]
   # Area under the curve.
   auc: float
 
@@ -179,8 +189,8 @@ def compute_pic_metric(
     pred_func: Callable[[np.ndarray], Sequence[float]],
     saliency_thresholds: Sequence[float],
     keep_monotonous: bool = False,
-    num_data_points: int = 1001
-) -> Optional[ComputePicMetricResult]:
+    num_data_points: int = 1000
+) -> ComputePicMetricResult:
   """Computes Performance Information Curve for a single image.
 
     The method can be used to compute either Softmax Information Curve (SIC) or
@@ -190,20 +200,22 @@ def compute_pic_metric(
 
     Args:
       img: an original image on which the curve should be computed. The numpy
-        array should have dimensions [H, W, C] and type uint8.
+        array should have dimensions [H, W, C] for a color image or [H, W]
+        for a grayscale image. The array should be of type uint8.
       saliency_map: the saliency map for which the metric should be calculated.
         Pixels with higher values are considered to be of higher importance.
         It is the responsibility of the caller to decide on the order of pixel
-        importance, e.g. if the absolut values should be used instead of the
+        importance, e.g. if the absolute values should be used instead of the
         signed ones, the caller should apply 'abs' function before calling this
         method. The shape of `saliency_map` is [H, W].
       random_mask: a random mask to use in order to create the initial
         completely blurred image.
       pred_func: a function that the method should call in order to obtain
         the prediction of a model on a batch of images. The method should accept
-        a numpy array of type uint8 with dimensions [B, H, W, C] and return the
-        predictions as a list of float values. For multiclass classification, it
-        is up to the implementer of the function to return the prediction for
+        a numpy array of type uint8 with dimensions [B, H, W, C] for color
+        images or [B, H, W] for grayscale images and return the predictions
+        as a list of float values. For multiclass classification, it is
+        up to the implementer of the function to return the prediction for
         the desired class. For the SIC metric, the function should return the
         softmax of the corresponding class. For the AIC metric, the function
         should return 1.0 if the classification was correct and 0.0 otherwise.
@@ -220,21 +232,23 @@ def compute_pic_metric(
       keep_monotonous: whether to keep the curve monotonically increasing.
         The value of this argument was set to 'True' in the original paper but
         setting it to 'False' is a viable alternative.
-      num_data_points: the number of PIC curve data points to return. E.g.,
-        value 1001 results in 1001 points evently distributed on the x-axis
-        from 0.0 to 1.0 with 0.001 increment.
+      num_data_points: the number of PIC curve data points to return. The number
+        excludes point 1.0 on the x-axis that is always appended to the end.
+        E.g., value 1000 results in 1001 points evently distributed on the
+        x-axis from 0.0 to 1.0 with 0.001 increment.
 
     Returns:
       The PIC curve data points and extra auxiliary information. See
       `ComputePicMetricResult` for more information.
 
-      ***Note*** The method may return None. That happens in two cases.
-      1. If the model prediction on the original image is not higher than the
-         model prediction on the completely blurred image.
-      2. If the entropy of the original image is not higher than the entropy
-         of the completely blurred image.
-      If None is returned, skip the image in the aggregation step.
-
+    Raises:
+      ComputePicMetricError:
+        The method raises the error in two cases. That happens in two cases:
+        1. If the model prediction on the original image is not higher than the
+           model prediction on the completely blurred image.
+        2. If the entropy of the original image is not higher than the entropy
+           of the completely blurred image.
+        If the error is raised, skip the image.
   """
   if img.dtype.type != np.uint8:
     raise ValueError('The `img` array that holds the input image should be of'
@@ -266,13 +280,23 @@ def compute_pic_metric(
   # entropy of the original image then the metric cannot be used for this
   # image. Don't include this image in the aggregated result.
   if fully_blurred_img_entropy >= original_img_entropy:
-    return None
+    message = (
+        'The entropy in the completely blurred image is not lower than'
+        ' the entropy in the original image. Catch the error and exclude this'
+        ' image from evaluation. Blurred entropy: {}, original'
+        ' entropy {}'.format(fully_blurred_img_entropy, original_img_entropy))
+    raise ComputePicMetricError(message)
 
   # If the score of the model on completely blurred image is higher or equal to
   # the score of the model on the original image then the metric cannot be used
   # for this image. Don't include this image in the aggregated result.
   if fully_blurred_img_pred >= original_img_pred:
-    return None
+    message = (
+        'The model prediction score on the completely blurred image is not'
+        ' lower than the score on the original image. Catch the error and'
+        ' exclude this image from the evaluation. Blurred score: {}, original'
+        ' score {}'.format(fully_blurred_img_pred, original_img_pred))
+    raise ComputePicMetricError(message)
 
   # Iterate through saliency thresholds and compute prediction of the model
   # for the corresponding blurred images with the saliency pixels revealed.
@@ -306,20 +330,27 @@ def compute_pic_metric(
   entropy_pred_tuples.append((0.0, 0.0))
   entropy_pred_tuples.append((1.0, 1.0))
 
-  data_points = zip(*entropy_pred_tuples)
-  interp_func = interpolate.interp1d(x=next(data_points), y=next(data_points))
+  entropy_data, pred_data = zip(*entropy_pred_tuples)
+  interp_func = interpolate.interp1d(x=entropy_data, y=pred_data)
 
-  curve_x = np.linspace(start=0.0, stop=1.0, num=num_data_points, endpoint=True)
+  curve_x = np.linspace(start=0.0, stop=1.0, num=num_data_points,
+                        endpoint=False)
   curve_y = np.asarray([interp_func(x) for x in curve_x])
 
-  auc = np.trapz(curve_y) / curve_y.size
+  curve_x = np.append(curve_x, 1.0)
+  curve_y = np.append(curve_y, 1.0)
+
+  auc = np.trapz(curve_y, curve_x)
 
   blurred_images.append(img)
   predictions.append(original_img_pred)
 
+  thresholds = [0.0] + list(saliency_thresholds) + [1.0]
+
   return ComputePicMetricResult(curve_x=curve_x, curve_y=curve_y,
                                 blurred_images=blurred_images,
-                                predictions=predictions, auc=auc)
+                                predictions=predictions, thresholds=thresholds,
+                                auc=auc)
 
 
 class AggregateMetricResult(NamedTuple):
@@ -371,7 +402,7 @@ def aggregate_individual_pic_results(
   else:
     raise ValueError('Unknown method {}.'.format(method))
 
-  auc = np.trapz(aggr_curve_y) / aggr_curve_y.size
+  auc = np.trapz(aggr_curve_y, curve_xs[0])
 
   return AggregateMetricResult(curve_x=curve_xs[0], curve_y=aggr_curve_y,
                                auc=auc)
