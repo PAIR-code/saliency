@@ -164,5 +164,19 @@ class PicTest(unittest.TestCase):
     self.assertEqual(len(metric_result.blurred_images),
                      len(saliency_thresholds) + 2)
 
+  def test_prediction_is_too_low(self):
+    saliency_map = np.random.random(size=(self.img.shape[0], self.img.shape[1]))
+    mask = pic.generate_random_mask(image_height=self.img.shape[0],
+                                    image_width=self.img.shape[1],
+                                    fraction=0.1)
+    with self.assertRaisesRegex(pic.ComputePicMetricError, 'min_pred_value'):
+      pic.compute_pic_metric(
+          img=self.img,
+          saliency_map=saliency_map,
+          random_mask=mask,
+          pred_func=lambda _: [0.9],
+          saliency_thresholds=[0.1, 0.2],
+          min_pred_value=0.95)
+
 if __name__ == '__main__':
   unittest.main()

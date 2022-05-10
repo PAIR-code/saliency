@@ -188,7 +188,8 @@ def compute_pic_metric(
     random_mask: np.ndarray,
     pred_func: Callable[[np.ndarray], Sequence[float]],
     saliency_thresholds: Sequence[float],
-    keep_monotonous: bool = False,
+    min_pred_value: float = 0.8,
+    keep_monotonous: bool = True,
     num_data_points: int = 1000
 ) -> ComputePicMetricResult:
   """Computes Performance Information Curve for a single image.
@@ -203,6 +204,10 @@ def compute_pic_metric(
         array should have dimensions [H, W, C] for a color image or [H, W]
         for a grayscale image. The array should be of type uint8.
       saliency_map: the saliency map for which the metric should be calculated.
+        Usually, the saliency map should be calculated with respect to the
+        same class label as the class label for which `pred_func` returns the
+        prediction. However, the class labels may be different if you want
+        to see how saliency for one class explains prediction of other class.
         Pixels with higher values are considered to be of higher importance.
         It is the responsibility of the caller to decide on the order of pixel
         importance, e.g. if the absolute values should be used instead of the
@@ -229,6 +234,11 @@ def compute_pic_metric(
         The value of this argument should be the list of thresholds in
         ascending order. Example value: [0.005, 0.01, 0.02, 0.03, 0.04, 0.05,
         0.07, 0.10, 0.13, 0.21, 0.34, 0.5, 0.75].
+      min_pred_value: used for filtering images. If the model prediction on the
+        original image is lower than the value of this argument, the method
+        raises ComputePicMetricError to indicate that the image should be
+        skipped. This is done to filter out images that produce low prediction
+        confidence.
       keep_monotonous: whether to keep the curve monotonically increasing.
         The value of this argument was set to 'True' in the original paper but
         setting it to 'False' is a viable alternative.
@@ -248,6 +258,8 @@ def compute_pic_metric(
            model prediction on the completely blurred image.
         2. If the entropy of the original image is not higher than the entropy
            of the completely blurred image.
+        3. If the model prediction on the original image is lower than
+           `min_pred_value`.
         If the error is raised, skip the image.
   """
   if img.dtype.type != np.uint8:
@@ -269,6 +281,14 @@ def compute_pic_metric(
 
   # Compute model prediction for the original image.
   original_img_pred = pred_func(img[np.newaxis, ...])[0]
+
+  if original_img_pred < min_pred_value:
+    message = ('The model prediction score on the original image is lower than'
+               ' `min_pred_value`. Skip this image or decrease the'
+               ' value of `min_pred_value` argument. min_pred_value'
+               ' = {}, the image prediction'
+               ' = {}.'.format(min_pred_value, original_img_pred))
+    raise ComputePicMetricError(message)
 
   # Compute model prediction for the completely blurred image.
   fully_blurred_img_pred = pred_func(fully_blurred_img[np.newaxis, ...])[0]
@@ -365,7 +385,7 @@ class AggregateMetricResult(NamedTuple):
 
 def aggregate_individual_pic_results(
     compute_pic_metrics_results: List[ComputePicMetricResult],
-    method: str = 'mean') -> AggregateMetricResult:
+    method: str = 'median') -> AggregateMetricResult:
   """Aggregates PIC metrics of individual images to produce the aggregate curve.
 
     The method should be called after calling the compute_pic_metric(...) method
