@@ -115,12 +115,12 @@ class PicTest(unittest.TestCase):
 
   def test_aggregate_individual_image_results(self):
     curve_x = [0.0, 0.25, 0.5, 0.75, 1.0]
-    metric_result_1 = pic.ComputePicMetricResult(
+    metric_result_1 = pic.PicMetricResult(
         curve_x=curve_x,
         curve_y=[0.0, 0.2, 0.4, 0.6, 1.0],
         blurred_images=[], predictions=[], thresholds=[], auc=0.4
     )
-    metric_result_2 = pic.ComputePicMetricResult(
+    metric_result_2 = pic.PicMetricResult(
         curve_x=curve_x,
         curve_y=[0.0, 0.4, 0.4, 0.4, 1.0],
         blurred_images=[], predictions=[], thresholds=[], auc=0.2

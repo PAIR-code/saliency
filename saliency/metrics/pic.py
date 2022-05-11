@@ -22,10 +22,13 @@ Information Curve (AIC).
 Here are the typical steps to compute the aggregated PIC curve for saliency
 methods:
 1) Call generate_random_mask(...) to generate a random pixel mask that serves
-   as the seed for generating initial fully blurred image. Make one call per
-   image and reuse the same mask for different saliency methods. The result of
-   generate_random_mask(...) should be passed as the `random_mask` argument
-   to compute_pic_metric(...).
+   as the seed for generating initial fully blurred image. To avoid using the
+   same random mask for all images, generate a new mask for every new image.
+   For fair comparison of multiple saliency methods, use the same random mask
+   on a given image. If exact reproducibility is required, save the random mask
+   on disk along with the results and reuse the masks on subsequent runs.
+   The result of generate_random_mask(...) should be passed as the `random_mask`
+   argument to compute_pic_metric(...).
 2) Call compute_pic_metric(...) for every image and store the results in a list.
    Use separate lists for different saliency methods. Be aware, that the
    method can raise ComputePicMetricError. If that happens, skip the image.
@@ -164,7 +167,7 @@ class ComputePicMetricError(Exception):
   pass
 
 
-class ComputePicMetricResult(NamedTuple):
+class PicMetricResult(NamedTuple):
   """Holds results of compute_pic_metric(...) method."""
   # x-axis coordinates of PIC curve data points.
   curve_x: Sequence[float]
@@ -191,7 +194,7 @@ def compute_pic_metric(
     min_pred_value: float = 0.8,
     keep_monotonous: bool = True,
     num_data_points: int = 1000
-) -> ComputePicMetricResult:
+) -> PicMetricResult:
   """Computes Performance Information Curve for a single image.
 
     The method can be used to compute either Softmax Information Curve (SIC) or
@@ -249,7 +252,7 @@ def compute_pic_metric(
 
     Returns:
       The PIC curve data points and extra auxiliary information. See
-      `ComputePicMetricResult` for more information.
+      `PicMetricResult` for more information.
 
     Raises:
       ComputePicMetricError:
@@ -367,10 +370,10 @@ def compute_pic_metric(
 
   thresholds = [0.0] + list(saliency_thresholds) + [1.0]
 
-  return ComputePicMetricResult(curve_x=curve_x, curve_y=curve_y,
-                                blurred_images=blurred_images,
-                                predictions=predictions, thresholds=thresholds,
-                                auc=auc)
+  return PicMetricResult(curve_x=curve_x, curve_y=curve_y,
+                         blurred_images=blurred_images,
+                         predictions=predictions, thresholds=thresholds,
+                         auc=auc)
 
 
 class AggregateMetricResult(NamedTuple):
@@ -384,7 +387,7 @@ class AggregateMetricResult(NamedTuple):
 
 
 def aggregate_individual_pic_results(
-    compute_pic_metrics_results: List[ComputePicMetricResult],
+    compute_pic_metrics_results: List[PicMetricResult],
     method: str = 'median') -> AggregateMetricResult:
   """Aggregates PIC metrics of individual images to produce the aggregate curve.
 
@@ -392,8 +395,8 @@ def aggregate_individual_pic_results(
     on multiple images for a given single saliency method.
 
     Args:
-      compute_pic_metrics_results: a list of ComputePicMetricResult instances.
-        Each instance is the result of a single compute_pic_metric(...) call.
+      compute_pic_metrics_results: a list of PicMetricResult instances that are
+        obtained by calling compute_pic_metric(...) on multiple images.
       method: method to use for the aggregation. The valid values are 'mean' and
         'median'.
     Returns:
