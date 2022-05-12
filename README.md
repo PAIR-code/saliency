@@ -33,9 +33,9 @@ new methods!
 
 ## Evaluation of Saliency Methods
 
-The repository provides an implementation of Performance Information Curve (PIC)
-metric - a human independent metric for evaluating quality of saliency
-methods ([paper](https://arxiv.org/abs/1906.02825),
+The repository provides an implementation of Performance Information Curve (PIC) -
+a human independent metric for evaluating quality of saliency methods
+([paper](https://arxiv.org/abs/1906.02825),
 [poster](https://github.com/PAIR-code/saliency/blob/master/docs/ICCV_XRAI_Poster.pdf),
 [code](https://github.com/PAIR-code/saliency/blob/master/saliency/metrics/pic.py),
 [notebook](https://github.com/PAIR-code/saliency/blob/master/pic_metrics.ipynb)).
