@@ -1,4 +1,5 @@
-# Updates
+# Saliency Library
+## Updates
 
 &#x1F534;&nbsp;&nbsp; Now framework-agnostic! [(Example core notebook)](Examples_core.ipynb) &nbsp;&#x1F534;
 
@@ -7,7 +8,7 @@
 If upgrading from an older version, update old imports to `import saliency.tf1 as saliency`. We provide wrappers to make the framework-agnostic version compatible with TF1 models. [(Example TF1 notebook)](Examples_tf1.ipynb)
 
 &#x1F534;&nbsp;&nbsp; Added Performance Information Curve (PIC) - a human
-independent metric for evaluating quality of saliency methods.
+independent metric for evaluating the quality of saliency methods.
 ([Example notebook](https://github.com/PAIR-code/saliency/blob/master/pic_metrics.ipynb)) &nbsp;&#x1F534;
 
 ## Saliency Methods
@@ -34,7 +35,7 @@ new methods!
 ## Evaluation of Saliency Methods
 
 The repository provides an implementation of Performance Information Curve (PIC) -
-a human independent metric for evaluating quality of saliency methods
+a human independent metric for evaluating the quality of saliency methods
 ([paper](https://arxiv.org/abs/1906.02825),
 [poster](https://github.com/PAIR-code/saliency/blob/master/docs/ICCV_XRAI_Poster.pdf),
 [code](https://github.com/PAIR-code/saliency/blob/master/saliency/metrics/pic.py),
