@@ -123,7 +123,7 @@ def _get_segments_felzenszwalb(im,
   masks = _unpack_segs_to_masks(segs)
   if dilation_rad:
     selem = disk(dilation_rad)
-    masks = [dilation(mask, selem=selem) for mask in masks]
+    masks = [dilation(mask, footprint=selem) for mask in masks]
   return masks
 
 
