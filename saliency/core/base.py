@@ -110,18 +110,22 @@ class CoreSaliency(object):
       magnitude: If true, computes the sum of squares of gradients instead of
                  just the sum. Defaults to true.
     """
-    stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
 
+    stdev = stdev_spread * (np.max(x_value) - np.min(x_value))
     total_gradients = np.zeros_like(x_value, dtype=np.float32)
-    for _ in range(nsamples):
-      noise = np.random.normal(0, stdev, x_value.shape)
-      x_plus_noise = x_value + noise
-      grad = self.GetMask(x_plus_noise, call_model_function, call_model_args,
+    shape = (nsamples,) + x_value.shape
+    noisy_samples = np.zeros(shape)
+    for i in range(nsamples):
+        noise = np.random.normal(0, stdev, x_value.shape)
+        x_plus_noise = x_value + noise
+        noisy_samples[i] = x_plus_noise
+
+    grads = self.GetMask(noisy_samples, call_model_function, call_model_args,
                           **kwargs)
-      if magnitude:
-        total_gradients += (grad * grad)
-      else:
-        total_gradients += grad
+    if magnitude:
+        total_gradients = np.sum((grads * grads), axis = 0)
+    else:
+        total_gradients = np.sum(grads, axis = 0)
 
     return total_gradients / nsamples
 
